@@ -17,10 +17,6 @@ class Catalog(db.Model):
     data_location = db.Column(db.String())
     # later change to foreignkey institute
     institute = db.Column(db.String(500))
-    # tags/keywords
-    keywords = db.Column(db.String())
-    # date/time of collection of data
-    # date_collection = db.Column(db.Datetime(), nullable=True)
     # location flag
     flag_location = db.Column(GEOALC_Geo("POINT"),
                               nullable=False)
