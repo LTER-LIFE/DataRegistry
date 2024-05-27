@@ -36,21 +36,8 @@ def home():
         lat_formatter=format_coord,
         lng_formatter=format_coord,
     ).add_to(main_map)
-    drawing = Draw(export=True)
-    drawing.add_to(main_map)
-    c1, c2 = st.columns(2)
 
-    with c1:
-        output = st_folium(main_map)
-    with c2:
-        st.write(output)
-    # Get iframe of the map
-    # iframe = main_map.get_root()._repr_html_()
-    with st.echo():
-        st_data = st_folium(main_map, width=500, height=400, returned_objects=["all_drawings"])
-        iframe = main_map.get_root()._repr_html_()
-
-        print(dir(st_data))
+    iframe = main_map.get_root()._repr_html_()
 
 
 

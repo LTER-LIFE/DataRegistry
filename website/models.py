@@ -23,7 +23,7 @@ class Catalog(db.Model):
     keywords = db.Column(db.String(500), nullable=False)
     # collection year
     collect_year = db.Column(db.Integer, nullable=False)
-    # polygon of the study area 
+    # polygon of the study area
     polygon_location = db.Column(GEOALC_Geo("GEOMETRYCOLLECTION"), nullable=True)
 
     def __repr__(self):
