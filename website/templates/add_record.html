@@ -1,33 +1,68 @@
 {% extends "base_template.html" %}
 {% block title %} Ecological metadata search engine {% endblock %}
-{% block page_info %} <div><h1>NIOO ecological data add study<br></h1></div>  {% endblock %}
+
 {% block map_view %}
-<div><h1> Add a new study </h1></div>
+<div align="center"> <h1> Add a new study </h1></div>
 <br/>
 <form method="POST">
-    {{form.hidden_tag()}}
-    {{form.title.label}}
-    {{form.title()}}
-    {{form.description()}}
-    {{form.contact()}}
-    {{form.data_location()}}
-    {{form.institute()}}
-    {{form.keywords()}}
-     <div class="form-group row">
-            <div id="select-geo-loc" class="hidden"></div>
-            <div class="col-sm-10">
-                {{ form.polygon_location.label }} {{ "*" if form.polygon_location.validators | length > 0 else "" }}
-                {{ form.polygon_location(class_="form-control" +
-                (" is-invalid" if form.polygon_location.errors else ""))
-                }}
-                <small id="polygon_locationHelp" class="form-text text-muted">
-                    {{ form.polygon_location.description + " " + " ".join(form.polygon_location.errors) + "" }}
-                </small>
+    <div class="container">
+        <div class="form-group row">
+            {{form.hidden_tag()}}
+            {{form.title.label}}
+            {{form.title(size=80)}}
             </div>
-        </div>
+        <br>
+        <div class="form-group row">
+            {{form.description.label}}
+            {{form.description(style='height: 100px;')}}
+            </div>
 
-    <br/>
-    {{form.submit_butt()}}
+        <br>
+        <div class="form-group row">
+            {{form.contact.label}}
+            {{form.contact(size=80)}}
+            </div>
+
+        <br>
+        <div class="form-group row">
+            {{form.email.label}}
+            {{form.email(size=80)}}
+            </div>
+
+        <br>
+        <div class="form-group row">
+                {{form.data_location.label}}
+                {{form.data_location(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+                {{form.collect_year.label}}
+                {{form.collect_year(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+            {{form.keywords.label}}
+            {{form.keywords(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+                {{form.institute.label}}
+                {{form.institute(size=80)}}
+            </div>
+        <br>
+            <div class="form-group row">
+                <div id="select-geo-loc" class="hidden"></div>
+                    {{ form.polygon_location.label }} {{ "*" if form.polygon_location.validators | length > 0 else "" }}
+                    {{ form.polygon_location(class_="form-control" +
+                    (" is-invalid" if form.polygon_location.errors else ""))
+                    }}
+                    <small id="polygon_locationHelp" class="form-text text-muted">
+                        {{ form.polygon_location.description + " " + " ".join(form.polygon_location.errors) + "" }}
+                    </small>
+                </div>
+        <br/>
+        {{form.submit_butt()}}
+    </div>
 </form>
 
 

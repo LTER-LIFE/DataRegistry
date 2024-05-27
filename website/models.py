@@ -12,18 +12,20 @@ class Catalog(db.Model):
     # describe the dataset
     description = db.Column(db.String(500), nullable=False)
     # email
-    contact = db.Column(db.String(300), nullable=False)
+    email = db.Column(db.String(300), nullable=False)
+    # contact person
+    contact_person = db.Column(db.String(300), nullable=False)
     # data location
     data_location = db.Column(db.String())
     # later change to foreignkey institute
     institute = db.Column(db.String(500))
-    # location flag
-    flag_location = db.Column(GEOALC_Geo("POINT"),
-                              nullable=False)
-    # polygon
+    # keywords
+    keywords = db.Column(db.String(500), nullable=False)
+    # collection year
+    collect_year = db.Column(db.Integer, nullable=False)
+    # polygon of the study area 
     polygon_location = db.Column(GEOALC_Geo("GEOMETRYCOLLECTION"), nullable=True)
 
     def __repr__(self):
         return f'Title {self.title}'
-
 
