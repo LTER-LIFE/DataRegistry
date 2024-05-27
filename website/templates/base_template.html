@@ -8,36 +8,128 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="icon" href="static/favicon.ico" type="image/vnd.microsoft.icon">
     <title>{% block title %}{% endblock %}</title>
-<style>body,h1,h2,h3,h4,h5,h6 {font-family: "Lato", sans-serif}
-.w3-bar,h1,button {font-family: "Montserrat", sans-serif}
-.fa-anchor,.fa-coffee {font-size:200px}
-</style>
+    <style>body, h1, h2, h3, h4, h5, h6 {
+        font-family: "Lato", sans-serif
+    }
+
+    #select-geo-loc {
+        width: 83%;
+        height: 350px;
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        background-color: grey;
+    }
+
+
+    .hidden {
+        display: none;
+    }
+
+
+    .w3-bar, h1, button {
+        font-family: "Montserrat", sans-serif
+    }
+
+    .fa-anchor, .fa-coffee {
+        font-size: 200px
+    }
+    </style>
+    <link href="{{ url_for('homepage.home') }}static/css/bootstrap.min.css"
+          rel="stylesheet"/>
+
+    <link href="{{ url_for('homepage.home') }}static/css/popover.css" rel="stylesheet">
+    <link href="{{ url_for('homepage.home') }}static/css/deps/leaflet.css" rel="stylesheet"/>
+    <link href="{{ url_for('homepage.home') }}static/css/deps/Control.Geocoder.min.css" rel="stylesheet">
+    <link href="{{ url_for('homepage.home') }}static/css/deps/leaflet.draw.css" rel="stylesheet">
+    <script src="{{ url_for('homepage.home') }}static/js/deps/jquery-3.6.0.js"></script>
+    <script src="{{ url_for('homepage.home') }}static/js/deps/moment.min.js"></script>
+    <script src="{{ url_for('homepage.home') }}static/js/deps/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('homepage.home') }}static/js/deps/popper.min.js"></script>
+    <script src="{{ url_for('homepage.home') }}static/js/deps/leaflet.js"></script>
+    <script src="{{ url_for('homepage.home') }}static/js/deps/Control.Geocoder.min.js"></script>
+    <script src="{{ url_for('homepage.home') }}static/js/deps/ol.min.js"></script>
+
+    <script src="{{ url_for('homepage.home') }}static/js/dataentry.js"></script>
+
+    <script type="application/javascript">
+
+        // Bootstrap tooltip
+        $(document).ready(function () {
+            $("body").tooltip({selector: '[data-toggle=tooltip]'});
+        });
+
+        // A helper function to add a class to a certain element
+        function addClasses(class_names) {
+            class_names.forEach(class_name => element.classList.add(class_name));
+            return class_names;
+        }
+
+        // A helper function to remove a class to a certain element
+        function removeClasses(class_names) {
+            class_names.forEach(class_name => element.classList.add(class_name));
+            return class_names;
+        }
+
+        // A helper function that waits for an element that doesn't exist yet
+        function modifyFutureElement(selector, class_names, callBack, checkFrequencyInMs, timeoutInMs) {
+            var startTimeInMs = Date.now();
+            (function loopSearch() {
+                element = document.querySelector(selector)
+                if (element != null) {
+                    callBack(class_names);
+                } else {
+                    setTimeout(function () {
+                        if (timeoutInMs && Date.now() - startTimeInMs > timeoutInMs)
+                            return;
+                        loopSearch();
+                    }, checkFrequencyInMs);
+                }
+            })();
+        }
+
+        // A function to show maps on a specified dif with specified coordinates
+        function showMap(div_id, coords) {
+            var map = L.map(div_id, {zoomControl: false});
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                doubleClickZoom: true,
+                maxBounds: ([[90, -270], [-90, 270]]),
+                selectArea: true
+            }).addTo(map);
+
+            // center map on result
+            map.setView(coords, 16);
+        };
+
+    </script>
 
 </head>
 <body>
 <section class="page-header">
-  <nav class="navbar">
-      <div class="nav-links" id="navbarNavDropdown">
-        <ul class="navbar-nav">
-          <li class="nav-item active">
-            <a class="nav-link" href="#">Home <span class="sr-only"></span></a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">National data</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">Contact</a>
-          </li>
-        </ul>
-      </div>
+    <nav class="navbar">
+        <div class="nav-links" id="navbarNavDropdown">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home <span class="sr-only"></span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">National data</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact</a>
+                </li>
+            </ul>
+        </div>
     </nav>
 </section>
 <div class="text-box">
-{% block page_info %} {% endblock %}
+    {% block page_info %} {% endblock %}
 </div>
 <main>
-    {{map|safe}}
-    </main>
+    {% block map_view %} {% endblock %}
+
+</main>
 
 <!--
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
@@ -45,4 +137,12 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 -->
 </body>
+
+<script src="{{ url_for('homepage.home') }}static/js/deps/bootstrap-tagsinput.min.js"></script>
+<script src="{{ url_for('homepage.home') }}static/js/deps/typeahead.bundle.js"></script>
+<script src="{{ url_for('homepage.home') }}static/js/deps/Control.Geocoder.min.js"></script>
+<script src="{{ url_for('homepage.home') }}static/js/deps/leaflet.draw.js"></script>
+<script src="{{ url_for('homepage.home') }}static/js/deps/ol.min.js"></script>
+<script src="{{ url_for('homepage.home') }}static/js/popover.js"></script>
+
 </html>
