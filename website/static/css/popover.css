@@ -1,0 +1,14 @@
+#select-geo-loc {
+    width: 83%;
+    height: 350px;
+    position: relative;
+	z-index:1;
+	overflow:hidden;
+	background-color:grey;
+	}
+}
+
+.hidden {
+    display: none;
+}
+
