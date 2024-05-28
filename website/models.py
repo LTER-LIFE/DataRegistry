@@ -29,3 +29,21 @@ class Catalog(db.Model):
     def __repr__(self):
         return f'Title {self.title}'
 
+    def to_dict(self):
+        """
+        Create a dictionary representation of the object.
+        :return: Returns a dictionary representation of the object.
+        """
+        return {
+            "dataset_id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "email": self.email,
+            "contact_person": self.contact_person,
+            "data_location": self.data_location,
+            "institute": self.institute,
+            "keywords": ",".join(key_word for key_word in self.keywords),
+            "collect_year": self.collect_year,
+            "polygon_location": self.polygon_location,
+        }
+    
