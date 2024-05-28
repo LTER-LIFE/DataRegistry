@@ -15,7 +15,7 @@ class Catalog(db.Model):
     email = db.Column(db.String(300), nullable=False)
     # contact person
     contact_person = db.Column(db.String(300), nullable=False)
-    # data location
+    # data location hyperlink
     data_location = db.Column(db.String())
     # later change to foreignkey institute
     institute = db.Column(db.String(500))
