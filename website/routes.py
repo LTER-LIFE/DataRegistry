@@ -43,9 +43,6 @@ def home():
 
     iframe = main_map.get_root()._repr_html_()
 
-
-
-
     return render_template('index.html', iframe=iframe)
 
 @homepage.route('/add_study', methods=['GET','POST'])
