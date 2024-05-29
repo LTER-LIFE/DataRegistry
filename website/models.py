@@ -21,10 +21,13 @@ class Catalog(db.Model):
     institute = db.Column(db.String(500))
     # keywords
     keywords = db.Column(db.String(500), nullable=False)
-    # collection year
-    collect_year = db.Column(db.Integer, nullable=False)
+    # collection year start
+    collect_year_start = db.Column(db.Date(), nullable=False)
+    # collection year end
+    collect_year_end = db.Column(db.Date(), nullable=False)
     # polygon of the study area
-    polygon_location = db.Column(GEOALC_Geo("GEOMETRYCOLLECTION"), nullable=True)
+    polygon_location = db.Column(GEOALC_Geo("GEOMETRYCOLLECTION"),
+                                 nullable=True)
 
     def __repr__(self):
         return f'Title {self.title}'
@@ -46,4 +49,3 @@ class Catalog(db.Model):
             "collect_year": self.collect_year,
             "polygon_location": self.polygon_location,
         }
-    

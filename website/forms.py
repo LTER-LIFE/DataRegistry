@@ -6,7 +6,9 @@
 # Import(s):
 from flask import Blueprint, render_template
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField
 from wtforms import SearchField, StringField, SubmitField, FieldList
+from wtforms.fields.datetime import DateField
 from wtforms.validators import DataRequired
 from wtforms.widgets import TextArea
 
@@ -30,7 +32,10 @@ class AddStudy(FlaskForm):
     keywords = StringField("Keywords ',' separated", validators=[
         DataRequired()])
     # collection year
-    collect_year = StringField("Year of data collection", validators=[DataRequired()])
+    collect_year_start = DateField("Year start of data collection", validators=[
+        DataRequired()])
+    collect_year_end = DateField("Year end of data collection", validators=[
+        DataRequired()])
     # polygon
     polygon_location = StringField("Polygon of the dataset", validators=[DataRequired()])
     # submit field
