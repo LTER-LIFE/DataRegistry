@@ -1,4 +1,6 @@
-from . import db
+from sqlalchemy.ext.hybrid import hybrid_property
+
+from . import db, pwd_context
 from geoalchemy2 import Geometry as GEOALC_Geo
 from shapely import geometry as SHAPE_Geo
 import os
@@ -46,6 +48,24 @@ class Catalog(db.Model):
             "data_location": self.data_location,
             "institute": self.institute,
             "keywords": ",".join(key_word for key_word in self.keywords),
-            "collect_year": self.collect_year,
+            "collect_year_start": self.collect_year_start,
+            "collect_year_end": self.collect_year_end,
             "polygon_location": self.polygon_location,
         }
+
+class User(db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(200), nullable=False)
+    email = db.Column(db.String(300), nullable=False, unique=True)
+    # hashing the password with gett and sett
+    _password = db.Column("password", db.String(255), nullable=False)
+
+    @hybrid_property
+    def password(self):
+        return self._password
+
+    @password.setter
+    def password(self, value):
+        self._password = pwd_context.hash(value)
+
