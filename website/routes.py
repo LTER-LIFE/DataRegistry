@@ -5,7 +5,7 @@
 # Use(s):
 # Import(s):
 import geoalchemy2.elements
-from flask import Blueprint, render_template, flash, request
+from flask import Blueprint, render_template, flash, request, redirect, url_for, get_flashed_messages
 from lxml import etree
 from . import db
 from .forms import AddStudy
@@ -62,7 +62,8 @@ def add_study():
                              data_location=form.data_location.data,
                              institute=form.institute.data,
                              keywords=form.keywords.data,
-                             collect_year=form.collect_year.data,
+                             collect_year_start=form.collect_year_start.data,
+                             collect_year_end=form.collect_year_end.data,
                              polygon_location=form.polygon_location.data
                              )
         # Add to the database
@@ -192,6 +193,6 @@ def upload_xml():
                 flash("Xml data added successfully!")
             else:
                 pass
-            return render_template('index.html')
+
 
     return render_template('add_xml.html')
