@@ -1,14 +1,14 @@
-from sqlalchemy.ext.hybrid import hybrid_property
+# Catalog model
 
-from . import db, pwd_context
-from geoalchemy2 import Geometry as GEOALC_Geo
-from shapely import geometry as SHAPE_Geo
-import os
-import datetime
+
+from sqlalchemy.ext.hybrid import hybrid_property
+from website import db
+import geoalchemy2
+
 
 class Catalog(db.Model):
     __tablename__ = "CatalogMeta"
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     # title of a dataset
     title = db.Column(db.String(200), nullable=False)
     # describe the dataset
@@ -28,7 +28,7 @@ class Catalog(db.Model):
     # collection year end
     collect_year_end = db.Column(db.Date(), nullable=False)
     # polygon of the study area
-    polygon_location = db.Column(GEOALC_Geo("GEOMETRYCOLLECTION"),
+    polygon_location = db.Column(geoalchemy2.Geometry("GEOMETRYCOLLECTION", -1),
                                  nullable=True)
 
     def __repr__(self):
@@ -52,20 +52,3 @@ class Catalog(db.Model):
             "collect_year_end": self.collect_year_end,
             "polygon_location": self.polygon_location,
         }
-
-class User(db.Model):
-    __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(200), nullable=False)
-    email = db.Column(db.String(300), nullable=False, unique=True)
-    # hashing the password with gett and sett
-    _password = db.Column("password", db.String(255), nullable=False)
-
-    @hybrid_property
-    def password(self):
-        return self._password
-
-    @password.setter
-    def password(self, value):
-        self._password = pwd_context.hash(value)
-

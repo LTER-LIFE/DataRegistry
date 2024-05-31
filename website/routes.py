@@ -6,6 +6,7 @@
 # Import(s):
 import geoalchemy2.elements
 from flask import Blueprint, render_template, flash, request, redirect, url_for, get_flashed_messages
+from flask_restful import Api
 from lxml import etree
 from . import db
 from .forms import AddStudy
@@ -15,15 +16,20 @@ from folium.plugins.treelayercontrol import TreeLayerControl
 from folium.features import Marker
 import streamlit as st
 from streamlit_folium import st_folium
-from .models import Catalog
+from website.models.models import Catalog
 from geoalchemy2.elements import WKBElement
 from werkzeug.utils import secure_filename
 from io import StringIO, BytesIO
 from shapely import geometry as SHAPE_geo
 
-# Define blueprint
-homepage = Blueprint('homepage', __name__, template_folder='templates')
-
+from .resources.user import UserList, UserResource
+#
+# # Define blueprint
+# homepage = Blueprint('homepage', __name__, template_folder='templates')
+# api = Api(homepage, errors=homepage.errorhandler)
+#
+# api.add_resource(UserList, "/users")
+# api.add_resource(UserResource, "/users/<int:user_id>")
 # Create the homepage route decorator
 @homepage.route('/')
 def home():
