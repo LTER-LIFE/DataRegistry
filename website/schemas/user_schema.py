@@ -1,6 +1,6 @@
 from marshmallow.fields import String
 from marshmallow import validate, validates_schema, ValidationError
-from website import ma
+from extensions import ma
 from website.models.users import User
 
 
@@ -25,7 +25,7 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
 
 
 class UserCreateSchema(UserSchema):
-    pwd = String(required=True, validate=[
+    password = String(required=True, validate=[
             validate.Regexp(r"^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$",
                             error="The password needs to be at least 8 characters long and include a lowercase, uppercase, number and special character.")
         ])

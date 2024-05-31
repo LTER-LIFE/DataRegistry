@@ -2,7 +2,7 @@
 
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from website import db, pwd_context
+from extensions import db, pwd_context
 
 
 class User(db.Model):

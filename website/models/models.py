@@ -2,7 +2,7 @@
 
 
 from sqlalchemy.ext.hybrid import hybrid_property
-from website import db
+from extensions import db
 import geoalchemy2
 
 
