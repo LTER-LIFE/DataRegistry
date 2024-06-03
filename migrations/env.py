@@ -1,6 +1,6 @@
 import logging
 from logging.config import fileConfig
-
+import re
 from flask import current_app
 
 from alembic import context
@@ -13,6 +13,31 @@ config = context.config
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)
 logger = logging.getLogger('alembic.env')
+
+
+# IF SOMETHING GOES WRONG WITH SPATIAL REF: https://gist.github.com/utek/6163250
+# OR remove spatial updates and if the upgrade becomes empty add to upgrade a create
+# dummy table and drop it from next version again to reset
+# EXAMPLE see migration:
+# 61c12ef1b6a1_.py
+#
+
+def exclude_tables_from_config(config_):
+    tables_ = config_.get("tables", None)
+    if tables_ is not None:
+        tables = tables_.split(",")
+    return tables
+
+
+# Changes from: https://gist.github.com/utek/6163250#gistcomment-3851168
+exclude_tables = re.sub(r"\s+", '',  # replace whitespace
+                        config.get_main_option('exclude', '')).split(',')
+
+
+def include_object(object, name, type_, *args, **kwargs):
+    return not (type_ == 'table' and name in exclude_tables)
+
+
 
 
 def get_engine():

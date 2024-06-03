@@ -12,6 +12,7 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
                   })
     email = String(required=True, validate=validate.Email())
 
+
     @validates_schema
     def validate_email(self, data, **kwargs):
         email = data.get("email")
@@ -21,7 +22,7 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = User
         load_instance = True
-        exclude = ["_password"]
+        exclude = ["_password", "id"]
 
 
 class UserCreateSchema(UserSchema):
