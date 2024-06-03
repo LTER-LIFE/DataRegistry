@@ -1,16 +1,21 @@
 from flask import request
 from flask_restful import Resource, abort
 from users import users
+from website.models.users import User
+from website.schemas.user_schema import UserSchema
+
 
 # user for api list for get and post
 class UserList(Resource):
     def get(self):
-        return {'users': users}
+        users = User.query.all()
+        schema = UserSchema(many=True)
+        return {'results': schema.dump(users)}
 
     def post(self):
         data = request.get_json(force=True)
         last_user_id = users[-1].get('id')
-        new_user = { 'id': last_user_id + 1,**data}
+        new_user = {'id': last_user_id + 1, **data}
         users.append(new_user)
 
         return {"msg": "user created"}

@@ -13,6 +13,7 @@ app = Api(homepage)
 app.add_resource(UserList, '/users')
 app.add_resource(UserResource, '/users/<int:id>')
 
+
 @homepage.errorhandler(ValidationError)
 def validation_error(e):
     return jsonify(e.messages), 400
