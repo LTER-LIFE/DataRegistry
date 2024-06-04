@@ -22,16 +22,19 @@ logger = logging.getLogger('alembic.env')
 # 61c12ef1b6a1_.py
 #
 
-def exclude_tables_from_config(config_):
-    tables_ = config_.get("tables", None)
-    if tables_ is not None:
-        tables = tables_.split(",")
-    return tables
+# def exclude_tables_from_config(config_):
+#     tables_ = config_.get("tables", None)
+#     if tables_ is not None:
+#         tables = tables_.split(",")
+#     return tables
+
+# removes the sys_ref from update downgrade
+exclude_tables = config.get_section('alembic:exclude').get('tables', '').split(',')
 
 
 # Changes from: https://gist.github.com/utek/6163250#gistcomment-3851168
-exclude_tables = re.sub(r"\s+", 'spatial_ref_sys',  # replace whitespace
-                        config.get_main_option('exclude', '')).split(',')
+# exclude_tables = re.sub(r"\s+", 'spatial_ref_sys',  # replace whitespace
+#                         config.get_main_option('exclude', '')).split(',')
 
 
 def include_object(object, name, type_, *args, **kwargs):

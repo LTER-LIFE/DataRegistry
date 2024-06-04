@@ -33,6 +33,7 @@ def create_app():
     """
     # Set up app
     app = Flask(__name__)
+    app._static_folder = 'website/static'
     # Get configuration from Config
     app.config.from_object("config")
 
