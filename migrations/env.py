@@ -30,7 +30,7 @@ def exclude_tables_from_config(config_):
 
 
 # Changes from: https://gist.github.com/utek/6163250#gistcomment-3851168
-exclude_tables = re.sub(r"\s+", '',  # replace whitespace
+exclude_tables = re.sub(r"\s+", 'spatial_ref_sys',  # replace whitespace
                         config.get_main_option('exclude', '')).split(',')
 
 
