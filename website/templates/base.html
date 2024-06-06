@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" class="has-color-palette color-palette-water-04 js cc-window-hidden no-touch" style="--palette-text:#082235;--palette-text--as-rgb:8,34,53;--palette-title:#004B85;--palette-title--as-rgb:0,75,133;--palette-links-and-box-background:#406098;--palette-links-and-box-background--as-rgb:64,96,152;--palette-button:#FDD447;--palette-button--as-rgb:253,212,71;--palette-accent:#FEE591;--palette-accent--as-rgb:254,229,145;--palette-border:#E2DFDC;--palette-border--as-rgb:226,223,220;--palette-page-background:#EFF3F4;--palette-page-background--as-rgb:239,243,244;" data-once="addNoTouch keyDownOnHTML">
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" href="{{url_for('static', filename='favicon.ico')}}" type="image/vnd.microsoft.icon">
+    <title>{% block title %}{% endblock %}</title>
+
+    <!-- LTER LIFE CSS STYLESHEETS adaptation of LTER-LIFE, used with permission of NIOO-KNAW/LTER-LIFE -->
+    <link rel="stylesheet" media="all" href="{{ url_for('static', filename='css/css_XSv616_-UZHUts9fFuyg9mffzNV0U85G4aYefDjhuYk.css')}}" type="text/css">
+    <link rel="stylesheet" media="all" href="{{ url_for('static', filename ='css/css_3x9R3_tngjCpZcuwRwM7LF1RowptFNv3ihZT1vdspCI.css')}}" type="text/css">
+    <link rel="stylesheet" media="screen and (min-width:30em)" href="{{ url_for('static', filename ='css/css_P7oSSqpIQN8Vhi-6W3Or1IcLhVMP1EatO7xg1-MSFUI.css')}}">
+    <link rel="stylesheet" media="screen and (min-width:48em)" href="{{ url_for('static', filename ='css/css_OFR5IUwHcbZlx-zQN9BKV9G_1paNngrg7w3y57V1nrI.css')}}">
+    <link rel="stylesheet" media="screen and (min-width:64em)" href="{{ url_for('static', filename ='css/css_vCK22n3_rX1DQQkuogIsBJ4FqhfoqY9N1ztUV6L3HFU.css')}}">
+    <link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_omgXSRZ-fOOCEP3kgfsAhK69nWepWMx6zaACIRBudAQ.css')}}">
+
+    <link href="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/css/bootstrap.min.css"
+          rel="stylesheet"/>
+
+    <link href="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/css/popover.css" rel="stylesheet">
+    <link href="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/css/deps/leaflet.css" rel="stylesheet"/>
+    <link href="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/css/deps/Control.Geocoder.min.css" rel="stylesheet">
+    <link href="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/css/deps/leaflet.draw.css" rel="stylesheet">
+    <script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/jquery-3.6.0.js"></script>
+    <script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/moment.min.js"></script>
+    <script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/popper.min.js"></script>
+    <script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/leaflet.js"></script>
+    <script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/Control.Geocoder.min.js"></script>
+    <script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/ol.min.js"></script>
+
+    <script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/dataentry.js"></script>
+
+    <script type="application/javascript">
+
+        // Bootstrap tooltip
+        $(document).ready(function () {
+            $("body").tooltip({selector: '[data-toggle=tooltip]'});
+        });
+
+        // A helper function to add a class to a certain element
+        function addClasses(class_names) {
+            class_names.forEach(class_name => element.classList.add(class_name));
+            return class_names;
+        }
+
+        // A helper function to remove a class to a certain element
+        function removeClasses(class_names) {
+            class_names.forEach(class_name => element.classList.add(class_name));
+            return class_names;
+        }
+
+        // A helper function that waits for an element that doesn't exist yet
+        function modifyFutureElement(selector, class_names, callBack, checkFrequencyInMs, timeoutInMs) {
+            var startTimeInMs = Date.now();
+            (function loopSearch() {
+                element = document.querySelector(selector)
+                if (element != null) {
+                    callBack(class_names);
+                } else {
+                    setTimeout(function () {
+                        if (timeoutInMs && Date.now() - startTimeInMs > timeoutInMs)
+                            return;
+                        loopSearch();
+                    }, checkFrequencyInMs);
+                }
+            })();
+        }
+
+        // A function to show maps on a specified dif with specified coordinates
+        function showMap(div_id, coords) {
+            var map = L.map(div_id, {zoomControl: false});
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                doubleClickZoom: true,
+                maxBounds: ([[90, -270], [-90, 270]]),
+                selectArea: true
+            }).addTo(map);
+
+            // center map on result
+            map.setView(coords, 16);
+        };
+
+    </script>
+    <script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/js_iTWqpvIogE9Q3_OolWAtk6gW-yNrVhnmLaii-AYlJFU.js"></script>
+
+</head>
+
+<!-- Body start -->
+<body class="path-group page--subsite">
+
+<div class="dialog-off-canvas-main-canvas" data-off-canvas-main-canvas>
+    <div class="page">
+        <header class="page-header">
+            <div class="page-header-inner grid-container">
+
+                <div class="region region-header-branding">
+
+                    <div class="region-inner region-header-branding-inner">
+
+                        <div id="block-entity-view-group" class="block block-ctools block-entity-viewgroup">
+
+                            <div class="block-content">
+                                <div class="group group--header-branding group--subsite full-click">
+                                    <a class="full-click__trigger" href="https://lter-life.nl/en">
+
+                                    <span class="site-logo-visual">
+                                        <img width height src="{{url_for('static', filename='LTER-LIFE-logo.svg')}}">
+
+                                    </span>
+
+                                    </a>
+
+                                </div>
+
+
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
+                </div>
+                <div class="region page-header--without-branding header-title-section">
+                    <span class="site-name"> Data Portal </span>
+                </div>
+                <div class="page-header--without-branding">
+                    <div class="region region-header">
+                        <div class="region-inner region-header-inner" data-lt-overflowhor-init="true">
+                            <nav id="block-menu-block-main" class="block block-menu navigation menu--main"
+                                 aria-label="Main navigation">
+                                <ul class="menu menu-level-0">
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.home')}}">Map</a>
+                                    </li>
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.search')}}">Table</a>
+                                    </li>
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.contact')}}">Contact</a>
+                                    </li>
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.about')}}">About</a>
+                                    </li>
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.sign_in')}}">Sign In</a>
+                                    </li>
+                                    <!-- ADD the admin section here -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                </div>
+        </header>
+   <!-- {% block page_info %} {% endblock %} -->
+<main>
+    <div class="layout-content">
+        <div class="region region-content">
+            <div class="region-inner region-content-inner">
+                <div class="content--header">
+                    <div class="content--header-inner">
+                        <div class="textual">
+                            <div class="grid-container">
+                                <div class="limit-1-col"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content--main">
+                    <div class="content--main--main">
+                        <div class="grid-container">
+                            <div class="limit-1-col content--main--bg-color">
+                                    {% block map_view %} {% endblock %}
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</main>
+</div>
+    </div>
+
+<!--
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+-->
+</body>
+
+<script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/bootstrap-tagsinput.min.js"></script>
+<script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/typeahead.bundle.js"></script>
+<script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/Control.Geocoder.min.js"></script>
+<script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/leaflet.draw.js"></script>
+<script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/deps/ol.min.js"></script>
+<script src="{{ url_for('homepage.home') }}/EcoSearchEngine/website/static/js/popover.js"></script>
+
+</html>

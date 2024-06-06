@@ -1,8 +1,14 @@
+import branca.element
 import folium
+import psycopg2
 from folium.plugins import MarkerCluster, MousePosition
 from flask import Blueprint, jsonify, render_template, request
 from flask_restful import Api
 from marshmallow import ValidationError
+from folium.plugins.treelayercontrol import TreeLayerControl
+from sqlalchemy.dialects.postgresql import psycopg2
+
+from website.models.db_data_loader import load_db_data
 from website.resources.user import UserList, UserResource
 
 # Set up the blueprints
@@ -21,7 +27,57 @@ def validation_error(e):
 
 @homepage.route('/')
 def home():
-    main_map = folium.Map(location=(51.921485, 4.491922), zoom_start=15)
+    """
+
+    :return:
+    """
+
+    list_of_stuff = load_db_data()
+    print(list_of_stuff)
+
+    # # Create the flags
+    # for dataset in dict_datasets:
+    #     print(dataset['dataset_id'])
+    #     # For each (dict)dataset in the dictionary
+    #     for dataset in dict_datasets:
+    #         popup_html = f"""
+    #         <head> <base target="_parent"> </head>
+    #         <style> </style>
+    #         <div class="textual adjust-order--vert">
+    #         <h3 class="heading h2"> {dataset['title']}</h3>
+    #         </div>
+    #         <div class="description">{dataset['description']}</div>
+    #         <div class="contact">Contact:   {dataset['contact_person']}</div>
+    #         <div class="keywords">Keyword(s):   {dataset['keywords']}</div>
+    #         <div class="start-collect">Start collect: {dataset['collect_year_start']}</div>
+    #         <div class="start-collect">Stop collect:  {dataset['collect_year_end']}</div>
+    #         """
+    #     # transform html popup into iframe
+    #     iframe = branca.element.IFrame(html=popup_html, width=300, height=400)
+    #     html_iframe = folium.Popup(iframe, max_width="100%")
+    #
+    #     # Entries
+    #     entry_dict = {"label":dataset['title'],
+    #                   "layer": folium.GeoJson(dataset['polygon_location'],
+    #                                           style_function=lambda feature: {
+    #                                               "fillColor": "#FFFF00",
+    #                                               "weight": 1,
+    #                                               "color": "aquamarine"
+    #                                           }
+    #                                           )}
+    #     holding_list.append(entry_dict)
+    # overlay_filter = {
+    #     "label": "Filters",
+    #     "select_all_checkbox": "De/select All",
+    #     "children": [
+    #         {"label": "The Netherlands",
+    #          "selectAllCheckbox": True,
+    #          "children": holding_list}
+    #     ]}
+
+
+    # base stuff
+    main_map = folium.Map(location=(52.075919, 5.891922), zoom_start=12)
     marker_cluster = MarkerCluster().add_to(main_map)
     # Define the main map dims
     main_map.get_root().width = "100%"
@@ -39,6 +95,8 @@ def home():
         lat_formatter=format_coord,
         lng_formatter=format_coord,
     ).add_to(main_map)
+    # Add Filter overlay for Treestyle indentation of the filters to the map
+    # TreeLayerControl(overlay_tree=overlay_filter).add_to(main_map)
 
     iframe = main_map.get_root()._repr_html_()
 
@@ -60,7 +118,7 @@ def about():
     return "<h1>About</h1>"
 
 
-@homepage.route('/Sign In')
+@homepage.route('/sign_in')
 def sign_in():
     return "<h1>Sign In</h1>"
 

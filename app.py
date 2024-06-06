@@ -6,6 +6,9 @@
 # Use(s):
 # Import(s):
 import os
+from psycopg2.extras import RealDictCursor
+
+import psycopg2
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
@@ -54,13 +57,7 @@ def create_app():
 
 app = create_app()
 
-#
-# def create_database(app):
-#     if not os.path.exists(app.config['SQLALCHEMY_DATABASE_URI']):
-#         with app.app_context():
-#             db.create_all()
-#
 
 # Create the flask app instance
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
