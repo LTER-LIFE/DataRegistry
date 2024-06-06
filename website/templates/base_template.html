@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="icon" href="../static/favicon.ico" type="image/vnd.microsoft.icon">
+    <link rel="icon" href="{{url_for('static', filename='favicon.ico')}}" type="image/vnd.microsoft.icon">
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
     <style>body, h1, h2, h3, h4, h5, h6 {
@@ -120,8 +120,13 @@
 
 </head>
 <body>
-<section class="navbar navbar-expand-lg">
+
+<div class="navbar navbar-expand-lg">
     <nav id="block-menu" class="navbar">
+        <div class="site-logo full-click">
+            <span class="site-logo"><img
+            alt="Logo, voorpagina Nederlands Instituut voor Ecologie (NIOO-KNAW)"
+            src="{{url_for('static', filename='logo_nioo.svg')}}"></span>
         <div class="nav-links" id="navbarNavDropdown">
             <ul class="navbar-nav">
                 <li class="nav-item active">
@@ -143,24 +148,28 @@
                     <a class="nav-link" href="{{url_for('homepage.about')}}">Add EML</a>
                 </li>
             </ul>
+            </div>
         </div>
     </nav>
     <br>
-</section>
+</div>
 <br>
-<section>
+
 
 
 
 <div class="text-box">
-
-    {% block page_info %} {% endblock %}
 <p>
 
+</p>
+    <p>
 
+    </p>
+    {% block page_info %} {% endblock %}
+<p>
 </p>
 </div>
-</section>
+</div>
 <p>
 
 

@@ -1,4 +1,5 @@
-{% extends "base_template.html" %}
+{% extends "base.html" %}
 {% block title %} Ecological metadata search engine {% endblock %}
-{% block page_info %} <div><h1>NIOO ecological data search engine<br></h1></div>  {% endblock %}
-{% block map_view %} {{iframe|safe}} <br>{% endblock %}
+{% block map_view %}
+{{iframe|safe}}
+{% endblock %}

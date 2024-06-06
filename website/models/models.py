@@ -47,8 +47,8 @@ class Catalog(db.Model):
             "contact_person": self.contact_person,
             "data_location": self.data_location,
             "institute": self.institute,
-            "keywords": ",".join(key_word for key_word in self.keywords),
+            "keywords": self.keywords,
             "collect_year_start": self.collect_year_start,
             "collect_year_end": self.collect_year_end,
-            "polygon_location": self.polygon_location,
+            "polygon_location": self.polygon_location
         }
