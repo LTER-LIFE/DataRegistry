@@ -35,6 +35,8 @@ def home():
 
     :return:
     """
+    # TAG FILTER OPTION
+
     # base stuff
     main_map = folium.Map(location=(52.075919, 5.891922), zoom_start=12)
 
@@ -43,7 +45,7 @@ def home():
 
     # Create feature layer (feature: Area)
     area_fg = folium.features.FeatureGroup(name="Area", show=False).add_to(main_map)
-
+    area_fg.add_to(marker_cluster)
     # LOADS the data to make generating the markers easier
     list_o_dicts = load_db_data()
 
@@ -78,17 +80,20 @@ def home():
         html_iframe = folium.Popup(iframe, max_width="100%")
 
         print(values_id['points'])
+        # Makes a marker for each study
+        marker_flag = Marker(literal_eval(values_id['points']),
+                             popup=html_iframe,
+                             tooltip="Click me").add_to(marker_cluster)
 
         entry_dict = {"label": values_id['title'],
-                      "layer": Marker(literal_eval(values_id['points']),popup=html_iframe,
-                                      tooltip="Click me").add_to(marker_cluster),
-                      "children":[
-                          {"label": "Area","layer": area_entry}
+                      "children": [
+                          {"label": "Area", "layer": area_entry}
                       ]}
         holding_list.append(entry_dict)
 
     # Create feature group consisting of area belonging to study surrounding the marker
-    feat_group_area = folium.features.FeatureGroup(name="Area", show=False).add_to(main_map)
+    feat_group_area = folium.features.FeatureGroup(name="Area",
+                                                   show=False).add_to(main_map)
 
     overlay_filter = {
         "label": "Filters",
