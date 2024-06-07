@@ -1,6 +1,10 @@
+import json
+from ast import literal_eval
+
 import branca.element
 import folium
 import psycopg2
+from folium import Marker
 from folium.plugins import MarkerCluster, MousePosition
 from flask import Blueprint, jsonify, render_template, request
 from flask_restful import Api
@@ -31,54 +35,70 @@ def home():
 
     :return:
     """
-
-    list_of_stuff = load_db_data()
-    print(list_of_stuff)
-
-    # # Create the flags
-    # for dataset in dict_datasets:
-    #     print(dataset['dataset_id'])
-    #     # For each (dict)dataset in the dictionary
-    #     for dataset in dict_datasets:
-    #         popup_html = f"""
-    #         <head> <base target="_parent"> </head>
-    #         <style> </style>
-    #         <div class="textual adjust-order--vert">
-    #         <h3 class="heading h2"> {dataset['title']}</h3>
-    #         </div>
-    #         <div class="description">{dataset['description']}</div>
-    #         <div class="contact">Contact:   {dataset['contact_person']}</div>
-    #         <div class="keywords">Keyword(s):   {dataset['keywords']}</div>
-    #         <div class="start-collect">Start collect: {dataset['collect_year_start']}</div>
-    #         <div class="start-collect">Stop collect:  {dataset['collect_year_end']}</div>
-    #         """
-    #     # transform html popup into iframe
-    #     iframe = branca.element.IFrame(html=popup_html, width=300, height=400)
-    #     html_iframe = folium.Popup(iframe, max_width="100%")
-    #
-    #     # Entries
-    #     entry_dict = {"label":dataset['title'],
-    #                   "layer": folium.GeoJson(dataset['polygon_location'],
-    #                                           style_function=lambda feature: {
-    #                                               "fillColor": "#FFFF00",
-    #                                               "weight": 1,
-    #                                               "color": "aquamarine"
-    #                                           }
-    #                                           )}
-    #     holding_list.append(entry_dict)
-    # overlay_filter = {
-    #     "label": "Filters",
-    #     "select_all_checkbox": "De/select All",
-    #     "children": [
-    #         {"label": "The Netherlands",
-    #          "selectAllCheckbox": True,
-    #          "children": holding_list}
-    #     ]}
-
-
     # base stuff
     main_map = folium.Map(location=(52.075919, 5.891922), zoom_start=12)
+
+    # Add clustering of markers
     marker_cluster = MarkerCluster().add_to(main_map)
+
+    # Create feature layer (feature: Area)
+    area_fg = folium.features.FeatureGroup(name="Area", show=False).add_to(main_map)
+
+    # LOADS the data to make generating the markers easier
+    list_o_dicts = load_db_data()
+
+    # hold the individual datapoints
+    holding_list = []
+    # Create the flags
+    for key_id, values_id in list_o_dicts.items():
+        print(values_id['title'])
+        popup_html = f"""
+        <head> <base target="_parent"> </head>
+        <style> </style>
+        <div class="textual adjust-order--vert">
+        <h3 class="heading h2"> {values_id['title']}</h3>
+        </div>
+        <div class="description">{values_id['description']}</div>
+        <div class="contact">Contact:   {values_id['contact_person']}</div>
+        <div class="keywords">Keyword(s):   {values_id['keywords']}</div>
+        <div class="start-collect">Start collect: {values_id['collect_year_start']}</div>
+        <div class="start-collect">Stop collect:  {values_id['collect_year_end']}</div>
+        """
+
+        area_entry = folium.GeoJson(values_id['polygon'],
+                           style_function=lambda feature: {
+                               "fillColor": "#ffff00",
+                               "color": "black",
+                               "weight": 2,
+                               "dashArray": "5, 5",
+                           }
+                           ).add_to(area_fg)
+        # transform html popup into iframe
+        iframe = branca.element.IFrame(html=popup_html, width=300, height=400)
+        html_iframe = folium.Popup(iframe, max_width="100%")
+
+        print(values_id['points'])
+
+        entry_dict = {"label": values_id['title'],
+                      "layer": Marker(literal_eval(values_id['points']),popup=html_iframe,
+                                      tooltip="Click me").add_to(marker_cluster),
+                      "children":[
+                          {"label": "Area","layer": area_entry}
+                      ]}
+        holding_list.append(entry_dict)
+
+    # Create feature group consisting of area belonging to study surrounding the marker
+    feat_group_area = folium.features.FeatureGroup(name="Area", show=False).add_to(main_map)
+
+    overlay_filter = {
+        "label": "Filters",
+        "select_all_checkbox": "De/select All",
+        "children": [
+            {"label": "The Netherlands",
+             "selectAllCheckbox": True,
+             "children": holding_list}
+        ]}
+
     # Define the main map dims
     main_map.get_root().width = "100%"
     main_map.get_root().height = "800px"
@@ -96,7 +116,7 @@ def home():
         lng_formatter=format_coord,
     ).add_to(main_map)
     # Add Filter overlay for Treestyle indentation of the filters to the map
-    # TreeLayerControl(overlay_tree=overlay_filter).add_to(main_map)
+    TreeLayerControl(overlay_tree=overlay_filter).add_to(main_map)
 
     iframe = main_map.get_root()._repr_html_()
 
@@ -121,4 +141,3 @@ def about():
 @homepage.route('/sign_in')
 def sign_in():
     return "<h1>Sign In</h1>"
-
