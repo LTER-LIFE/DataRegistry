@@ -97,7 +97,7 @@ def home():
 
         # Markers
         marker_cords_list =[]
-        for long, lat in literal_eval(values_id['test'])['coordinates']:
+        for long, lat in literal_eval(values_id['markers'])['coordinates']:
             print(lat, long)
             print(type(lat), type(long))
             coords = lat, long
