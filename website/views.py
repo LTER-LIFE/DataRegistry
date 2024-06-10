@@ -4,6 +4,11 @@ from ast import literal_eval
 import branca.element
 import folium
 import psycopg2
+import shapely.geometry
+from shapely import wkt
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import MultiPoint, Point, Polygon, shape
 from folium import Marker
 from folium.plugins import MarkerCluster, MousePosition
 from flask import Blueprint, jsonify, render_template, request
@@ -22,6 +27,17 @@ app = Api(homepage)
 
 app.add_resource(UserList, '/users')
 app.add_resource(UserResource, '/users/<int:id>')
+
+
+icon_create_function = """\
+function(cluster) {
+    return L.divIcon({
+    html: '<b>' + cluster.getChildCount() + '</b>',
+    className: 'marker-cluster marker-cluster-large',
+    iconSize: new L.Point(20, 20)
+    });
+}"""
+
 
 
 @homepage.errorhandler(ValidationError)
@@ -45,10 +61,10 @@ def home():
 
     # Create feature layer (feature: Area)
     area_fg = folium.features.FeatureGroup(name="Area", show=False).add_to(main_map)
-    area_fg.add_to(marker_cluster)
+    # area_fg.add_to(marker_cluster)
     # LOADS the data to make generating the markers easier
     list_o_dicts = load_db_data()
-
+    print(list_o_dicts)
     # hold the individual datapoints
     holding_list = []
     # Create the flags
@@ -79,11 +95,26 @@ def home():
         iframe = branca.element.IFrame(html=popup_html, width=300, height=400)
         html_iframe = folium.Popup(iframe, max_width="100%")
 
-        print(values_id['points'])
+        # Markers
+        marker_cords_list =[]
+        for long, lat in literal_eval(values_id['test'])['coordinates']:
+            print(lat, long)
+            print(type(lat), type(long))
+            coords = lat, long
+            marker_cords_list.append(coords)
+        # if there are multiple markers for a single study create them all
+        for k in range(0, len(marker_cords_list)):
+            marker = folium.Marker(marker_cords_list[k])
+            html_iframe = folium.Popup(iframe, max_width="100%")
+            html_iframe.add_to(marker)
+            marker_cluster.add_child(marker)
+
+        # Old method only creates a single marker
         # Makes a marker for each study
-        marker_flag = Marker(literal_eval(values_id['points']),
-                             popup=html_iframe,
-                             tooltip="Click me").add_to(marker_cluster)
+        #marker_flag = Marker(literal_eval(values_id['points']),
+        #                     popup=html_iframe,
+        #                     tooltip="Click me").add_to(marker_cluster)
+        #print(marker_flag)
 
         entry_dict = {"label": values_id['title'],
                       "children": [
@@ -120,6 +151,7 @@ def home():
         lat_formatter=format_coord,
         lng_formatter=format_coord,
     ).add_to(main_map)
+
     # Add Filter overlay for Treestyle indentation of the filters to the map
     TreeLayerControl(overlay_tree=overlay_filter).add_to(main_map)
 
