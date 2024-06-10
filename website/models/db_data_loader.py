@@ -18,10 +18,14 @@ def load_db_data():
 
     connect = psycopg2.connect(os.environ.get('SQLALCHEMY_DATABASE_URI'))
     print('Database connection established')
+    # cursor = connect.cursor()
     cursor = connect.cursor(cursor_factory=RealDictCursor)
 
+
     # cur = db.Query(Catalog)
-    cursor.execute('SELECT id,title, description, email, keywords, '
+    cursor.execute('SELECT id,title, st_asgeojson(st_collectionextract('
+                   'polygon_location,1)) AS test ,'
+                   'description, email, keywords, '
                    'contact_person, '
                    'data_location, (ST_Y(ST_AsText(ST_GeometryN(st_collectionextract('
                    'polygon_location,1'
