@@ -24,7 +24,7 @@ def load_db_data():
 
     # cur = db.Query(Catalog)
     cursor.execute('SELECT id,title, st_asgeojson(st_collectionextract('
-                   'polygon_location,1)) AS test ,'
+                   'polygon_location,1)) AS markers ,'
                    'description, email, keywords, '
                    'contact_person, '
                    'data_location, (ST_Y(ST_AsText(ST_GeometryN(st_collectionextract('
