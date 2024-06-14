@@ -10,13 +10,14 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import MultiPoint, Point, Polygon, shape
 from folium import Marker
-from folium.plugins import MarkerCluster, MousePosition
+from folium.plugins import MarkerCluster, MousePosition, GroupedLayerControl
 from flask import Blueprint, jsonify, render_template, request
 from flask_restful import Api
 from marshmallow import ValidationError
 from folium.plugins.treelayercontrol import TreeLayerControl
 from sqlalchemy.dialects.postgresql import psycopg2
 
+from website.forms import AddStudy
 from website.models.db_data_loader import load_db_data
 from website.resources.user import UserList, UserResource
 
@@ -55,6 +56,22 @@ def home():
 
     # base stuff
     main_map = folium.Map(location=(52.075919, 5.891922), zoom_start=12)
+    # map esri
+    tile_esri = folium.TileLayer(
+        tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr='Esri',
+        name='Esri Satellite',
+        overlay=False,
+        control=True
+    ).add_to(main_map)
+    # map streets
+    street_map= folium.TileLayer('openstreetmap').add_to(main_map)
+
+    GroupedLayerControl(groups={
+        'Maps': [tile_esri, street_map]},
+        collapsed=False).add_to(main_map)
+    # add map layers
+
 
     # Add clustering of markers
     marker_cluster = MarkerCluster().add_to(main_map)
@@ -63,8 +80,9 @@ def home():
     area_fg = folium.features.FeatureGroup(name="Area", show=False).add_to(main_map)
     # area_fg.add_to(marker_cluster)
     # LOADS the data to make generating the markers easier
-    list_o_dicts = load_db_data()
+    list_o_dicts, data_json = load_db_data()
     print(list_o_dicts)
+    print(data_json)
     # hold the individual datapoints
     holding_list = []
     # Create the flags
@@ -178,3 +196,17 @@ def about():
 @homepage.route('/sign_in')
 def sign_in():
     return "<h1>Sign In</h1>"
+
+@homepage.route('add_study', methods=['GET', 'POST'])
+def add_study():
+    name = None
+    form = AddStudy()
+    return render_template('add_record.html', form=form, name=name)
+
+@homepage.route('/newmap')
+def newmap():
+    list_o_dicts, data_json= load_db_data()
+    print(type(data_json))
+
+    print(json.dumps(data_json, indent=4))
+    return render_template('new_map.html', list_o_geo=json.dumps(data_json))
