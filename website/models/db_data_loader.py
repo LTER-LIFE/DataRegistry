@@ -7,7 +7,8 @@ import os
 from extensions import db
 import psycopg2
 from psycopg2.extras import RealDictCursor
-
+from sqlalchemy import create_engine
+import geopandas as gpd
 
 # Functions
 def load_db_data():
@@ -36,7 +37,19 @@ def load_db_data():
                    'polygon_location,3'
                    ')) AS polygon, collect_year_start, collect_year_end FROM "CatalogMeta"')
     data_temp = cursor.fetchall()
+    cursor.close()
+    cursor = connect.cursor()
+    cursor.execute('''SELECT st_asgeojson("CatalogMeta") FROM "CatalogMeta"''')
+    data_json = [json.loads(i[0]) for i in cursor.fetchall()]
+
+
+
+    cursor.close()
+
+
     # standard method
     # Grab the data from the database and turn it into a dict
     dict_datasets = {item['id']:item for item in data_temp}
-    return dict_datasets
+
+
+    return dict_datasets, data_json

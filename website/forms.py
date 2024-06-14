@@ -11,7 +11,7 @@ from wtforms import SearchField, StringField, SubmitField, FieldList
 from wtforms.fields.datetime import DateField
 from wtforms.validators import DataRequired
 from wtforms.widgets import TextArea
-
+from flask_jwt_extended import jwt_required, get_jwt_identity
 # Create Form class add_study
 class AddStudy(FlaskForm):
     # title of a dataset

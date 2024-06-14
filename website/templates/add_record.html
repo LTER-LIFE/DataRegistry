@@ -1,7 +1,9 @@
-{% extends "base_template.html" %}
+{% extends "base.html" %}
+
 {% block title %} Ecological metadata search engine {% endblock %}
 
 {% block map_view %}
+
 <div align="center"> <h1> Add a new study </h1></div>
 <br/>
 <form method="POST">
@@ -13,13 +15,13 @@
             </div>
         <br>
         <div class="form-group row">
-            {{form.description.label}}
+            {{form.description.label}}<br>
             {{form.description(style='height: 100px;')}}
             </div>
 
         <br>
         <div class="form-group row">
-            {{form.contact.label}}
+            {{form.contact.label}}<br>
             {{form.contact(size=80)}}
             </div>
 

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" class="has-color-palette color-palette-water-04 js cc-window-hidden no-touch" style="--palette-text:#082235;--palette-text--as-rgb:8,34,53;--palette-title:#004B85;--palette-title--as-rgb:0,75,133;--palette-links-and-box-background:#406098;--palette-links-and-box-background--as-rgb:64,96,152;--palette-button:#FDD447;--palette-button--as-rgb:253,212,71;--palette-accent:#FEE591;--palette-accent--as-rgb:254,229,145;--palette-border:#E2DFDC;--palette-border--as-rgb:226,223,220;--palette-page-background:#EFF3F4;--palette-page-background--as-rgb:239,243,244;" data-once="addNoTouch keyDownOnHTML">
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" href="{{url_for('static', filename='favicon.ico')}}" type="image/vnd.microsoft.icon">
+    <title>Map view</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <style>
+        #map{
+            height: 100vh;
+            width: 100%;
+        }
+
+        .info {
+    padding: 6px 8px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+}
+.info h4 {
+    margin: 0 0 5px;
+    color: #777;
+}
+
+.legend {
+    line-height: 18px;
+    color: #555;
+}
+.legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+
+    </style>
+</head>
+
+
+<body>
+<div id="map">
+</div>
+</body>
+</html>
+
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<script>
+
+    let geo_json_points = JSON.parse('{{list_o_geo| safe }}');
+
+    var map = L.map('map').setView([52.075919, 5.891922],8)
+
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+});
+osm.addTo(map);
+
+// Tile map layers
+
+
+    googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+ });
+ googleStreets.addTo(map);
+
+ googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+   maxZoom: 20,
+   subdomains:['mt0','mt1','mt2','mt3']
+ });
+googleSat.addTo(map);
+
+// Layer control
+    var baseLayers ={
+      "Google Streets": googleStreets,
+      "Google Satellite": googleSat,
+      "Open StreetMap": osm
+    };
+    L.control.layers(baseLayers).addTo(map);
+// add geojson
+    //var geo_po = L.geoJSON(geo_json_points).addTo(map);
+    //var overlays ={
+    //    "markers_2": geo_po,
+    //};
+    //L.control.layers(overlays).addTo(map);
+
+// experiment with individual items from the geojson
+    var rando_var = geo_json_points[0]['geometry']['type'];
+
+// Individual marker for loop
+    //var areas = L.geoJSON(geo_json_points,{
+    //onEachFeature:function(feature, layer){
+    //        layer.on('mouseover',function (){
+    //            this.setStyle({
+    //                'fillColor': '#0000ff'
+    //            });
+    //        });
+    //        layer.on('mouseout',function(){
+    //            this.setStyle({
+    //                'fillColor': '#ff0000'
+    //            });
+    //        });
+    //}
+    //}).addTo(map);
+// Retain the polygons and the study id to link the points to the polygon
+    // holding arrays
+    let hold_polygons = [];
+    let hold_points = []
+    let hold_ids = [];
+    // for each geojson in array
+    for (entry in geo_json_points){
+        // retain the data_id
+        var id_poly = geo_json_points[entry].properties['id']
+        // for each geometry element
+        for (geom_type in geo_json_points[entry].geometry.geometries){
+            // if the geometry element is of type polygon
+            if( geom_type.type == 'Polygon'){
+                // retain the polygon
+                var type_o_geom = geo_json_points[entry].geometry.geometries[geom_type]
+            } else if (geom_type.type == 'Point'){
+                var type_o_geom = geo_json_points[entry].geometry.geometries[geom_type]
+            }
+        }
+    }
+
+// attempt 2
+//    var geo_markers = L.geoJSON(geo_json_points, {
+//        style: {
+//            fillColor: '#1c9099',
+//            weight: 8
+//        }
+//    }).addTo(map);
+
+// attempt 3 multi geometry objects
+    var geo_indiv =L.geoJSON(turf.flatten(geo_json_points[7]),{
+        style: {
+            fillColor: '#1c9909',
+            weight: 8
+
+        },
+        onEachFeature: on_feat
+    }).addTo(map);
+
+    var selectedLayerId = null;
+    function toggleLayerVisibility(layer){
+        if (selectedLayerId){
+            var temp_info = selectedLayerId[0]
+            geo_indiv.resetStyle(layer);
+            selectedLayerId = null;
+        } else {
+            layer.setStyle({
+                opacity: 0,
+                fillOpacity: 0.0
+            });
+            selectedLayerId = layer._leaflet_id;
+        }
+    }
+    function on_feat(feature, layer) {
+        if (feature.geometry.type === 'Polygon') {
+            layer.on({
+                click: function (e) {
+                    toggleLayerVisibility(e.target);
+                }
+            })
+        }
+    }
+
+    var weirdtest = turf.flatten(geo_json_points[7]);
+
+  </script>
