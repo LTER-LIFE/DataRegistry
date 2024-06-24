@@ -91,7 +91,7 @@
                     </div>
                 </div>
                 <div class="region page-header--without-branding header-title-section">
-                    <span class="site-name"> Data Portal </span>
+                    <span class="site-name"> Metadata Portal </span>
                 </div>
                 <div class="page-header--without-branding">
                     <div class="region region-header">
@@ -182,7 +182,7 @@
 
     let geo_json_points = JSON.parse('{{list_o_geo| safe }}');
 
-    var map = L.map('map').setView([52.075919, 5.891922],8)
+    var map = L.map('map').setView([52.075919, 5.891922],10)
 
     var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
