@@ -7,6 +7,16 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="icon" href="{{url_for('static', filename='favicon.ico')}}" type="image/vnd.microsoft.icon">
     <title>Map view</title>
+    <!-- LTER LIFE CSS STYLESHEETS adaptation of LTER-LIFE, used with permission of NIOO-KNAW/LTER-LIFE -->
+    <link rel="stylesheet" media="all" href="{{ url_for('static', filename='css/css_XSv616_-UZHUts9fFuyg9mffzNV0U85G4aYefDjhuYk.css')}}" type="text/css">
+    <link rel="stylesheet" media="all" href="{{ url_for('static', filename ='css/css_3x9R3_tngjCpZcuwRwM7LF1RowptFNv3ihZT1vdspCI.css')}}" type="text/css">
+    <link rel="stylesheet" media="screen and (min-width:30em)" href="{{ url_for('static', filename ='css/css_P7oSSqpIQN8Vhi-6W3Or1IcLhVMP1EatO7xg1-MSFUI.css')}}">
+    <link rel="stylesheet" media="screen and (min-width:48em)" href="{{ url_for('static', filename ='css/css_OFR5IUwHcbZlx-zQN9BKV9G_1paNngrg7w3y57V1nrI.css')}}">
+    <link rel="stylesheet" media="screen and (min-width:64em)" href="{{ url_for('static', filename ='css/css_vCK22n3_rX1DQQkuogIsBJ4FqhfoqY9N1ztUV6L3HFU.css')}}">
+    <link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_omgXSRZ-fOOCEP3kgfsAhK69nWepWMx6zaACIRBudAQ.css')}}">
+
+    <link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
+    <link rel="stylesheet" media="all" href="{{ url_for('static', filename='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <style>
@@ -17,7 +27,6 @@
 
         .info {
     padding: 6px 8px;
-    font: 14px/16px Arial, Helvetica, sans-serif;
     background: white;
     background: rgba(255,255,255,0.8);
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
@@ -45,17 +54,131 @@
 </head>
 
 
-<body>
-<div id="map">
-</div>
+<!-- Body start -->
+<body class="path-group page--subsite">
+
+<div class="dialog-off-canvas-main-canvas" data-off-canvas-main-canvas>
+    <div class="page">
+        <header class="page-header">
+            <div class="page-header-inner grid-container">
+
+                <div class="region region-header-branding">
+
+                    <div class="region-inner region-header-branding-inner">
+
+                        <div id="block-entity-view-group" class="block block-ctools block-entity-viewgroup">
+
+                            <div class="block-content">
+                                <div class="group group--header-branding group--subsite full-click">
+                                    <a class="full-click__trigger" href="https://lter-life.nl/en">
+
+                                    <span class="site-logo-visual">
+                                        <img width height src="{{url_for('static', filename='LTER-LIFE-logo.svg')}}">
+
+                                    </span>
+
+                                    </a>
+
+                                </div>
+
+
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
+                </div>
+                <div class="region page-header--without-branding header-title-section">
+                    <span class="site-name"> Data Portal </span>
+                </div>
+                <div class="page-header--without-branding">
+                    <div class="region region-header">
+                        <div class="region-inner region-header-inner" data-lt-overflowhor-init="true">
+                            <nav id="block-menu-block-main" class="block block-menu navigation menu--main"
+                                 aria-label="Main navigation">
+                                <ul class="menu menu-level-0">
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.home')}}">Map</a>
+                                    </li>
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.search')}}">Table</a>
+                                    </li>
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.contact')}}">Contact</a>
+                                    </li>
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.about')}}">About</a>
+                                    </li>
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('homepage.sign_in')}}">Sign In</a>
+                                    </li>
+                                    <!-- ADD the admin section here -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                </div>
+        </header>
+   <!-- {% block page_info %} {% endblock %} -->
+<main>
+    <div class="layout-content">
+        <div class="region region-content">
+            <div class="region-inner region-content-inner">
+                <div class="content--header">
+                    <div class="content--header-inner">
+                        <div class="textual">
+                            <div class="grid-container">
+                                <div class="limit-1-col"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content--main">
+                    <div class="content--main--main">
+                        <div class="grid-container">
+                            <div class="limit-1-col content--main--bg-color">
+                                    <div id="map"> </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+    </div>
+    </div>
 </body>
 </html>
 
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/deps/jquery-3.6.0.js')}}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.4/js/bootstrap-switch.js" data-turbolinks-track="true"></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-<script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/"></script>
+
+<script src="{{ url_for('static', filename='css/leaflet.markercluster.js')}}"></script>
+<script src="{{ url_for('static', filename='css/leaflet.markercluster-src.js')}}"></script>
+
+<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/MarkerCluster.css')}}">
+<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/MarkerCluster.Default.css')}}">
+<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
+
+
+
+
+<script type="application/javascript">
 
     let geo_json_points = JSON.parse('{{list_o_geo| safe }}');
 
@@ -88,94 +211,106 @@ googleSat.addTo(map);
       "Open StreetMap": osm
     };
     L.control.layers(baseLayers).addTo(map);
-// add geojson
-    //var geo_po = L.geoJSON(geo_json_points).addTo(map);
-    //var overlays ={
-    //    "markers_2": geo_po,
-    //};
-    //L.control.layers(overlays).addTo(map);
 
-// experiment with individual items from the geojson
-    var rando_var = geo_json_points[0]['geometry']['type'];
-
-// Individual marker for loop
-    //var areas = L.geoJSON(geo_json_points,{
-    //onEachFeature:function(feature, layer){
-    //        layer.on('mouseover',function (){
-    //            this.setStyle({
-    //                'fillColor': '#0000ff'
-    //            });
-    //        });
-    //        layer.on('mouseout',function(){
-    //            this.setStyle({
-    //                'fillColor': '#ff0000'
-    //            });
-    //        });
-    //}
-    //}).addTo(map);
-// Retain the polygons and the study id to link the points to the polygon
-    // holding arrays
-    let hold_polygons = [];
-    let hold_points = []
-    let hold_ids = [];
-    // for each geojson in array
-    for (entry in geo_json_points){
-        // retain the data_id
-        var id_poly = geo_json_points[entry].properties['id']
-        // for each geometry element
-        for (geom_type in geo_json_points[entry].geometry.geometries){
-            // if the geometry element is of type polygon
-            if( geom_type.type == 'Polygon'){
-                // retain the polygon
-                var type_o_geom = geo_json_points[entry].geometry.geometries[geom_type]
-            } else if (geom_type.type == 'Point'){
-                var type_o_geom = geo_json_points[entry].geometry.geometries[geom_type]
+// create new geojson object from the various geometry shapes and move the polygon to feature
+    // for each dataset
+    for (study in geo_json_points){
+        // for each geometry of the dataset
+        geo_json_points[study].properties.Area = []
+        for (geomet in geo_json_points[study].geometry.geometries){
+            // for each geometry check if the type is polygon (and later also other shapes other than point)
+            if (geo_json_points[study].geometry.geometries[geomet].type === 'Polygon'){
+                geo_json_points[study].properties.Area.push(geo_json_points[study].geometry.geometries[geomet])
+                var index_num = geo_json_points[study].geometry.geometries.indexOf(geo_json_points[study].geometry.geometries[geomet])
+                geo_json_points[study].geometry.geometries.splice(index_num,1);
             }
         }
     }
 
-// attempt 2
-//    var geo_markers = L.geoJSON(geo_json_points, {
-//        style: {
-//            fillColor: '#1c9099',
-//            weight: 8
-//        }
-//    }).addTo(map);
 
-// attempt 3 multi geometry objects
-    var geo_indiv =L.geoJSON(turf.flatten(geo_json_points[7]),{
-        style: {
-            fillColor: '#1c9909',
-            weight: 8
+//// This one works but semi optimal
+     var ClusterMarkers = L.markerClusterGroup().addTo(map);
+     var Areagroup = L.featureGroup().addTo(map)
+     var MarkerGroup = L.featureGroup().addTo(map)
+//
+     map.on('click', function (e){
+         Areagroup.clearLayers();
+     });
+    // var geo_marker_array = []
+    // for (dataset in geo_json_points){
+    //     geo_point = L.geoJson(geo_json_points[dataset]);
+    //     // ADD individual information from the geojson entry needed for popups
+    //     geo_point.Area = geo_json_points[dataset].properties.Area
+    //     geo_point.id = geo_json_points[dataset].properties.id
+    //     geo_point.title = geo_json_points[dataset].properties.title
+    //     geo_point.description = geo_json_points[dataset].properties.description
+    //     geo_point.keywords = geo_json_points[dataset].properties.keywords
+    //     geo_point.on('click', function (e) {
+    //         if (Areagroup.getLayers().length >= 1){
+    //             Areagroup.clearLayers()
+    //         } else {
+    //         var polies = L.geoJson(e.target.Area)
+    //         polies.addTo(Areagroup)
+    //         }
+    //
+    //     });
+    //     ClusterMarkers.addLayer(geo_point.bindPopup("nuts"))
+    //     geo_marker_array.push(geo_point)
+    // }
+    // ClusterMarkers.addTo(map);
 
-        },
-        onEachFeature: on_feat
-    }).addTo(map);
+    // add a new marker with a popup overtop
 
-    var selectedLayerId = null;
-    function toggleLayerVisibility(layer){
-        if (selectedLayerId){
-            var temp_info = selectedLayerId[0]
-            geo_indiv.resetStyle(layer);
-            selectedLayerId = null;
-        } else {
-            layer.setStyle({
-                opacity: 0,
-                fillOpacity: 0.0
-            });
-            selectedLayerId = layer._leaflet_id;
+    // // // // reformat Jsons together
+    all_string = JSON.stringify(geo_json_points)
+    // //
+    all_points = L.geoJson(JSON.parse(all_string),{
+        pointToLayer: (feature, latlng) => {
+            const div = document.createElement("div");
+            var id_code = feature.properties.id
+            div.innerHTML = "<h4>"+feature.properties.title+"</h4> <br>" +
+                "Description: "+feature.properties.description+"<br>"+
+                "Keyword(s): "+feature.properties.keywords+"<br>"+
+                "Collection area:   ";
+
+            var area_poly = feature.properties.Area
+            const button = document.createElement("button");
+            button.innerHTML= "Show Area";
+
+            button.onclick = function() {
+                if (Areagroup.getLayers().length >=1){
+                    Areagroup.clearLayers()
+                } else {
+                const area = L.geoJson(area_poly);
+                area.addTo(Areagroup);
+            }}
+            div.appendChild(button);
+            return L.marker(latlng).bindPopup(div);
         }
-    }
-    function on_feat(feature, layer) {
-        if (feature.geometry.type === 'Polygon') {
-            layer.on({
-                click: function (e) {
-                    toggleLayerVisibility(e.target);
-                }
-            })
-        }
-    }
+    });
+    ClusterMarkers.addLayer(all_points);
+    //
+    // all_points.addTo(MarkerGroup)
+    // all_points.on('click', function(e) {
+    //     console.log(e)
+    //
+    // })
+    //MarkerGroup.addLayer(all_points)
+    // all_points.eachLayer(function (layer){
+    //     layer.idcode = layer.feature.properties.id
+    // })
+    //
+    // ClusterMarkers.addLayers(all_points)
+    // ClusterMarkers.eachLayer(function (layer){
+    //     layer.bindPopup("id code: " + layer._eventParents.idcode);
+    //     console.log(layer._eventParents)
+    // });
+    //
+    //geo_all = L.geoJson(geo_json_points).addTo(map).addTo(ClusterMarkers).bindPopup("somestuff").openPopup();
 
-    var weirdtest = turf.flatten(geo_json_points[7]);
+    //// newest attempt
+
+
+    // ClusterMarkers.addLayer(all_points);
 
   </script>
