@@ -23,7 +23,7 @@ from werkzeug.utils import secure_filename
 from extensions import db
 from website import Catalog
 from website.forms import AddStudy
-from website.models.db_data_loader import load_db_data
+from website.models.db_data_loader import load_db_data, load_db_table
 from website.resources.user import UserList, UserResource
 
 # Set up the blueprints
@@ -183,10 +183,6 @@ def validation_error(e):
 #     return render_template('index.html', iframe=iframe)
 
 
-@homepage.route('/search')
-def search():
-    return "<h1>Search</h1>"
-
 
 @homepage.route('/contact')
 def contact():
@@ -196,6 +192,16 @@ def contact():
 @homepage.route('/about')
 def about():
     return "<h1>About</h1>"
+
+@homepage.route('/table')
+def table_view():
+    data_table = load_db_table()
+
+    print(data_table)
+
+
+    return render_template('table_view.html',datasets=[data_table.to_html(
+                                                       header= 'true')])
 
 
 @homepage.route('/sign_in')
@@ -347,8 +353,7 @@ def upload_xml():
 
 @homepage.route('/')
 def home():
-    list_o_dicts, data_json= load_db_data()
+    data_json= load_db_data()
     print(type(data_json))
-
     print(json.dumps(data_json, indent=4))
     return render_template('new_map.html', list_o_geo=json.dumps(data_json))
