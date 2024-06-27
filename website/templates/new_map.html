@@ -105,7 +105,7 @@
                                     </li>
                                     <li class="menu-item no-children">
 
-                                        <a href="{{url_for('homepage.search')}}">Table</a>
+                                        <a href="{{url_for('homepage.table_view')}}">Table</a>
                                     </li>
                                     <li class="menu-item no-children">
 
@@ -271,12 +271,13 @@ googleSat.addTo(map);
             div.innerHTML = "<h4>"+feature.properties.title+"</h4> <br>" +
                 "Description: "+feature.properties.description+"<br>"+
                 "Keyword(s): "+feature.properties.keywords+"<br>"+
-                "Collection area:   ";
+                "Data storage: "+"<a href='"+feature.properties.data_location+"' target='_blank'> Data </a>"+"<br>"+
+                "Collection area:   " +
+                "<br>";
 
             var area_poly = feature.properties.Area
             const button = document.createElement("button");
             button.innerHTML= "Show Area";
-
             button.onclick = function() {
                 if (Areagroup.getLayers().length >=1){
                     Areagroup.clearLayers()

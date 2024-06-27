@@ -22,7 +22,7 @@ class Catalog(db.Model):
     # later change to foreignkey institute
     institute = db.Column(db.String(500))
     # keywords
-    keywords = db.Column(db.String(500), nullable=False)
+    keywords = db.Column(db.String(500), nullable=True)
     # collection year start
     collect_year_start = db.Column(db.Date(), nullable=False)
     # collection year end

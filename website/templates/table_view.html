@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %} Ecological metadata search engine {% endblock %}
+{% block css_block %}
+
+<script type="application/javascript">
+
+<!--    let geo_json_data = JSON.parse('{{datasets| safe }}');-->
+<!--    console.log(geo_json_data[0].properties.id)-->
+<!--    console.log(geo_json_data)-->
+console.log('{{datasets}}')
+
+</script>
+
+
+{% endblock %}
+
+{% block map_view %}
+<div class="card">
+    <div class="card-header">
+        <b> Data Table</b>
+    </div>
+    {% for dataset in datasets %}
+    <div class="card-header">
+        <b></b>
+        {{dataset|safe}}
+        <div class="card-body">
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
