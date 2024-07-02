@@ -2,32 +2,74 @@
 
 {% block title %} Ecological metadata search engine {% endblock %}
 {% block css_block %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.css">
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
 
 <script type="application/javascript">
+    var test_var = 'sometext'
+    console.log(test_var)
 
-<!--    let geo_json_data = JSON.parse('{{datasets| safe }}');-->
 <!--    console.log(geo_json_data[0].properties.id)-->
-<!--    console.log(geo_json_data)-->
-console.log('{{datasets}}')
-
+<!--   console.log('{{datasets| safe}}') -->
 </script>
+<script>
+function myFunction() {
+  // Declare variables
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("myInput");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("myTable");
+  tr = table.getElementsByTagName("tr");
 
-
+  // Loop through all table rows, and hide those who don't match the search query
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+</script>
 {% endblock %}
 
 {% block map_view %}
 <div class="card">
+    <div class="button-wrapper">
     <div class="card-header">
         <b> Data Table</b>
     </div>
+    </div>
+    <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search...">
+
     {% for dataset in datasets %}
     <div class="card-header">
         <b></b>
+        <div id="myTable">
         {{dataset|safe}}
+        </div>
         <div class="card-body">
 
         </div>
     </div>
     {% endfor %}
+
 </div>
+
+{% endblock %}
+
+<script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
+
+
+{% block java_code %}
+
+
 {% endblock %}

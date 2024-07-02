@@ -69,4 +69,6 @@ def load_db_table():
     contact_person, collect_year_start, collect_year_end, data_location FROM 
     "CatalogMeta"''', connect)
     cursor.close()
+
+
     return datasets_table
