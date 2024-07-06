@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask import current_app as app
+from flask import current_app as cur_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, \
     get_jwt_identity, get_jwt
 from marshmallow import ValidationError
@@ -98,7 +98,7 @@ def check_if_token_revoked(jwt_header, jwt_payload):
 
 @jwt.user_lookup_loader
 def load_user(jwt_header, jwt_payload):
-    user_id = jwt_payload[app.config['JWT_IDENTITY_CLAIM']]
+    user_id = jwt_payload[cur_app.config['JWT_IDENTITY_CLAIM']]
     return User.query.get(user_id)
 
 

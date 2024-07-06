@@ -9,6 +9,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from wtforms import SearchField, StringField, SubmitField, FieldList
 from wtforms.fields.datetime import DateField
+from wtforms.fields.simple import PasswordField
 from wtforms.validators import DataRequired
 from wtforms.widgets import TextArea
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -40,3 +41,11 @@ class AddStudy(FlaskForm):
     polygon_location = StringField("Polygon of the dataset", validators=[DataRequired()])
     # submit field
     submit_butt = SubmitField('Submit dataset')
+
+
+
+class UserForm(FlaskForm):
+    email = StringField("Email address", validators=[DataRequired()])
+    password_hash = PasswordField("Password", validators=[DataRequired()])
+    password_hash2 = PasswordField("Confirm Password", validators=[DataRequired()])
+    submit = SubmitField('Submit')

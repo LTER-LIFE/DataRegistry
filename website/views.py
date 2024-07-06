@@ -1,7 +1,9 @@
 import json
 from ast import literal_eval
-from lxml import etree
 
+from flask_bcrypt import Bcrypt
+from flask_login import current_user
+from lxml import etree
 import branca.element
 import folium
 import psycopg2
@@ -13,16 +15,16 @@ import shapely.geometry as SHAPE_geo
 from shapely.geometry import MultiPoint, Point, Polygon, shape
 from folium import Marker
 from folium.plugins import MarkerCluster, MousePosition, GroupedLayerControl
-from flask import Blueprint, jsonify, render_template, request, flash
+from flask import Blueprint, jsonify, render_template, request, flash, redirect, url_for
 from flask_restful import Api
 from marshmallow import ValidationError
 from folium.plugins.treelayercontrol import TreeLayerControl
 from sqlalchemy.dialects.postgresql import psycopg2
 from werkzeug.utils import secure_filename
-
 from extensions import db
 from website import Catalog
-from website.forms import AddStudy
+from website.forms import AddStudy, UserForm
+from website.models import User
 from website.models.db_data_loader import load_db_data, load_db_table
 from website.resources.user import UserList, UserResource
 
@@ -71,6 +73,20 @@ def table_view():
 @homepage.route('/sign_in')
 def sign_in():
     return "<h1>Sign In</h1>"
+
+
+@homepage.route('/register')
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('/'))
+    form_reg = UserForm()
+    # if form_reg.validate_on_submit():
+    #     hashed_password = bcrypt.generate_password_hash(
+    #         form_reg.password_hash.data).decode('utf-8')
+
+
+    return "<h1>Register</h1>"
+
 
 @homepage.route('add_study', methods=['GET', 'POST'])
 def add_study():

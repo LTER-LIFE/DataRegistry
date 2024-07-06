@@ -1,6 +1,6 @@
 from flask import request
 from flask_restful import Resource, abort
-from users import users
+from user_base import users
 from website.models.users import User
 from website.schemas.user_schema import UserSchema
 

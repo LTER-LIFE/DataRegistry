@@ -6,6 +6,8 @@
 # Use(s):
 # Import(s):
 import os
+
+from flask_bcrypt import Bcrypt
 from psycopg2.extras import RealDictCursor
 
 import psycopg2
@@ -39,11 +41,11 @@ def create_app():
     app._static_folder = 'website/static'
     # Get configuration from Config
     app.config.from_object("config")
-
     # Init the db with the app
     db.init_app(app)
 
     migrate.init_app(app, db)
+
     # Init the JWT with the app
     jwt.init_app(app)
 
@@ -56,7 +58,6 @@ def create_app():
 
 
 app = create_app()
-
 
 # Create the flask app instance
 if __name__ == '__main__':
