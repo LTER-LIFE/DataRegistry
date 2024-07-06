@@ -1,16 +1,20 @@
 # ok
+from datetime import datetime
 
+from flask_login import UserMixin
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from extensions import db, pwd_context
 
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False, unique=True)
     _password = db.Column(db.String(255), nullable=False)
+    confirmed = db.Column(db.Boolean, nullable=False, default=False)
+    registered_on = db.Column(db.DateTime, nullable=False)
 
 
     @hybrid_property
