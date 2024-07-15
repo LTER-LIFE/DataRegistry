@@ -21,6 +21,7 @@ from marshmallow import ValidationError
 from folium.plugins.treelayercontrol import TreeLayerControl
 from sqlalchemy.dialects.postgresql import psycopg2
 from werkzeug.utils import secure_filename
+
 from extensions import db
 from website import Catalog
 from website.forms import AddStudy, UserForm
@@ -31,10 +32,10 @@ from website.resources.user import UserList, UserResource
 # Set up the blueprints
 homepage = Blueprint('homepage', __name__, url_prefix='/',
                       template_folder='templates')
-app = Api(homepage)
+apps = Api(homepage)
 
-app.add_resource(UserList, '/users')
-app.add_resource(UserResource, '/users/<int:id>')
+apps.add_resource(UserList, '/users')
+apps.add_resource(UserResource, '/users/<int:id>')
 
 
 icon_create_function = """\
@@ -77,15 +78,8 @@ def sign_in():
 
 @homepage.route('/register')
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('/'))
-    form_reg = UserForm()
-    # if form_reg.validate_on_submit():
-    #     hashed_password = bcrypt.generate_password_hash(
-    #         form_reg.password_hash.data).decode('utf-8')
 
-
-    return "<h1>Register</h1>"
+     return "<h1>Register</h1>"
 
 
 @homepage.route('add_study', methods=['GET', 'POST'])

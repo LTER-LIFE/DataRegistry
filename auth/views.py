@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, render_template
 from flask import current_app as cur_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, \
     get_jwt_identity, get_jwt
@@ -6,29 +6,43 @@ from marshmallow import ValidationError
 
 from auth.token_helper import add_token_to_db, revoke_token_from_db, is_token_revoked
 from extensions import db, pwd_context, jwt
+from website.forms import UserForm
 from website.models.users import User
 from website.schemas.user_schema import UserCreateSchema, UserSchema
 
 auth_blueprint = Blueprint("auth", __name__, url_prefix="/auth")
 
+# return render_template('add_record.html', form=form, name=name)
 
-# register a new user
-@auth_blueprint.route("/register", methods=["POST"])
+# # register a new user
+# @auth_blueprint.route("/register", methods=["POST", "GET"])
+# def register():
+#     if not request.is_json:
+#         return {"message": "Missing JSON in request"}, 400
+#
+#
+#     if request.method == "POST":
+#         schema = UserCreateSchema()
+#         user = schema.load(request.json)
+#         db.session.add(user)
+#         db.session.commit()
+#
+#
+#         schema = UserSchema()
+#
+#     return {"message": "Registered successfully", "user": schema.dump(user)}, 201
+@auth_blueprint.route("/register", methods=["POST", "GET"])
 def register():
-    if not request.is_json:
-        return {"message": "Missing JSON in request"}, 400
-
-
-    if request.method == "POST":
-        schema = UserCreateSchema()
-        user = schema.load(request.json)
-        db.session.add(user)
-        db.session.commit()
-
-
+    form = UserForm()
+    if form.validate_on_submit():
         schema = UserSchema()
+        register_user = UserSchema().load(form.data)
+        db.session.add(register_user)
+        db.session.commit()
+        schema = UserSchema()
+    return render_template('register.html', form=form)
 
-    return {"message": "Registered successfully", "user": schema.dump(user)}, 201
+
 
 
 @auth_blueprint.route("/login", methods=["POST"])

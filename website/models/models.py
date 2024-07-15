@@ -27,6 +27,11 @@ class Catalog(db.Model):
     collect_year_start = db.Column(db.Date(), nullable=False)
     # collection year end
     collect_year_end = db.Column(db.Date(), nullable=False)
+    # collection_interval
+    collect_interval = db.Column(db.String(), nullable=True)
+    # Eco-sphere (as per LTER-LIFE)
+    ecosphere_type = db.Column(db.String(), nullable=True)
+
     # polygon of the study area
     polygon_location = db.Column(geoalchemy2.Geometry("GEOMETRYCOLLECTION", -1),
                                  nullable=True)

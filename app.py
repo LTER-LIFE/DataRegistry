@@ -17,7 +17,6 @@ from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
 from dotenv import load_dotenv
-
 from passlib.context import CryptContext
 from auth.views import auth_blueprint
 from website.views import homepage
@@ -58,6 +57,8 @@ def create_app():
 
 
 app = create_app()
+
+
 
 # Create the flask app instance
 if __name__ == '__main__':

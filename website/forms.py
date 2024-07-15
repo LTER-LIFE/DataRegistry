@@ -37,6 +37,10 @@ class AddStudy(FlaskForm):
         DataRequired()])
     collect_year_end = DateField("Year end of data collection", validators=[
         DataRequired()])
+    # collection intervals
+    collect_interval = StringField("Interval between data collection")
+    # Ecosphere type (per LTER-LIFe)
+    ecosphere_type = StringField("Ecosphere type (as per LTER-LIFE)")
     # polygon
     polygon_location = StringField("Polygon of the dataset", validators=[DataRequired()])
     # submit field
@@ -46,6 +50,7 @@ class AddStudy(FlaskForm):
 
 class UserForm(FlaskForm):
     email = StringField("Email address", validators=[DataRequired()])
+    name = StringField("Name", validators=[DataRequired()])
     password_hash = PasswordField("Password", validators=[DataRequired()])
     password_hash2 = PasswordField("Confirm Password", validators=[DataRequired()])
     submit = SubmitField('Submit')
