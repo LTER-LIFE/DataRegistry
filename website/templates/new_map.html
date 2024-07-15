@@ -117,9 +117,13 @@
                                     </li>
                                     <li class="menu-item no-children">
 
-                                        <a href="{{url_for('homepage.sign_in')}}">Sign In</a>
+                                        <a href="{{url_for('auth.login')}}">Sign In</a>
                                     </li>
                                     <!-- ADD the admin section here -->
+                                    <li class="menu-item no-children">
+
+                                        <a href="{{url_for('auth.register')}}">Register</a>
+                                    </li>
                                 </ul>
                             </nav>
                         </div>

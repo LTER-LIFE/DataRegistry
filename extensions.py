@@ -8,6 +8,7 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from passlib.context import CryptContext
 
+
 # Init the DB
 db = SQLAlchemy()
 ma = flask_marshmallow.Marshmallow()
