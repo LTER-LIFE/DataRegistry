@@ -76,6 +76,13 @@ def sign_in():
     return "<h1>Sign In</h1>"
 
 
+@homepage.route('/authorize')
+def authorize():
+    return "<h1>Sign In</h1>"
+
+
+
+
 @homepage.route('/register')
 def register():
 
