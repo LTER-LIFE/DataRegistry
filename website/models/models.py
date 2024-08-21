@@ -9,6 +9,7 @@ import geoalchemy2
 class Catalog(db.Model):
     __tablename__ = "CatalogMeta"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    checked = db.Column(db.Boolean, nullable=False, default=False)
     # title of a dataset
     title = db.Column(db.String(200), nullable=False)
     # describe the dataset
