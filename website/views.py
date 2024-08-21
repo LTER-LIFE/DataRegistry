@@ -56,11 +56,13 @@ def validation_error(e):
 
 @homepage.route('/contact')
 def contact():
+    # Add a contact hmtl file in the website templates folder
     return "<h1>Contact</h1>"
 
 
 @homepage.route('/about')
 def about():
+    # Add an about hmtl file in the website templates folder
     return "<h1>About</h1>"
 
 @homepage.route('/table')
