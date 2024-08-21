@@ -39,7 +39,7 @@ def load_db_data():
     # data_temp = cursor.fetchall()
     # cursor.close()
     cursor = connect.cursor()
-    cursor.execute('''SELECT st_asgeojson("CatalogMeta") FROM "CatalogMeta"''')
+    cursor.execute('''SELECT st_asgeojson("CatalogMeta") FROM "CatalogMeta" WHERE checked=true''')
     data_json = [json.loads(i[0]) for i in cursor.fetchall()]
 
 
@@ -67,7 +67,7 @@ def load_db_table():
 
     datasets_table = pd.read_sql_query('''SELECT title, email, keywords, 
     contact_person, collect_year_start, collect_year_end, data_location FROM 
-    "CatalogMeta"''', connect)
+    "CatalogMeta" WHERE checked=true''', connect)
     cursor.close()
 
 
