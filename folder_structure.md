@@ -2,6 +2,9 @@
 In the current version the most important folder is the website folder.
 Other important files are the .env, app.py, config.py, extensions.py & the yaml for the dependencies. 
 
+Alembic folder:
+The alembic folder contains different versions of the database (if alembic is used to update the database)
+
 #### website/models
 Contains the various models of the application (including user models that are not implemented)
 Of specific importance:

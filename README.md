@@ -25,6 +25,11 @@ website/models/models.py
 website/views.py
     - function addstudy() needs to be updated in the validate on submit fields according to the changes.
 
+## Updating the values in the pop up on the map
+To update the values shown in the pop up to match the desired fields
+Go to file website/templates/new_map.html
+lines: 272 - 300
+
 
 ## Adding or changing pages
 To add additional pages create a new .html file in the website/templates/ folder.
