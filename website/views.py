@@ -113,7 +113,7 @@ def add_study():
         # Commit study to the database
         db.session.commit()
         # Feedback
-        flash(("Data '{}' added successfully!").format(data_entry.title))
+        flash(("Entry '{}' is now being reviewed!").format(data_entry.title))
         # Reset the form
         form.title.data = ''
         form.description.data = ''
