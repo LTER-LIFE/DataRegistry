@@ -7,12 +7,17 @@
 from flask import Blueprint, render_template
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
-from wtforms import SearchField, StringField, SubmitField, FieldList
+from wtforms import (SearchField, StringField, SubmitField, FieldList,
+                     SelectMultipleField,SelectField, widgets, RadioField)
 from wtforms.fields.datetime import DateField
 from wtforms.fields.simple import PasswordField
 from wtforms.validators import DataRequired
 from wtforms.widgets import TextArea
 from flask_jwt_extended import jwt_required, get_jwt_identity
+
+# Checkbox class
+
+
 # Create Form class add_study
 class AddStudy(FlaskForm):
     # title of a dataset
@@ -43,6 +48,16 @@ class AddStudy(FlaskForm):
     ecosphere_type = StringField("Ecosphere type (as per LTER-LIFE)")
     # polygon
     polygon_location = StringField("Polygon of the dataset", validators=[DataRequired()])
+
+
+    # Consent to use email, personal data and metadata
+
+    consent_field_1 = RadioField('Consent', choices=[(1,'I consent that the metadata '
+                                                        'may be archived as part of the Portal')], validators=[DataRequired()])
+    consent_field_2 = RadioField('Consent', choices=[(1,'I consent that the metadata may be publicly visible')], validators=[DataRequired()])
+    consent_field_3 = RadioField('Consent', choices=[(1,'I confirm that I have the rights or permissions to '
+                       'submit the metadata provided above to the Portal')], validators=[DataRequired()])
+
     # submit field
     submit_butt = SubmitField('Submit dataset')
 
