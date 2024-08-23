@@ -30,7 +30,9 @@ from website.models.db_data_loader import load_db_data, load_db_table
 from website.resources.user import UserList, UserResource
 
 # Set up the blueprints
-homepage = Blueprint('homepage', __name__, url_prefix='/',
+
+
+homepage = Blueprint('homepage', __name__,
                       template_folder='templates')
 apps = Api(homepage)
 
@@ -91,7 +93,7 @@ def register():
      return "<h1>Register</h1>"
 
 
-@homepage.route('add_study', methods=['GET', 'POST'])
+@homepage.route('/add_study', methods=['GET', 'POST'])
 def add_study():
     name = None
     form = AddStudy()

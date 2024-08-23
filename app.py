@@ -35,9 +35,16 @@ def create_app():
 
     :return:
     """
+
+
+    proxy_prefix = os.environ.get('PROXY_PREFIX')
+    url_prefix = f"/{proxy_prefix}/".rstrip("/") if proxy_prefix else ""
+
+
     # Set up app
-    app = Flask(__name__)
-    app._static_folder = 'website/static'
+    app = Flask(__name__, static_url_path=f'{url_prefix}/website/static')
+    app._static_folder = './website/static'
+
     # Get configuration from Config
     app.config.from_object("config")
     # Init the db with the app
@@ -49,10 +56,12 @@ def create_app():
     jwt.init_app(app)
 
     # Register blueprints
-    app.register_blueprint(blueprint=homepage, url_prefix='/')
-    app.register_blueprint(blueprint=auth_blueprint, url_prefix='/auth')
+    app.register_blueprint(blueprint=homepage, url_prefix=url_prefix, template_folder='templates')
+    app.register_blueprint(blueprint=auth_blueprint, url_prefix='/auth', template_folder='templates', static_folder='static')
 
-    # app.register_blueprint(blueprint=)
+    for rule in app.url_map.iter_rules():
+        print(rule)
+
     return app
 
 
@@ -62,4 +71,4 @@ app = create_app()
 
 # Create the flask app instance
 if __name__ == '__main__':
-    app.run(debug=True, threaded=True)
+    app.run(debug=True, threaded=True, port=8000)
