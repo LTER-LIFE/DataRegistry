@@ -2,10 +2,116 @@
 By: Sander Vlugter
 Internship project with NIOO-KNAW part of WUR MSc Bioinformatics programme 2024
 
-## Set up local version
-Git clone or download the repository.
-Included in the repository is a yaml with the dependencies and packages.
-Not included but required: (Postgre)SQL.
+## Install
+
+Clone project from git
+```
+mkdir ~/Apps/
+cd ~/Apps/
+git clone git@gitlab.bioinf.nioo.knaw.nl:nioo-rdm-group/metadata-app.git
+git checkout main
+```
+
+Install dependencies
+```bash
+#APT
+sudo apt install git 
+
+sudo -s
+
+# Install miniconda
+"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
+
+# Create miniconda env
+mamba create -n metadata-app-test python=3.12
+
+# Activate env
+mamba activate metadata-app-test
+
+# PIPenv python dependencys (requirements.txt)
+pip install -r requirements.txt
+```
+
+ Optional install psqldb:
+
+```bash
+sudo apt install postgresql postgresql-client
+```
+
+ # In the pg_hba file, the access rights are managed.
+ ``` bash
+sudo nano /etc/postgresql/*/main/pg_hba.conf
+ ```
+
+## IPv4 local connections:
+ ```
+host all all 127.0.0.1/32 scram-sha-256 || md5
+ ```
+ 
+
+## Change postgres user password
+sudo -u postgres psql
+```postgres-psql
+ALTER ROLE postgres WITH ENCRYPTED PASSWORD 'mypassword'; 
+\q
+```
+
+
+
+## Create datamanagement_app database
+```bash
+sudo su - postgres
+createdb datamanagement_test_app -Upostgres -hlocalhost
+```
+
+
+## OPTIONAL: Copy backup to DATABASE
+psql datamanagement_test_app < <(zcat /var/backups/postgres/datamanagement_app.0416.sql.gz)
+
+## Go to created database
+```bash
+psql datamanagement_test_app -Upostgres -hlocalhost  
+```
+## Create datamanagement_app user and grant permissions to datamanagement_test_app
+```postgres-psql
+CREATE USER datamanagement_test_app WITH PASSWORD 'password';
+
+#OR
+
+ALTER USER datamanagement_test_app WITH PASSWORD 'new_password';
+```
+
+##
+```postgres-psql
+GRANT ALL PRIVILEGES ON DATABASE datamanagement_test_app to datamanagement_test_app
+
+# When using a backup
+ALTER TABLE "DataSet" OWNER TO datamanagement_test_app;
+ALTER TABLE "DataType" OWNER TO datamanagement_test_app;
+ALTER TABLE "Keyword" OWNER TO datamanagement_test_app;
+ALTER TABLE "Project" OWNER TO datamanagement_test_app;
+ALTER TABLE "User" OWNER TO datamanagement_test_app;
+ALTER TABLE "keywordDataset" OWNER TO datamanagement_test_app;
+ALTER TABLE "alembic_version" OWNER TO datamanagement_test_app;
+
+```
+sudo cp config/metadata-app-test.service /etc/systemd/system/
+sudo systemctl enable metadata-app-test.service
+systemctl daemon-reload
+```
+
+## Usage
+
+```
+git clone
+```
+
+## Contributing
+
+PRs accepted.
+
+## License
+
 
 With (Postgre)SQL installed set up a database and fill out the .env_template file accordingly.
 ***Do not forget to rename .env_template to .env***
