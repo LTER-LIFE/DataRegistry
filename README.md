@@ -20,7 +20,7 @@ sudo apt install git
 sudo -s
 # Install PostgreSQL
 sudo apt install postgresql postgresql-client
-
+apt install postgresql-postgis
 # Install miniconda
 "${SHELL}" <(curl -L micro.mamba.pm/install.sh)
 
@@ -85,6 +85,10 @@ ALTER USER datamanagement_test_app WITH PASSWORD 'new_password';
 ```postgres-psql
 GRANT ALL PRIVILEGES ON DATABASE datamanagement_test_app to datamanagement_test_app
 
+psql EcoMeta
+GRANT ALL ON SCHEMA public TO EXAMPLE_USER;
+CREATE EXTENSION postgis;
+
 # When using a backup
 ALTER TABLE "DataSet" OWNER TO datamanagement_test_app;
 ALTER TABLE "DataType" OWNER TO datamanagement_test_app;
@@ -99,6 +103,12 @@ sudo cp config/metadata-app-test.service /etc/systemd/system/
 sudo systemctl enable metadata-app-test.service
 systemctl daemon-reload
 ```
+## Login and create the database tables
+```postgres-psql
+psql EcoMeta
+flask shell db.create_all()
+```
+
 
 ## Usage
 
@@ -123,6 +133,7 @@ python3
 from app.py import db
 db.create_all()
 exit()
+
 ## Adapting the forms & database
 If the forms are no longer sufficient, to make changes to the form the database needs to be changed accordingly.
 This is not done automatically, thus additional tables/columns need to be added depending on the changes.
