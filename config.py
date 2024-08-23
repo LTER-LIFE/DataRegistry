@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 FLASK_DEBUG = os.environ.get('FLASK_DEBUG')
+PROXY_PREFIX =  os.environ.get('PROXY_PREFIX') or "/"
 SECRET_KEY = os.environ.get('APP_SECRET_KEY')
 ENV = os.environ.get('ENV')
 SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
