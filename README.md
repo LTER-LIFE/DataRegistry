@@ -12,6 +12,11 @@ With (Postgre)SQL installed set up a database and fill out the .env_template fil
 
 Can start the application by running app.py
 
+If the database does not create the tables on first start you could run on the commandline:
+python3
+from app.py import db
+db.create_all()
+exit()
 ## Adapting the forms & database
 If the forms are no longer sufficient, to make changes to the form the database needs to be changed accordingly.
 This is not done automatically, thus additional tables/columns need to be added depending on the changes.
