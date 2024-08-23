@@ -18,6 +18,8 @@ Install dependencies
 sudo apt install git 
 
 sudo -s
+# Install PostgreSQL
+sudo apt install postgresql postgresql-client
 
 # Install miniconda
 "${SHELL}" <(curl -L micro.mamba.pm/install.sh)
@@ -34,9 +36,7 @@ pip install -r requirements.txt
 
  Optional install psqldb:
 
-```bash
-sudo apt install postgresql postgresql-client
-```
+
 
  # In the pg_hba file, the access rights are managed.
  ``` bash
