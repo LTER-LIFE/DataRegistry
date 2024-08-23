@@ -1,3 +1,4 @@
 .env
 /.idea
 /budburst_EML.xml
+*.pyc
