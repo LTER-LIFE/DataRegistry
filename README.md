@@ -94,7 +94,7 @@ ALTER TABLE "User" OWNER TO datamanagement_test_app;
 ALTER TABLE "keywordDataset" OWNER TO datamanagement_test_app;
 ALTER TABLE "alembic_version" OWNER TO datamanagement_test_app;
 
-```
+
 sudo cp config/metadata-app-test.service /etc/systemd/system/
 sudo systemctl enable metadata-app-test.service
 systemctl daemon-reload
