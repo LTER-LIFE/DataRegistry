@@ -166,3 +166,4 @@ The current version contains code to set up authentication, yet it is not implem
 
 ## Known bugs
 In the web form if the user does not include a marker in every drawn polygon the data will not show in the portal.
+In the description field if a new line is used it will break the entry and the map.
