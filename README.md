@@ -8,7 +8,7 @@ Clone project from git
 ```
 mkdir ~/Apps/
 cd ~/Apps/
-git clone git@gitlab.bioinf.nioo.knaw.nl:nioo-rdm-group/metadata-app.git
+git clone git@github.com:LTER-LIFE/EcoSearchEngine.git
 git checkout main
 ```
 
