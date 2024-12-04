@@ -1,0 +1,113 @@
+{% extends "nioo_bootstrap.html" %}
+
+{% block title %} Ecological metadata search engine {% endblock %}
+
+{% block content %}
+
+{% for message in get_flashed_messages() %}
+<svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+  <symbol id="check-circle-fill" viewBox="0 0 16 16">
+    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+  </symbol>
+</svg>
+    <div class="alert alert-success d-flex align-items-center fade show" role="alert">
+  <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill"/></svg>
+  <div>
+   {{message}}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+
+    </div>
+{% endfor %}
+<div align="center"> <h1> Add a study </h1></div>
+<br/>
+<form method="POST">
+    <div class="container">
+        <div class="form-group row">
+            {{form.hidden_tag()}}
+            {{form.release_date.label}}
+            {{form.release_date(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+            {{form.language.label}}<br>
+            {{form.language}}
+            </div>
+
+        <br>
+        <div class="form-group row">
+            {{form.creator.label}}<br>
+            {{form.creator(size=80)}}
+            </div>
+
+        <br>
+        <div class="form-group row">
+            {{form.title.label}}
+            {{form.title(size=80)}}
+            </div>
+
+        <br>
+        <div class="form-group row">
+                {{form.description.label}}
+                {{form.description(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+                {{form.resource_type.label}}
+                {{form.resource_type(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+                {{form.dataset_contact_point.label}}
+                {{form.dataset_contact_point(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+                {{form.publisher.label}}
+                {{form.publisher(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+            {{form.temporal_coverage_start.label}}
+            {{form.temporal_coverage_start(size=80)}}
+            {{form.temporal_coverage_end.label}}
+            {{form.temporal_coverage_end(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+            {{form.temporal_resolution.label}}
+            {{form.temporal_resolution(size=80)}}
+            </div>
+        <br>
+        <br>
+            <div class="form-group row">
+                <div id="select-geo-loc" class="hidden"></div>
+                    {{ form.spatial_covarage.label }} {{ "*" if form.spatial_covarage.validators | length > 0 else "" }}
+                    {{ form.spatial_covarage(class_=(" is-invalid" if form.spatial_covarage.errors else ""))
+                    }}
+                    <small id="spatial_covarageHelp" class="form-text text-muted">
+                        {{ form.spatial_covarage.description + " " + " ".join(form.spatial_covarage.errors) + "" }}
+                    </small>
+                </div>
+        <br/>
+        <br>
+        <div class="form-group row">
+            {{form.spatial_resolution.label}}
+            {{form.spatial_resolution(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+            {{form.license.label}}
+            {{form.license(size=80)}}
+            </div>
+        <br>
+        <div class="form-group row">
+            {{form.access_rights.label}}
+            {{form.access_rights(size=80)}}
+            </div>
+        <br>
+        {{form.submit_button()}}
+    </div>
+</form>
+
+{% endblock %}
