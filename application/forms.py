@@ -10,7 +10,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, DateField, SelectField
 from wtforms.fields.simple import SubmitField
 from wtforms.validators import DataRequired
-from wtforms.widgets.html5 import DateInput
+from wtforms.widgets import DateInput
 
 from application.models import Dataset
 
@@ -24,6 +24,9 @@ class DatasetForm(FlaskForm):
     release_date = DateField("Release date")
     language = SelectField("Language", choices=[('EN', 'English'), ('NL', 'Nederlands')],
                            validators=[DataRequired()])
+
+    metadata_provider = StringField("Metadata provider", validators=[DataRequired()], description="The provider of the "
+                                                                                          "metadata")
     creator = StringField("creator", validators=[DataRequired()])
     title = StringField("Dataset title", validators=[DataRequired()])
     description = StringField("Dataset description", validators=[DataRequired()])
@@ -38,8 +41,12 @@ class DatasetForm(FlaskForm):
     spatial_covarage = StringField("Dataset spatial coverage", validators=[DataRequired()])
     spatial_resolution = StringField("Dataset spatialcoverage resolution", validators=[DataRequired()])
 
+    taxonomic_coverage = StringField("Dataset spatial coverage", validators=[DataRequired()])
+
     license = StringField("Dataset licence", validators=[DataRequired()])
     access_rights = StringField("Dataset access rights", validators=[DataRequired()])
+
+
 
 
     # submit field
@@ -67,6 +74,7 @@ class DatasetForm(FlaskForm):
         self.spatial_resolution.data = ''
         self.license.data = ''
         self.access_rights.data = ''
+        self.metadata_provider.data = ''
 
     def to_dataset(self):
         dataset = Dataset()
@@ -74,7 +82,7 @@ class DatasetForm(FlaskForm):
         dataset.release_date = self.release_date.data
         dataset.language = self.language.data
 
-        dataset.metadata_provider
+        dataset.metadata_provider = self.metadata_provider.data
         dataset.creator = self.creator.data
         dataset.title = self.title.data
         dataset.description = self.description.data

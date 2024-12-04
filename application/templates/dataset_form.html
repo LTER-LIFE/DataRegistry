@@ -24,60 +24,106 @@
 <form method="POST">
     <div class="container">
         <div class="form-group row">
+
             {{form.hidden_tag()}}
-            {{form.release_date.label}}
+            {{form.release_date.label}} {{ "*" if form.release_date.validators | length > 0 else "" }}
             {{form.release_date(size=80)}}
+            <small id="release_dateHelp" class="form-text text-muted">
+                    {{ form.release_date.description + " " + " ".join(form.release_date.errors) }}
+            </small>
+        </div>
+        <br>
+        <div class="form-group row">
+            {{form.metadata_provider.label}}{{ "*" if form.metadata_provider.validators | length > 0 else "" }}
+            {{form.metadata_provider(size=80)}}
+            <small id="metadata_providerHelp" class="form-text text-muted">
+                    {{ form.metadata_provider.description + " " + " ".join(form.metadata_provider.errors) }}
+            </small>
             </div>
         <br>
         <div class="form-group row">
-            {{form.language.label}}<br>
+            {{form.language.label}} {{ "*" if form.language.validators | length > 0 else "" }}<br>
             {{form.language}}
+            <small id="languageHelp" class="form-text text-muted">
+                    {{ form.language.description + " " + " ".join(form.language.errors) }}
+            </small>
             </div>
-
         <br>
         <div class="form-group row">
-            {{form.creator.label}}<br>
+            {{form.creator.label}} {{ "*" if form.creator.validators | length > 0 else "" }}<br>
             {{form.creator(size=80)}}
+            <small id="creatorHelp" class="form-text text-muted">
+                    {{ form.creator.description + " " + " ".join(form.creator.errors) }}
+            </small>
             </div>
 
         <br>
         <div class="form-group row">
-            {{form.title.label}}
+            {{form.title.label}} {{ "*" if form.title.validators | length > 0 else "" }}
             {{form.title(size=80)}}
+            <small id="titleHelp" class="form-text text-muted">
+                    {{ form.title.description + " " + " ".join(form.title.errors) }}
+            </small>
             </div>
 
         <br>
         <div class="form-group row">
-                {{form.description.label}}
+                {{form.description.label}} {{ "*" if form.description.validators | length > 0 else "" }}
                 {{form.description(size=80)}}
+            <small id="descriptionHelp" class="form-text text-muted">
+                    {{ form.description.description + " " + " ".join(form.description.errors) }}
+            </small>
             </div>
         <br>
         <div class="form-group row">
-                {{form.resource_type.label}}
+            <div class="col-sm-10">
+                {{form.resource_type.label}} {{ "*" if form.resource_type.validators | length > 0 else "" }}
+                </div>
                 {{form.resource_type(size=80)}}
-            </div>
+            <small id="resource_typeHelp" class="form-text text-muted">
+                    {{ form.resource_type.description + " " + " ".join(form.resource_type.errors) }}
+            </small>
+
+        </div>
         <br>
         <div class="form-group row">
-                {{form.dataset_contact_point.label}}
+                {{form.dataset_contact_point.label}} {{ "*" if form.dataset_contact_point.validators | length > 0
+            else "" }}<br>
                 {{form.dataset_contact_point(size=80)}}
+            <small id="dataset_contact_pointHelp" class="form-text text-muted">
+                    {{ form.dataset_contact_point.description + " " + " ".join(form.dataset_contact_point.errors) }}
+            </small>
             </div>
         <br>
         <div class="form-group row">
-                {{form.publisher.label}}
+                {{form.publisher.label}}  {{ "*" if form.publisher.validators | length > 0 else "" }}<br>
                 {{form.publisher(size=80)}}
-            </div>
+            <small id="publisherHelp" class="form-text text-muted">
+                    {{ form.publisher.description + " " + " ".join(form.publisher.errors) }}
+            </small>
+        </div>
         <br>
         <div class="form-group row">
-            {{form.temporal_coverage_start.label}}
+            {{form.temporal_coverage_start.label}}  {{ "*" if form.temporal_coverage_start.validators | length > 0
+            else "" }}<br>
             {{form.temporal_coverage_start(size=80)}}
-            {{form.temporal_coverage_end.label}}
+            {{form.temporal_coverage_end.label}}  {{ "*" if form.temporal_coverage_end.validators | length > 0 else
+            "" }}<br>
             {{form.temporal_coverage_end(size=80)}}
-            </div>
+            <small id="temporal_coverageHelp" class="form-text text-muted">
+                    {{ form.temporal_coverage_end.description + " " + " ".join(form.temporal_coverage_end.errors) }}
+                {{ form.temporal_coverage_start.description + " " + " ".join(form.temporal_coverage_start.errors) }}
+            </small>
+        </div>
         <br>
         <div class="form-group row">
-            {{form.temporal_resolution.label}}
+            {{form.temporal_resolution.label}}  {{ "*" if form.temporal_resolution.validators | length > 0 else ""
+            }}<br>
             {{form.temporal_resolution(size=80)}}
-            </div>
+            <small id="temporal_resolutionHelp" class="form-text text-muted">
+                    {{ form.temporal_resolution.description + " " + " ".join(form.temporal_resolution.errors) }}
+            </small>
+        </div>
         <br>
         <br>
             <div class="form-group row">
@@ -92,19 +138,36 @@
         <br/>
         <br>
         <div class="form-group row">
-            {{form.spatial_resolution.label}}
+            {{form.spatial_resolution.label}}  {{ "*" if form.spatial_resolution.validators | length > 0 else "" }}<br>
             {{form.spatial_resolution(size=80)}}
-            </div>
+            <small id="spatial_resolutionHelp" class="form-text text-muted">
+                    {{ form.spatial_resolution.description + " " + " ".join(form.spatial_resolution.errors) }}
+            </small>
+        </div>
         <br>
         <div class="form-group row">
-            {{form.license.label}}
+            {{form.taxonomic_coverage.label}}  {{ "*" if form.taxonomic_coverage.validators | length > 0 else "" }}<br>
+            {{form.taxonomic_coverage}}
+            <small id="taxonomic_coverageHelp" class="form-text text-muted">
+                    {{ form.taxonomic_coverage.description + " " + " ".join(form.taxonomic_coverage.errors) }}
+            </small>
+        </div>
+        <br>
+        <div class="form-group row">
+            {{form.license.label}}  {{ "*" if form.license.validators | length > 0 else "" }}<br>
             {{form.license(size=80)}}
-            </div>
+            <small id="licenseHelp" class="form-text text-muted">
+                    {{ form.license.description + " " + " ".join(form.license.errors) }}
+            </small>
+        </div>
         <br>
         <div class="form-group row">
-            {{form.access_rights.label}}
+            {{form.access_rights.label}}  {{ "*" if form.access_rights.validators | length > 0 else "" }}<br>
             {{form.access_rights(size=80)}}
-            </div>
+            <small id="access_rightsHelp" class="form-text text-muted">
+                    {{ form.access_rights.description + " " + " ".join(form.access_rights.errors) }}
+            </small>
+        </div>
         <br>
         {{form.submit_button()}}
     </div>

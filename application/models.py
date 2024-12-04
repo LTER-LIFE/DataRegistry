@@ -318,6 +318,20 @@ class Dataset(Base):
     modified = Column(DateTime, nullable=False)
 
     """
+    RDF property: dcterms:metadata_provider ??? TODO: makle sure this info is right 
+    Range: foaf:Agent 
+    TODO:not dcat standard which is vcard:Kind
+    """
+    metadata_provider_id = Column(Integer, ForeignKey('Agent.agent_id'))
+    metadata_provider = relationship("Agent", foreign_keys=[metadata_provider_id])
+
+    """
+    RDF property: eml:taxonomic_coverage ??? TODO: makle sure this info is right 
+    """
+    taxonomic_coverage = Column(String(255), nullable=True)
+
+
+    """
     RDF Property: dcat:landingPage
     Range: foaf:Document
     
