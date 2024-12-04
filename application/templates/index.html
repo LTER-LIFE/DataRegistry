@@ -1,0 +1,153 @@
+{% extends "nioo_bootstrap.html" %}
+
+{% block title %} Ecological metadata search engine {% endblock %}
+
+{% block content %}
+
+<main>
+    <div class="layout-content">
+        <div class="region region-content">
+            <div class="region-inner region-content-inner">
+                <div class="content--header">
+                    <div class="content--header-inner">
+                        <div class="textual">
+                            <div class="grid-container">
+                                <div class="limit-1-col"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content--main">
+                    <div class="content--main--main">
+                        <div class="grid-container">
+
+                            <div class="limit-1-col content--main--bg-color">
+                                    <div id="map"> </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+    </div>
+    </div>
+
+
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/deps/jquery-3.6.0.js')}}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.4/js/bootstrap-switch.js" data-turbolinks-track="true"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+
+<script src="{{ url_for('static', filename='js/leaflet.markercluster.js')}}"></script>
+<script src="{{ url_for('static', filename='js/leaflet.markercluster-src.js')}}"></script>
+
+<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/MarkerCluster.css')}}">
+<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/MarkerCluster.Default.css')}}">
+<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
+
+
+<script type="application/javascript">
+
+let geo_json_points = JSON.parse('{{list_o_geo| safe }}');
+
+var map = L.map('map').setView([52.075919, 5.891922],10)
+
+var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          });
+osm.addTo(map);
+
+// Tile map layers
+
+googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+ });
+googleStreets.addTo(map);
+
+googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+   maxZoom: 20,
+   subdomains:['mt0','mt1','mt2','mt3']
+});
+googleSat.addTo(map);
+
+// Layer control
+var baseLayers ={
+    "Google Streets": googleStreets,
+    "Google Satellite": googleSat,
+    "Open StreetMap": osm
+};
+
+L.control.layers(baseLayers).addTo(map);
+
+// create new geojson object from the various geometry shapes and move the polygon to feature
+// for each dataset
+/*
+for (study in geo_json_points){
+    // for each geometry of the dataset
+    geo_json_points[study].properties.Area = []
+    for (geomet in geo_json_points[study].geometry.geometries) {
+    // for each geometry check if the type is polygon (and later also other shapes other than point)
+        if (geo_json_points[study].geometry.geometries[geomet].type === 'Polygon') {
+            geo_json_points[study].properties.Area.push(geo_json_points[study].geometry.geometries[geomet])
+            var index_num = geo_json_points[study].geometry.geometries.indexOf(geo_json_points[study].geometry.geometries[geomet])
+            geo_json_points[study].geometry.geometries.splice(index_num,1);
+            }
+        }
+    }
+*/
+
+//// This one works but semi optimal
+// Cluster groups
+var ClusterMarkers = L.markerClusterGroup().addTo(map);
+var Areagroup = L.featureGroup().addTo(map)
+var MarkerGroup = L.featureGroup().addTo(map)
+
+// on click clear group
+ map.on('click', function (e){
+     Areagroup.clearLayers();
+ });
+
+// add a new marker with a popup overtop
+
+// // // // reformat Jsons together
+all_string = JSON.stringify(geo_json_points)
+// //
+all_points = L.geoJson(JSON.parse(all_string), {
+    pointToLayer: (feature, latlng) => {
+        const div = document.createElement("div");
+        var id_code = feature.properties.id
+        div.innerHTML = "<h4>"+feature.properties.title+"</h4> <br>" +
+            "Description: "+feature.properties.description+"<br>"+
+            "Keyword(s): "+feature.properties.keywords+"<br>"+
+            "Data storage: "+"<a href='"+feature.properties.data_location+"' target='_blank'> Data </a>"+"<br>"+
+            "Collection area:   " +
+            "<br>";
+
+        var area_poly = feature.properties.Area
+        const button = document.createElement("button");
+        button.innerHTML= "Show Area";
+        button.onclick = function() {
+            if (Areagroup.getLayers().length >=1){
+                Areagroup.clearLayers()
+            } else {
+            const area = L.geoJson(area_poly);
+            area.addTo(Areagroup);
+            }
+        }
+        div.appendChild(button);
+        return L.marker(latlng).bindPopup(div);
+    }
+});
+
+ClusterMarkers.addLayer(all_points);
+
+ </script>
+
+{% endblock %}

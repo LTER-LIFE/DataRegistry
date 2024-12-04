@@ -1,18 +1,20 @@
-import os
-from datetime import timedelta
+from os import environ, path, urandom
+import socket
 
 from dotenv import load_dotenv
 
-load_dotenv()
+basedir = path.abspath(path.dirname(__file__))
+if socket.gethostname() == "NIOO0035":
+    load_dotenv(path.join(basedir, "config/ecosearch_test.conf"))
+else:
+    load_dotenv(path.join(basedir, "config/ecosearch_local.conf"))
 
-FLASK_DEBUG = os.environ.get('FLASK_DEBUG')
-PROXY_PREFIX =  os.environ.get('PROXY_PREFIX') or "/"
-SECRET_KEY = os.environ.get('APP_SECRET_KEY')
-ENV = os.environ.get('ENV')
-SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
-SQLALCHEMY_TRACK_MODIFICATIONS = False
-JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
-JWT_TOKEN_LOCATION = ['headers']
-JWT_IDENTITY_CLAIM = 'user_id'  # default ==sub
-JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=20)
+class Config(object):
+    SERVER_NAME = environ.get('SERVER_NAME') or "localhost:5000"
+    SECRET_KEY = environ.get('SECRET_KEY') or urandom(24)
+    SESSION_TYPE = environ.get('SESSION_TYPE')
+    PROXY_PREFIX = environ.get('PROXY_PREFIX') or "/"
 
+    SESSION_COOKIE_SAMESITE = environ.get("SESSION_COOKIE_SAMESITE", "None")
+    SQLALCHEMY_DATABASE_URI = environ.get('SQLALCHEMY_DATABASE_URI') or 'sqlite:///localapp.db'
+    SPATIALITE_LIBRARY_PATH = environ.get('SPATIALITE_LIBRARY_PATH') or 'la'
