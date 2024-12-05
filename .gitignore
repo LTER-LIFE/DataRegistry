@@ -2,3 +2,5 @@
 /.idea
 /budburst_EML.xml
 *.pyc
+__pycache__
+flask_session/*
