@@ -34,7 +34,7 @@
         </div>
         <br>
         <div class="form-group row">
-            {{form.metadata_provider.label}}{{ "*" if form.metadata_provider.validators | length > 0 else "" }}
+            {{form.metadata_provider.label}} {{ "*" if form.metadata_provider.validators | length > 0 else "" }}
             {{form.metadata_provider(size=80)}}
             <small id="metadata_providerHelp" class="form-text text-muted">
                     {{ form.metadata_provider.description + " " + " ".join(form.metadata_provider.errors) }}

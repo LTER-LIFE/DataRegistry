@@ -54,7 +54,7 @@
 
 <script type="application/javascript">
 
-let geo_json_points = JSON.parse('{{list_o_geo| safe }}');
+let geo_json_points = JSON.parse('{{ list_o_geo |tojson}}');
 
 var map = L.map('map').setView([52.075919, 5.891922],10)
 

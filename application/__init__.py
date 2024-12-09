@@ -10,6 +10,9 @@ from flask_session import Session
 from flask_jwt_extended import JWTManager
 import identity.web
 
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 def create_app():
 
     proxy_prefix = environ.get('PROXY_PREFIX')
