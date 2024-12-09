@@ -1,11 +1,14 @@
 import json
 
+import shapely
 from flask import render_template, Blueprint, flash
 from flask import current_app as app
+from geoalchemy2.functions import ST_AsGeoJSON
+
 from application.database import db_session
 from application.forms import DatasetForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
-    LicenseDocument, MediaType
+    LicenseDocument, MediaType, Location
 
 # Blueprint Configuration
 # Here the static folder and the templates folder are annotated
@@ -17,43 +20,16 @@ main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_fol
 
 @main_bp.route('/')
 def home(dataset_id=None):
-    data_json = json.loads("""{ "type": "FeatureCollection",
-  "features": [
-    { "type": "Feature",
-      "geometry": {"type": "Point", "coordinates": [102.0, 0.5]},
-      "properties": {"prop0": "value0"}
-      },
-    { "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
-          ]
-        },
-      "properties": {
-        "prop0": "value0",
-        "prop1": 0.0
-        }
-      },
-    { "type": "Feature",
-       "geometry": {
-         "type": "Polygon",
-         "coordinates": [
-           [ [100.0, 0.0], [101.0, 0.0], [101.0, 1.0],
-             [100.0, 1.0], [100.0, 0.0] ]
-           ]
+    datasets = db_session.query(Dataset).all()
 
-       },
-       "properties": {
-         "prop0": "value0",
-         "prop1": {"this": "that"}
-         }
-       }
-    ]
-  }
-    """)
+    datasets_shapes = []
+    for dataset in datasets:
+        spatial_coverage_wkb = shapely.wkb.loads(str(dataset.dataset_spatial_covarage.geometry))
+        spatial_coverage_dict = json.loads(shapely.to_geojson(spatial_coverage_wkb))
+        spatial_coverage_dict["properties"] = {"id": dataset.title}
+        datasets_shapes.append(spatial_coverage_dict)
 
-    return render_template('index.html', list_o_geo=json.dumps(data_json))
+    return render_template('index.html', list_o_geo=datasets_shapes)
 
 @main_bp.route('/add_dataset', methods=['GET', 'POST'])
 def add_dataset():
@@ -66,6 +42,7 @@ def add_dataset():
         db_session.add(dataset)
         # Commit study to the database
         db_session.commit()
+        db_session.flush()
         # Feedback
         flash(("Entry '{}' is now being reviewed!").format(dataset.title))
 

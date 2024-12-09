@@ -12,7 +12,7 @@ else:
     connect_args = {}
 
 engine = create_engine(Config.SQLALCHEMY_DATABASE_URI,
-                       echo=True, connect_args=connect_args, poolclass=NullPool)
+                       echo=True, connect_args=connect_args)
 
 if Config.SQLALCHEMY_DATABASE_URI.find("sqlite") > -1:
     listen(engine, "connect", load_spatialite)

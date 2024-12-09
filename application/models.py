@@ -12,12 +12,14 @@ the DCAT-AP specification.
 """
 import hashlib
 
+import shapely
 from geoalchemy2 import Geometry
+from shapely import GeometryCollection
 from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.testing.schema import Table
 
-from application.database import Base
+from application.database import Base, db_session
 
 metadata = Base.metadata
 
@@ -54,6 +56,18 @@ class Agent(Base):
 
     def __str__(self):
         return self.name
+    @classmethod
+    def add_or_update_agent(cls, name=None, mbox=None, persist=True):
+        db_agent = db_session.query(Agent).filter_by(mbox=mbox).first()
+        if not db_agent:
+            db_agent = Agent()
+            if mbox:
+                db_agent.mbox = mbox
+            if persist:
+                db_session.add(db_agent)
+                db_session.commit()
+                db_session.flush()
+        return db_agent
 
 
 class Catalog(Base):
@@ -229,7 +243,7 @@ class Dataset(Base):
     TODO:not dcat standard which is vcard:Kind
     """
     dataset_publisher_id = Column(Integer, ForeignKey('Agent.agent_id'))
-    publisher = relationship("Agent", foreign_keys=[dataset_publisher_id])
+    dataset_publisher = relationship("Agent", foreign_keys=[dataset_publisher_id])
 
     """
     RDF propery: dcat:keyword
@@ -263,8 +277,8 @@ class Dataset(Base):
     
     ISO 19115 WKT!!! TODO: check 
     """
-    spatial_covarage_id = Column(Integer, ForeignKey('Location.location_id'))
-    spatial_covarage = relationship("Location", foreign_keys=[spatial_covarage_id])
+    dataset_spatial_covarage_id = Column(Integer, ForeignKey('Location.location_id'))
+    dataset_spatial_covarage = relationship('Location', lazy=True)
 
     """
     RDF Properties: dcat:spatialResolutionInMeters
@@ -293,7 +307,7 @@ class Dataset(Base):
     catalog = models.ForeignKey("Catalog", on_delete=models.CASCADE)
     """
     dataset_catalog_id = Column(Integer, ForeignKey('Catalog.catalog_id'))
-    dataset_catalog = relationship("Catalog", foreign_keys=[dataset_catalog_id])
+    dataset_catalog = relationship("Catalog", foreign_keys=[dataset_catalog_id], back_populates="datasets_in_catalogue")
 
     # Recommended properties
     # TODO: description is mandatory
@@ -443,8 +457,6 @@ class MediaType(Base):
     media_type = Column(String(50), nullable=True)
     description = Column(Text, nullable=True)
 
-    dataservices_with_mediatype = relationship('DataService', secondary='dataserviceMediaType')
-
     def __str__(self):
         return self.extension
 
@@ -461,7 +473,7 @@ class LicenseDocument(Base):
     def type(self):
         return self.url_general or self.label
 
-    label = Column(String(255), nullable=False)
+    label = Column(String(255), nullable=True)
     code = Column(String(255), nullable=False)
     url_general = Column(String(255), nullable=True)
     url_document = Column(String(255), nullable=True)
@@ -512,10 +524,31 @@ class Keyword(Base):
     name = Column(String(50), nullable=False)
     slug = Column(String(50), nullable=True)
 
-    datasets_with_keyword = relationship('Dataset', secondary='datasetKeyword')
-
     def __str__(self):
         return self.name
+
+    @classmethod
+    def add_or_update_keywords(cls, keyword_names=None, keyword_ids=None, persist=True):
+        """
+        Add or Update a user, Add a user to the database, if it does not yet exist.
+
+
+        @param keyword_names:
+        @param keyword_ids: TODO: does this need to stay?
+        @param persist: default True, if persist false is selected, just the data model will be built, but nothing will
+                    be saved in database
+        @return:
+        """
+        db_keywords = []
+        for keyword in keyword_names.split(","):
+            db_keyword = db_session.query(Keyword).filter_by(keyword_name=keyword).first()
+            if not db_keyword:
+                db_keyword = Keyword(keyword_name=keyword, keyword_validated=False)
+                if persist:
+                    db_session.add(db_keyword)
+                    db_session.commit()
+            db_keywords.append(db_keyword)
+        return db_keywords
 
 
 class Location(Base):
@@ -525,9 +558,32 @@ class Location(Base):
     """
     __tablename__ = 'Location'
     location_id = Column(Integer, primary_key=True, nullable=False)
-    bbox = Column(Geometry(geometry_type='GEOMETRY', srid=-1), nullable=False)
-    centroid = Column(Geometry(geometry_type='POINT', srid=-1), nullable=False)
+    bbox = Column(Geometry(geometry_type='GEOMETRY', srid=-1), nullable=True)
+    centroid = Column(Geometry(geometry_type='POINT', srid=-1), nullable=True)
     geometry = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=-1), nullable=False)
+    #bbox = Column(String(255), nullable=True)
+    #centroid = Column(String(255), nullable=True)
+    #geometry = Column(String(4096), nullable=True)
+    # TODO:
+
+    #datasets_at_location = relationship("Dataset", back_populates="dataset_spatial_coverage", lazy=False)
+    @classmethod
+    def add_or_update_location(cls, location_id=None, bbox=None, centroid=None, geometry=None, persist=True):
+        db_location = db_session.query(Location).filter_by(geometry=geometry).first()
+        if not db_location:
+            db_location = Location()
+            if geometry:
+                geometry_shape = shapely.from_wkt(geometry)
+
+                if shapely.get_type_id(geometry_shape) != 7:
+                    geometry_shape = GeometryCollection(geometry_shape)
+
+                db_location.geometry = shapely.to_wkt(geometry_shape)
+            if persist:
+                db_session.add(db_location)
+                db_session.commit()
+                db_session.flush()
+        return db_location
 
 
 dataThemeCatalog = Table('dataThemeCatalog', Base.metadata,
