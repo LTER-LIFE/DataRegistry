@@ -2,13 +2,8 @@
 
 {% block content %}
 
-<select name="select_datasets" onchange="location = this.value;">
-    <option value="{{ url_for('main_bp.datasets') }}">All</option>
-
-</select>
 
 {% for dataset in datasets %}
-
 <div class="card">
     <div class="card-header">
         <b>{{ dataset.title }}</b>
@@ -25,39 +20,67 @@
                         <td class="p-1">{{ dataset.release_date }}</td>
                     </tr>
                     <tr>
-                        <th scope="row" class="p-1">Metadata_provider:</th>
-                        <td class="p-1">{{ dataset.dataset_metadata_provider.name }}</td>
-                    </tr>
-
-                    <tr>
                         <th scope="row" class="p-1">Language:</th>
                         <td class="p-1">{{ dataset.language }}</td>
                     </tr>
-                                        <tr>
-                        <th scope="row" class="p-1">creator:</th>
-                        <td class="p-1">{{ dataset.creator.mbox }}</td>
+                    <tr>
+                        <th scope="row" class="p-1">Metadata_provider:</th>
+                        <td class="p-1">{{ dataset.metadata_provider }}</td>
+                    </tr>
+<tr>
+                        <th scope="row" class="p-1">Creator:</th>
+                        <td class="p-1">{{ dataset.creator }}</td>
                     </tr>
                     <tr>
-                        <th scope="row" class="p-1">Resource type:</th>
-                        <td class="p-1">{{ dataset.resource_type }}</td>
+                        <th scope="row" class="p-1">Contact point:</th>
+                        <td class="p-1">{{ dataset.contact_point}}</td>
                     </tr>
 
+                                        <tr>
+                        <th scope="row" class="p-1">Resource Type:</th>
+                        <td class="p-1">{{ dataset.resource_type }}</td>
+                    </tr>
                     <tr>
-                        <th scope="row" class="p-1">Dataset contact point:</th>
-                        <td class="p-1">{{ dataset.dataset_contact_point.mbox }}</td>
+                        <th scope="row" class="p-1">Licence:</th>
+                        <td class="p-1">{{ dataset.licence }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="p-1">Access rights:</th>
+                        <td class="p-1">{{ dataset.access_rights }}</td>
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Dataset publisher:</th>
                         <td class="p-1">{{ dataset.dataset_publisher.mbox }}</td>
                     </tr>
                     <tr>
+                        <th scope="row" class="p-1">Dataset ID:</th>
+                        <td class="p-1">{{ dataset.public_id }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="p-1">Landing page:</th>
+                        <td class="p-1">{{ dataset.landing_page }}</td>
+                    </tr>
+                    <tr>
                         <th scope="row" class="p-1">Temporal coverage:</th>
                         <td class="p-1">{{ dataset.temporal_coverage_start}} / {{ dataset.temporal_coverage_end }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="p-1">Temporal resolution:</th>
+                        <td class="p-1">{{ dataset.temporal_resolution }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="p-1">Spatial resolution:</th>
+                        <td class="p-1">{{ dataset.spatial_resolution}}</td>
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Access rights:</th>
                         <td class="p-1">{{ dataset.access_rights }}</td>
                     </tr>
+                                        <tr>
+                        <th scope="row" class="p-1">Taxonomic coverage:</th>
+                        <td class="p-1">{{ dataset.taxonomic_coverage }}</td>
+                    </tr>
+
                     </tbody>
                 </table>
             </div>

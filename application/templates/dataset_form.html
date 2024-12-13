@@ -237,10 +237,10 @@
                 </div>
                 <br>
                 <div class="form-group row">
-                        {{form.publisher_id.label}}  {{ "*" if form.publisher_id.validators | length > 0 else "" }}<br>
-                        {{form.publisher_id(size=80)}}
-                    <small id="publisher_idHelp" class="form-text text-muted">
-                            {{ form.publisher_id.description + " " + " ".join(form.publisher_id.errors) }}
+                        {{form.public_id.label}}  {{ "*" if form.public_id.validators | length > 0 else "" }}<br>
+                        {{form.public_id(size=80)}}
+                    <small id="public_idHelp" class="form-text text-muted">
+                            {{ form.public_id.description + " " + " ".join(form.public_id.errors) }}
                     </small>
                 </div>
                 <div class="form-group row">
