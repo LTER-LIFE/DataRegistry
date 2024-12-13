@@ -94,7 +94,7 @@ class DatasetForm(FlaskForm):
                                             "ongoing or completed. Some general methods description is appropriate, "
                                             "and broad classes of measured parameters should also be included.")
 
-    keywords = StringField("Keywords", validators=[DataRequired()], description="Commonly used words or "
+    keywords = StringField("Keywords", description="Commonly used words or "
                                                                                 "phrases to describe the "
                                                                                 "dataset. Format: separate "
                                                                                 "keywords by a comma.")
@@ -138,7 +138,7 @@ class DatasetForm(FlaskForm):
                                                     "that is included in the current version of the dataset. Format: "
                                                     "either YYYY or YYYY-MM-DD.")
 
-    temporal_resolution = StringField("Temporal resolution", validators=[DataRequired()],
+    temporal_resolution = StringField("Temporal resolution", validators=[],
                                       description="The temporal resolution of the dataset is the frequency with which "
                                                   "data is collected or acquired. ")
 
@@ -158,13 +158,14 @@ class DatasetForm(FlaskForm):
                                                                        "listing taxon names.")
 
     release_date = StringField("Metadata submission date", description="Date of registration of your dataset in the "
-                                                                       "Veluwe Metadata Portal.")
+                                                                       "Veluwe Metadata Portal.",
+                               validators=[DataRequired()])
     language = SelectField("Language", choices=[('EN', 'English'), ('NL', 'Nederlands')], validators=[DataRequired()],
                            description="Language used in this form")
 
-    consent = RadioField("Consent", choices=[('Y', 'Yes'), ('N', 'No')],
+    consent = RadioField("Terms and conditions", choices=[('Y', 'Yes')],
                          validators=[AnyOf(["Y"], message="Please answer Yes to proceed")],
-                           description="I consent to the three points above.")
+                           description="I have read and agree to the terms and conditions")
 
     # User
 
@@ -197,7 +198,7 @@ class DatasetForm(FlaskForm):
         self.resource_type.data = ''
         self.publisher.data = ''
         self.publisher_id.data = ''
-        self.publisher_landing_page.data = 'ś'
+        self.landing_page.data = ''
         self.temporal_coverage_start.data = ''
         self.temporal_coverage_end.data = ''
         self.temporal_resolution.data = ''
@@ -220,9 +221,8 @@ class DatasetForm(FlaskForm):
         dataset.spatial_resolution = self.spatial_resolution.data
         dataset.taxonomic_coverage = self.taxonomic_coverage.data
         dataset.access_rights = self.access_rights.data
-        dataset.landing_page = self.publisher_landing_page.data
+        dataset.landing_page = self.landing_page.data
         dataset.dataset_publisher_id = self.publisher_id.data
-        dataset.landing_page = self.publisher_landing_page.data
 
         # Fill creator -> Agent
         dataset.creator = Agent.add_or_update_agent(name=self.creator_name.data,

@@ -328,7 +328,7 @@ class Dataset(Base):
     RDF Properties: dcat:spatialResolutionInMeters
     Range: rdf:Literal
     """
-    spatial_resolution = Column(Float, nullable=False)
+    spatial_resolution = Column(String(255), nullable=False)
 
     """
     RDF Property: dcterms:license
