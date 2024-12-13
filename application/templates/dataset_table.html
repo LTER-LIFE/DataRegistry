@@ -63,8 +63,8 @@
             </div>
             <div class="col-md-8">
                 <b>Keywords: </b>
-                {% for kw in dataset.keywords %}
-                <span class="badge rounded-pill bg-primary">{{ kw.keyword_name }}</span>
+                {% for kw in dataset.dataset_keywords %}
+                <span class="badge rounded-pill bg-primary">{{ kw.name }}</span>
                 {% endfor %}
                 <br/>
                 <b>Geographic origin:</b>

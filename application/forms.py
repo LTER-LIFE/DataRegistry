@@ -125,6 +125,10 @@ class DatasetForm(FlaskForm):
                                                                         "associated with the published "
                                                                         "dataset.")
 
+    landing_page = StringField("Landing page", validators=[], description="The web page (URL) that can be "
+                                                                                    "navigated to in a web browser to "
+                                                                                    "gain access to the dataset.")
+
     temporal_coverage_start = StringField("Start date", validators=[DataRequired()],
                                           description="The period of time when the data collection started. Format: "
                                                       "either YYYY or YYYY-MM-DD.")
@@ -192,6 +196,8 @@ class DatasetForm(FlaskForm):
         self.description.data = ''
         self.resource_type.data = ''
         self.publisher.data = ''
+        self.publisher_id.data = ''
+        self.publisher_landing_page.data = 'ś'
         self.temporal_coverage_start.data = ''
         self.temporal_coverage_end.data = ''
         self.temporal_resolution.data = ''
@@ -214,6 +220,9 @@ class DatasetForm(FlaskForm):
         dataset.spatial_resolution = self.spatial_resolution.data
         dataset.taxonomic_coverage = self.taxonomic_coverage.data
         dataset.access_rights = self.access_rights.data
+        dataset.landing_page = self.publisher_landing_page.data
+        dataset.dataset_publisher_id = self.publisher_id.data
+        dataset.landing_page = self.publisher_landing_page.data
 
         # Fill creator -> Agent
         dataset.creator = Agent.add_or_update_agent(name=self.creator_name.data,
@@ -243,40 +252,4 @@ class DatasetForm(FlaskForm):
 
         return dataset
 
-    def test_dataset(self):
-        dataset = Dataset()
-        dataset.modified = datetime.now()
-        dataset.release_date = datetime.now()
-        dataset.language = "EN"
-        dataset.title = "Title of the mock dataset"
-        dataset.description = "Description of the mock dataset"
-        dataset.resource_type = "Resource type of the mock dataset"
-        dataset.temporal_coverage_start = datetime.now() - timedelta(days=1)
-        dataset.temporal_coverage_end = datetime.now() + timedelta(days=1)
-        dataset.temporal_resolution = "1"
-        dataset.spatial_resolution = "1"
-        dataset.taxonomic_coverage = "Rabbit"
-        dataset.access_rights = "OPEN"
-
-        eric = "e.kuijt@nioo.knaw.nl"
-        stefan = "s.vriend@nioo.knaw.nl"
-        # Fill creator -> Agent
-        dataset.creator = Agent.add_or_update_agent(eric)
-        # dataset_contact_point -> Agent
-        dataset.dataset_contact_point = Agent.add_or_update_agent(eric)
-        # publisher -> Agent
-        dataset.publisher = Agent.add_or_update_agent(stefan)
-
-        # metadata_provider -> Agent
-        dataset.metadata_provider = Agent.add_or_update_agent(stefan)
-        # keywords -> Keyword
-
-        # spatial_covarage -> Location
-        # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-        dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry="POINT(5.858043 52.028838)")
-
-        # licence -> LicenceDocument
-        dataset.license = LicenseDocument(code="CC-BY-4.0")
-
-        return dataset
 

@@ -243,6 +243,13 @@
                             {{ form.publisher_id.description + " " + " ".join(form.publisher_id.errors) }}
                     </small>
                 </div>
+                <div class="form-group row">
+                        {{form.landing_page.label}}  {{ "*" if form.landing_page.validators | length > 0 else "" }}<br>
+                        {{form.landing_page(size=80)}}
+                    <small id="landing_pageHelp" class="form-text text-muted">
+                            {{ form.landing_page.description + " " + " ".join(form.landing_page.errors) }}
+                    </small>
+                </div>
                 <br>
                 <hr class="my-4">
                 <div class="form-group row">
