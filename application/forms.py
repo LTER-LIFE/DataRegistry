@@ -240,7 +240,7 @@ class DatasetForm(FlaskForm):
                                                               organisation=self.metadata_provider_organisation.data)
 
         # publisher -> Agent
-        dataset.publisher = Agent.add_or_update_agent(organisation=self.publisher.data)
+        dataset.dataset_publisher = Agent.add_or_update_agent(organisation=self.publisher.data)
 
         dataset.dataset_keywords = Keyword.add_or_update_keywords(keyword_names=self.keywords.data)
 

@@ -76,7 +76,8 @@ class Agent(Base):
     def add_or_update_agent(cls, name="", organisation="", mbox="", persist=True):
         db_agent = db_session.query(Agent).filter(
                                                   or_(
-                                                            and_(Agent.name == organisation, Agent.type == 'Organisation'),
+                                                            and_(Agent.name == organisation, Agent.type ==
+                                                                 'Organisation', Agent.mbox == mbox),
                                                             and_(Agent.name == name,
                                                                  Agent.type == 'Person',
                                                                  Agent.mbox == mbox)
