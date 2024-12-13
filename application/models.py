@@ -57,13 +57,20 @@ class Agent(Base):
         return result
 
     def __str__(self):
+        if self.name and self.mbox:
+            return f"{self.name} <{self.mbox}>"
         if self.name:
             return self.name
         if self.mbox:
             return self.mbox
 
     def web(self):
-        return self.__str__()
+        if self.name and self.mbox:
+            return f"<a href='{self.name}>{self.mbox}</a>"
+        if self.name:
+            return self.name
+        if self.mbox:
+            return self.mbox
 
     @classmethod
     def add_or_update_agent(cls, name="", organisation="", mbox="", persist=True):
@@ -522,7 +529,21 @@ class LicenseDocument(Base):
     url_document = Column(String(255), nullable=True)
 
     def __str__(self):
-        return self.label
+        if self.label and self.code:
+            return f"{self.name} <{self.mbox}>"
+        if self.code:
+            return self.code
+        if self.label:
+            return self.label
+
+    def web(self):
+        if self.label and self.code:
+            return f"<a href='{self.name}>{self.mbox}</a>"
+        if self.code:
+            return self.code
+        if self.label:
+            return self.label
+
 
 
 class DataTheme(Base):

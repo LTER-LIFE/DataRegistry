@@ -28,7 +28,9 @@ def home(dataset_id=None):
         dataset_dict["properties"] = {"id": dataset.title,
                                       "title": dataset.title,
                                       "description": dataset.description,
-                                      "keywords": [kw.name for kw in dataset.dataset_keywords]}
+                                      "temp_coverage": f"{dataset.temporal_coverage_start} / "
+                                                       f"{dataset.temporal_coverage_end}"
+                                      }
         datasets_shapes[dataset.dataset_id] = dataset_dict
 
     return render_template('index.html', list_o_geo=datasets_shapes)

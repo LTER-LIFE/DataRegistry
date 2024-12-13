@@ -149,7 +149,7 @@ class DatasetForm(FlaskForm):
     spatial_resolution = StringField("Spatial resolution", description="If the dataset contains data acquired over a "
                                                                        "range of spatial locations during each "
                                                                        "collection period, document the spatial "
-                                                                       "resolution of the dataset.", default=1)
+                                                                       "resolution of the dataset.")
 
     taxonomic_coverage = StringField("Taxonomic coverage", description="If applicable, taxonomic coverage is "
                                                                        "a description of the taxa represented "
@@ -249,7 +249,7 @@ class DatasetForm(FlaskForm):
         dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry=self.spatial_covarage.data)
 
         # licence -> LicenceDocument
-        dataset.license = LicenseDocument(code=self.license.data)
+        dataset.license = LicenseDocument(label=self.license.data)
 
         return dataset
 
