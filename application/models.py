@@ -79,8 +79,7 @@ class Agent(Base):
                                                             and_(Agent.name == organisation, Agent.type == 'Organisation'),
                                                             and_(Agent.name == name,
                                                                  Agent.type == 'Person',
-                                                                 Agent.mbox == mbox),
-                                                            Agent.name == name
+                                                                 Agent.mbox == mbox)
                                                          )
                                                     ).first()
         if not db_agent:
