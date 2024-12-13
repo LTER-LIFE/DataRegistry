@@ -32,11 +32,6 @@
         </div>
     </div>
 </main>
-    </div>
-    </div>
-
-
-
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="{{ url_for('static', filename='js/deps/jquery-3.6.0.js')}}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.4/js/bootstrap-switch.js" data-turbolinks-track="true"></script>
@@ -53,9 +48,6 @@
 
 
 <script type="application/javascript">
-
-let geo_json_points = JSON.parse('{{ list_o_geo |tojson}}');
-
 var map = L.map('map').setView([52.075919, 5.891922],10)
 
 var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -64,7 +56,6 @@ var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 osm.addTo(map);
 
 // Tile map layers
-
 googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
     maxZoom: 20,
     subdomains:['mt0','mt1','mt2','mt3']
@@ -86,24 +77,6 @@ var baseLayers ={
 
 L.control.layers(baseLayers).addTo(map);
 
-// create new geojson object from the various geometry shapes and move the polygon to feature
-// for each dataset
-/*
-for (study in geo_json_points){
-    // for each geometry of the dataset
-    geo_json_points[study].properties.Area = []
-    for (geomet in geo_json_points[study].geometry.geometries) {
-    // for each geometry check if the type is polygon (and later also other shapes other than point)
-        if (geo_json_points[study].geometry.geometries[geomet].type === 'Polygon') {
-            geo_json_points[study].properties.Area.push(geo_json_points[study].geometry.geometries[geomet])
-            var index_num = geo_json_points[study].geometry.geometries.indexOf(geo_json_points[study].geometry.geometries[geomet])
-            geo_json_points[study].geometry.geometries.splice(index_num,1);
-            }
-        }
-    }
-*/
-
-//// This one works but semi optimal
 // Cluster groups
 var ClusterMarkers = L.markerClusterGroup().addTo(map);
 var Areagroup = L.featureGroup().addTo(map)
@@ -114,39 +87,42 @@ var MarkerGroup = L.featureGroup().addTo(map)
      Areagroup.clearLayers();
  });
 
+let geo_json = JSON.parse('{{ list_o_geo |tojson}}');
 // add a new marker with a popup overtop
+let all_points = [];
+Object.entries(geo_json).forEach(dataset_items => {
+    dataset_id = dataset_items[0];
+    dataset = dataset_items[1];
+    all_points.push(L.geoJson(dataset.centroid, {
 
-// // // // reformat Jsons together
-all_string = JSON.stringify(geo_json_points)
-// //
-all_points = L.geoJson(JSON.parse(all_string), {
-    pointToLayer: (feature, latlng) => {
-        const div = document.createElement("div");
-        var id_code = feature.properties.id
-        div.innerHTML = "<h4>"+feature.properties.title+"</h4> <br>" +
-            "Description: "+feature.properties.description+"<br>"+
-            "Keyword(s): "+feature.properties.keywords+"<br>"+
-            "Data storage: "+"<a href='"+feature.properties.data_location+"' target='_blank'> Data </a>"+"<br>"+
-            "Collection area:   " +
-            "<br>";
+        pointToLayer: (feature, latlng) => {
+            const div = document.createElement("div");
+            var id_code = dataset_id;
+            div.innerHTML = "<h4>"+dataset.properties.title+"</h4> <br>" +
+                "Description: "+dataset.properties.description+"<br>"+
+                "Keyword(s): "+dataset.properties.keywords+"<br>"+
+                "Collection area:   " +
+                "<br>";
 
-        var area_poly = feature.properties.Area
-        const button = document.createElement("button");
-        button.innerHTML= "Show Area";
-        button.onclick = function() {
-            if (Areagroup.getLayers().length >=1){
-                Areagroup.clearLayers()
-            } else {
-            const area = L.geoJson(area_poly);
-            area.addTo(Areagroup);
+            var area_poly = dataset.geometry;
+            const button = document.createElement("button");
+            button.innerHTML= "Show Area";
+            button.onclick = function() {
+                if (Areagroup.getLayers().length >=1){
+                    Areagroup.clearLayers()
+                } else {
+                const area = L.geoJson(area_poly);
+                area.addTo(Areagroup);
+                }
             }
+            div.appendChild(button);
+            return L.marker(latlng).bindPopup(div);
         }
-        div.appendChild(button);
-        return L.marker(latlng).bindPopup(div);
-    }
+    })
+    );
 });
 
-ClusterMarkers.addLayer(all_points);
+ClusterMarkers.addLayer(L.layerGroup(all_points));
 
  </script>
 

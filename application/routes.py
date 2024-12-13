@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 import shapely
 from flask import render_template, Blueprint, flash
@@ -22,12 +23,16 @@ main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_fol
 def home(dataset_id=None):
     datasets = db_session.query(Dataset).all()
 
-    datasets_shapes = []
+    datasets_shapes = defaultdict(dict)
     for dataset in datasets:
-        spatial_coverage_wkb = shapely.wkb.loads(str(dataset.dataset_spatial_covarage.geometry))
-        spatial_coverage_dict = json.loads(shapely.to_geojson(spatial_coverage_wkb))
-        spatial_coverage_dict["properties"] = {"id": dataset.title}
-        datasets_shapes.append(spatial_coverage_dict)
+        dataset_dict = {}
+        dataset_dict["centroid"] = json.loads(dataset.dataset_spatial_covarage.to_shape(field="centroid", to="geojson"))
+        dataset_dict["geometry"] = json.loads(dataset.dataset_spatial_covarage.to_shape(field="geometry", to="geojson"))
+        dataset_dict["properties"] = {"id": dataset.title,
+                                      "title": dataset.title,
+                                      "description": dataset.description,
+                                      "keywords": [kw.name for kw in dataset.dataset_keywords]}
+        datasets_shapes[dataset.dataset_id] = dataset_dict
 
     return render_template('index.html', list_o_geo=datasets_shapes)
 
@@ -47,3 +52,12 @@ def add_dataset():
         flash(("Entry '{}' is now being reviewed!").format(dataset.title))
 
     return render_template('dataset_form.html', form=dataset_form, name=name)
+
+@main_bp.route('/datasets')
+@main_bp.route('/S3cr3T/datasets')
+def datasets(dataset_id=None):
+    datasets = db_session.query(Dataset).all()
+
+    datasets_shapes = []
+
+    return render_template('dataset_table.html', datasets=datasets)

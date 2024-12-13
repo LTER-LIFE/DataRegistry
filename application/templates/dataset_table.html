@@ -1,0 +1,84 @@
+{% extends "nioo_bootstrap.html" %}
+
+{% block content %}
+
+<select name="select_datasets" onchange="location = this.value;">
+    <option value="{{ url_for('main_bp.datasets') }}">All</option>
+
+</select>
+
+{% for dataset in datasets %}
+
+<div class="card">
+    <div class="card-header">
+        <b>{{ dataset.title }}</b>
+    </div>
+    <div class="card-body">
+        {{ dataset.project_description }}
+        <p></p>
+        <div class="row">
+            <div class="table-responsive col-md-4">
+                <table class="table table-borderless mb-5">
+                    <tbody>
+                    <tr>
+                        <th scope="row" class="p-1">Release date:</th>
+                        <td class="p-1">{{ dataset.release_date }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="p-1">Metadata_provider:</th>
+                        <td class="p-1">{{ dataset.dataset_metadata_provider.name }}</td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row" class="p-1">Language:</th>
+                        <td class="p-1">{{ dataset.language }}</td>
+                    </tr>
+                                        <tr>
+                        <th scope="row" class="p-1">creator:</th>
+                        <td class="p-1">{{ dataset.creator.mbox }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="p-1">Resource type:</th>
+                        <td class="p-1">{{ dataset.resource_type }}</td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row" class="p-1">Dataset contact point:</th>
+                        <td class="p-1">{{ dataset.dataset_contact_point.mbox }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="p-1">Dataset publisher:</th>
+                        <td class="p-1">{{ dataset.dataset_publisher.mbox }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="p-1">Temporal coverage:</th>
+                        <td class="p-1">{{ dataset.temporal_coverage_start}} / {{ dataset.temporal_coverage_end }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="p-1">Access rights:</th>
+                        <td class="p-1">{{ dataset.access_rights }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-8">
+                <b>Keywords: </b>
+                {% for kw in dataset.keywords %}
+                <span class="badge rounded-pill bg-primary">{{ kw.keyword_name }}</span>
+                {% endfor %}
+                <br/>
+                <b>Geographic origin:</b>
+                <div class="h-100" id="geo-{{ dataset.dataset_id }}"></div>
+            </div>
+        </div>
+        <br/>
+    </div>
+</div>
+<script type="application/javascript">
+    loadDatasetMap({{dataset.dataset_id}}, "{{dataset.dataset_spatial_covarage.to_shape()}}");
+</script>
+
+
+{% endfor %}
+
+{% endblock %}
