@@ -99,7 +99,7 @@ function loadMap(osm) {
         circle: false, // not supported in geojson yet
         circlemarker: false, // not supported in geojson yet
         rectangle: true,
-        marker: true
+        marker: false
       },
       edit: {
         featureGroup: editableLayers, //REQUIRED!!

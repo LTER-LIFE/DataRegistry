@@ -11,12 +11,14 @@ the DCAT-AP specification.
 
 """
 import hashlib
+import json
 
 import shapely
 from geoalchemy2 import Geometry
 from shapely import GeometryCollection
-from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, Float
-from sqlalchemy.orm import relationship
+from shapely.geometry import box
+from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, Float, Computed, or_, and_
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.testing.schema import Table
 
 from application.database import Base, db_session
@@ -55,14 +57,37 @@ class Agent(Base):
         return result
 
     def __str__(self):
-        return self.name
+        if self.name:
+            return self.name
+        if self.mbox:
+            return self.mbox
+
+    def web(self):
+        return self.__str__()
+
     @classmethod
-    def add_or_update_agent(cls, name=None, mbox=None, persist=True):
-        db_agent = db_session.query(Agent).filter_by(mbox=mbox).first()
+    def add_or_update_agent(cls, name="", organisation="", mbox="", persist=True):
+        db_agent = db_session.query(Agent).filter(
+                                                  or_(
+                                                            and_(Agent.name == organisation, Agent.type == 'Organisation'),
+                                                            and_(Agent.name == name,
+                                                                 Agent.type == 'Person',
+                                                                 Agent.mbox == mbox),
+                                                            Agent.name == name
+                                                         )
+                                                    ).first()
         if not db_agent:
             db_agent = Agent()
-            if mbox:
+            if mbox != "":
                 db_agent.mbox = mbox
+            if organisation != "":
+                db_agent.name = organisation
+                db_agent.type = 'Organisation'
+            if name != "":
+                db_agent.name = name
+                db_agent.type = 'Person'
+            if f"{mbox}{organisation}{name}" == "":
+                return None
             if persist:
                 db_session.add(db_agent)
                 db_session.commit()
@@ -90,18 +115,18 @@ class Catalog(Base):
     # catalogue =
     contact_point = Column(String(255), nullable=True)
 
-    catalog_creator_id = Column(Integer, ForeignKey('Agent.agent_id'))
-    creator = relationship("Agent", foreign_keys=[catalog_creator_id])
-
-    datasets_in_catalogue = relationship("Dataset", foreign_keys='Dataset.dataset_catalog_id',
-                                         back_populates="dataset_catalog", lazy=False)
-
     title = Column(String(255), nullable=True)
     # A name given to the Catalogue.
     description = Column(Text, nullable=True)
 
     # A web page that acts as the main page for the Catalogue.
     homepage = Column(String(255), nullable=True)
+
+    catalog_creator_id = Column(Integer, ForeignKey('Agent.agent_id'))
+    creator = relationship("Agent", foreign_keys=[catalog_creator_id])
+
+    datasets_in_catalogue = relationship("Dataset", foreign_keys='Dataset.dataset_catalog_id',
+                                         back_populates="dataset_catalog", lazy=False)
 
     # A knowledge organization system used to classify the Catalogue's Datasets.
     themes = relationship('DataTheme', secondary='dataThemeCatalog')
@@ -166,7 +191,8 @@ class Dataset(Base):
     
     RDF Property:	dcterms:issued
     Definition:	Date of formal issuance (e.g., publication) of the resource.
-    Range:	rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [DATETIME] and typed using the appropriate XML Schema datatype [XMLSCHEMA11-2] (xsd:gYear, xsd:gYearMonth, xsd:date, or xsd:dateTime).
+    Range:	rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [DATETIME] and typed using 
+    the appropriate XML Schema datatype [XMLSCHEMA11-2] (xsd:gYear, xsd:gYearMonth, xsd:date, or xsd:dateTime).
             Usage note:	This property SHOULD be set using the first known date of issuance.
     See also:	6.5.3 Property: listing date and 6.8.3 Property: release date
     """
@@ -174,7 +200,9 @@ class Dataset(Base):
 
     """
     RDF Property:	dcterms:language
-        Definition:	A language of the resource. This refers to the natural language used for textual metadata (i.e., titles, descriptions, etc.) of a cataloged resource (i.e., dataset or service) or the textual values of a dataset distribution
+        Definition:	A language of the resource. This refers to the natural language used for textual metadata (i.e., 
+        titles, descriptions, etc.) of a cataloged resource (i.e., dataset or service) or the textual values of a 
+        dataset distribution
     Range:	
         dcterms:LinguisticSystem
             Resources defined by the Library of Congress (ISO 639-1) should be used
@@ -189,14 +217,17 @@ class Dataset(Base):
     Range: foaf:Agent
     """
     # TODO: create backreference in agent
-    dataset_creator_id = Column(Integer, ForeignKey('Agent.agent_id'))
-    creator = relationship("Agent", foreign_keys=[dataset_creator_id])
+    creator_id = Column(Integer, ForeignKey('Agent.agent_id'))
+    creator = relationship("Agent", foreign_keys=[creator_id])
 
     """
    The name of the described dataset.
-    Recommended spelling for this property is: (project attribute) subject (location attribute) (time attribute) (version). The parts in brackets are not mandatory, the others are. Abbreviations are only permitted in the title if they are also written out, for example: “Large-scale Basic Map of the Netherlands (GBKN)”.
+    Recommended spelling for this property is: (project attribute) subject (location attribute) (time attribute) (
+    version). The parts in brackets are not mandatory, the others are. Abbreviations are only permitted in the title 
+    if they are also written out, for example: “Large-scale Basic Map of the Netherlands (GBKN)”.
 
-    This property can only be iterated to display the value in a different language. See multilingualism for dealing with different languages.
+    This property can only be iterated to display the value in a different language. See multilingualism for dealing 
+    with different languages.
     
     RDF property: 
        dcterms:title
@@ -208,9 +239,13 @@ class Dataset(Base):
     title = Column(String(255), nullable=False)
 
     """
-    This property contains a description of the contents of the dataset. This is preferably at least three sentences and a maximum of one paragraph long (2000 characters). The findability of the dataset is determined, among other things, by the quality of the description. This includes different users, colleagues, but also others, for whom the text must be understandable.
+    This property contains a description of the contents of the dataset. This is preferably at least three sentences 
+    and a maximum of one paragraph long (2000 characters). The findability of the dataset is determined, among other 
+    things, by the quality of the description. This includes different users, colleagues, but also others, 
+    for whom the text must be understandable.
 
-    This property can only be iterated to display the value in a different language. See multilingualism for dealing with different languages.
+    This property can only be iterated to display the value in a different language. See multilingualism for dealing 
+    with different languages.
     
     RDF property: 
        dcterms:description
@@ -245,12 +280,21 @@ class Dataset(Base):
     dataset_publisher_id = Column(Integer, ForeignKey('Agent.agent_id'))
     dataset_publisher = relationship("Agent", foreign_keys=[dataset_publisher_id])
 
+
+    """
+    RDF property: dcterms:metadata_provider ??? TODO: makle sure this info is right 
+    Range: foaf:Agent 
+    TODO:not dcat standard which is vcard:Kind
+    """
+    dataset_metadata_provider_id = Column(Integer, ForeignKey('Agent.agent_id'))
+    dataset_metadata_provider = relationship("Agent", foreign_keys=[dataset_metadata_provider_id])
+
     """
     RDF propery: dcat:keyword
     Range: rdf:Literal
     """
 
-    keywords = relationship('Keyword', secondary='datasetKeyword')
+    dataset_keywords = relationship('Keyword', secondary='datasetKeyword')
 
     """
     RDF property: dcterms:temporal
@@ -293,7 +337,7 @@ class Dataset(Base):
     TODO: backreferecne
     """
     dataset_license_id = Column(Integer, ForeignKey('LicenseDocument.license_document_id'))
-    license = relationship("LicenseDocument", foreign_keys=[dataset_license_id])
+    dataset_license = relationship("LicenseDocument", foreign_keys=[dataset_license_id])
 
     """
     RDF Property: dcterms:accessRights
@@ -319,7 +363,7 @@ class Dataset(Base):
         help_text="A category of the Dataset. A Dataset may be associated with multiple themes.",
     )
     """
-    themes = relationship('DataTheme', secondary='datasetDataTheme')
+    dataset_themes = relationship('DataTheme', secondary='datasetDataTheme')
 
     # Optional properties
     """
@@ -331,19 +375,11 @@ class Dataset(Base):
     """
     modified = Column(DateTime, nullable=False)
 
-    """
-    RDF property: dcterms:metadata_provider ??? TODO: makle sure this info is right 
-    Range: foaf:Agent 
-    TODO:not dcat standard which is vcard:Kind
-    """
-    metadata_provider_id = Column(Integer, ForeignKey('Agent.agent_id'))
-    metadata_provider = relationship("Agent", foreign_keys=[metadata_provider_id])
 
     """
     RDF property: eml:taxonomic_coverage ??? TODO: makle sure this info is right 
     """
     taxonomic_coverage = Column(String(255), nullable=True)
-
 
     """
     RDF Property: dcat:landingPage
@@ -541,32 +577,32 @@ class Keyword(Base):
         """
         db_keywords = []
         for keyword in keyword_names.split(","):
-            db_keyword = db_session.query(Keyword).filter_by(keyword_name=keyword).first()
+            keyword = keyword.lower().strip()
+            db_keyword = db_session.query(Keyword).filter_by(name=keyword).first()
             if not db_keyword:
-                db_keyword = Keyword(keyword_name=keyword, keyword_validated=False)
+                db_keyword = Keyword(name=keyword)
                 if persist:
                     db_session.add(db_keyword)
                     db_session.commit()
+                    db_session.flush()
             db_keywords.append(db_keyword)
         return db_keywords
 
 
 class Location(Base):
     """
-
+    The location class, based on Range: dcterms:location
+    contains spatial information,
 
     """
     __tablename__ = 'Location'
     location_id = Column(Integer, primary_key=True, nullable=False)
     bbox = Column(Geometry(geometry_type='GEOMETRY', srid=-1), nullable=True)
     centroid = Column(Geometry(geometry_type='POINT', srid=-1), nullable=True)
-    geometry = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=-1), nullable=False)
-    #bbox = Column(String(255), nullable=True)
-    #centroid = Column(String(255), nullable=True)
-    #geometry = Column(String(4096), nullable=True)
-    # TODO:
 
-    #datasets_at_location = relationship("Dataset", back_populates="dataset_spatial_coverage", lazy=False)
+    geometry = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=-1), nullable=False)
+
+    # datasets_at_location = relationship("Dataset", back_populates="dataset_spatial_coverage", lazy=False)
     @classmethod
     def add_or_update_location(cls, location_id=None, bbox=None, centroid=None, geometry=None, persist=True):
         db_location = db_session.query(Location).filter_by(geometry=geometry).first()
@@ -579,21 +615,34 @@ class Location(Base):
                     geometry_shape = GeometryCollection(geometry_shape)
 
                 db_location.geometry = shapely.to_wkt(geometry_shape)
+                db_location.centroid = shapely.to_wkt(geometry_shape.centroid)
+                db_location.bbox = shapely.to_wkt(box(*geometry_shape.bounds))
             if persist:
                 db_session.add(db_location)
                 db_session.commit()
                 db_session.flush()
         return db_location
 
+    def to_shape(self, field="geometry", to="wkt"):
+        if field in self.__dict__.keys():
+            wkb_value = str(self.__dict__.get(field, "POLYGON EMPTY"))
+            if wkb_value == 'None':
+                spatial_coverage_wkb = GeometryCollection()
+            else:
+                spatial_coverage_wkb = shapely.wkb.loads(wkb_value)
+            if to == "wkt":
+                return shapely.to_wkt(spatial_coverage_wkb)
+            if to == "geojson":
+                return shapely.to_geojson(spatial_coverage_wkb)
+
 
 dataThemeCatalog = Table('dataThemeCatalog', Base.metadata,
-                     Column('data_theme_id', Integer, ForeignKey('DataTheme.data_theme_id'),
-                            primary_key=True),
-                     Column('catalog_id', Integer, ForeignKey('Catalog.catalog_id'), primary_key=True))
+                         Column('data_theme_id', Integer, ForeignKey('DataTheme.data_theme_id'), primary_key=True),
+                         Column('catalog_id', Integer, ForeignKey('Catalog.catalog_id'), primary_key=True))
 
 datasetDataTheme = Table('datasetDataTheme', Base.metadata,
-                     Column('data_theme_id', Integer, ForeignKey('DataTheme.data_theme_id'), primary_key=True),
-                     Column('dataset_id', Integer, ForeignKey('Dataset.dataset_id'), primary_key=True))
+                         Column('data_theme_id', Integer, ForeignKey('DataTheme.data_theme_id'), primary_key=True),
+                         Column('dataset_id', Integer, ForeignKey('Dataset.dataset_id'), primary_key=True))
 
 datasetKeyword = Table('datasetKeyword', Base.metadata,
                        Column('keyword_id', Integer, ForeignKey('Keyword.keyword_id'), primary_key=True),
@@ -603,7 +652,6 @@ dataserviceMediaType = Table('dataserviceMediaType', Base.metadata,
                              Column('mediatype_id', Integer, ForeignKey('MediaType.mediatype_id'), primary_key=True),
                              Column('dataservice_id', Integer, ForeignKey('DataService.dataservice_id'),
                                     primary_key=True))
-
 
 # class CatalogRecord(models.Model):
 #     """A description of a Dataset's entry in the Catalogue.

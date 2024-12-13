@@ -149,7 +149,7 @@
                                     </li>
                                     <li class="menu-item no-children">
 
-                                        <a href="#">Table</a>
+                                        <a href="{{url_for('main_bp.datasets')}}">Table</a>
                                     </li>
                                     <li class="menu-item no-children">
 
@@ -163,15 +163,6 @@
 
                                         <a href="#">About</a>
                                     </li>
-                                    <li class="menu-item no-children">
-
-                                        <a href="#">Sign In</a>
-                                    </li>
-                                    <!-- ADD the admin section here -->
-                                    <li class="menu-item no-children">
-
-                                        <a href="#">Register</a>
-                                    </li>
                                 </ul>
                             </nav>
                         </div>
@@ -179,7 +170,7 @@
                 </div>
                 </div>
         </header>
-   <!-- {% block page_info %} {% endblock %} -->
+
         {% block content %}{% endblock %}
 </body>
     <script src="{{ url_for('static', filename='js/deps/bootstrap-tagsinput.min.js')}}"></script>
