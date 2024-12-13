@@ -28,7 +28,8 @@ def home(dataset_id=None):
         dataset_dict["properties"] = {"id": dataset.title,
                                       "title": dataset.title,
                                       "description": dataset.description,
-                                      "temp_coverage": f"{dataset.temporal_coverage_start} / "
+                                      "creator": str(dataset.creator),
+                                      "temporal_coverage": f"{dataset.temporal_coverage_start} / "
                                                        f"{dataset.temporal_coverage_end}"
                                       }
         datasets_shapes[dataset.dataset_id] = dataset_dict
@@ -52,8 +53,8 @@ def add_dataset():
 
     return render_template('dataset_form.html', form=dataset_form, name=name)
 
-@main_bp.route('/datasets')
 @main_bp.route('/S3cr3T/datasets')
+@main_bp.route('/datasets')
 def datasets(dataset_id=None):
     datasets = db_session.query(Dataset).all()
 
