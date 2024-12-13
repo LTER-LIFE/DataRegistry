@@ -389,6 +389,13 @@ class Dataset(Base):
     """
     landing_page = Column(String(255), nullable=True)
 
+    """
+    RDF Property: dcat:identifier
+    Range: rdf:Literal
+
+    """
+    public_id = Column(String(255), nullable=True)
+
     def to_jsonld(self):
         result = dict()
         result["dct:title"] = self.title

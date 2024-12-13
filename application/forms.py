@@ -121,7 +121,7 @@ class DatasetForm(FlaskForm):
                                         "online. Examples include but are not limited to: GBIF, Dataverse NL, Zenodo, "
                                         "Dryad, Figshare. ")
 
-    publisher_id = StringField("Dataset ID", validators=[], description="DOI or other unique identifier "
+    public_id = StringField("Dataset ID", validators=[], description="DOI or other unique identifier "
                                                                         "associated with the published "
                                                                         "dataset.")
 
@@ -197,7 +197,7 @@ class DatasetForm(FlaskForm):
         self.description.data = ''
         self.resource_type.data = ''
         self.publisher.data = ''
-        self.publisher_id.data = ''
+        self.public_id.data = ''
         self.landing_page.data = ''
         self.temporal_coverage_start.data = ''
         self.temporal_coverage_end.data = ''
@@ -222,7 +222,8 @@ class DatasetForm(FlaskForm):
         dataset.taxonomic_coverage = self.taxonomic_coverage.data
         dataset.access_rights = self.access_rights.data
         dataset.landing_page = self.landing_page.data
-        dataset.dataset_publisher_id = self.publisher_id.data
+        dataset.public_id = self.public_id.data
+
 
         # Fill creator -> Agent
         dataset.creator = Agent.add_or_update_agent(name=self.creator_name.data,
