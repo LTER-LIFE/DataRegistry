@@ -18,7 +18,7 @@ def create_app():
     proxy_prefix = environ.get('PROXY_PREFIX')
     url_prefix = f"/{proxy_prefix}/".rstrip("/") if proxy_prefix else ""
 
-    app = Flask(__name__)
+    app = Flask(__name__, static_url_path=f'{url_prefix}/')
 
     # Configure the flask app instance
     app.config.from_object(Config)

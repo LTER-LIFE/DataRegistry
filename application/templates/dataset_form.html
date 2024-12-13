@@ -47,7 +47,7 @@
         <div class="border rounded-2 m-1">
             <div class="jumbotron bg-light">
                 <div class="mt-0 m-3">
-                <h2 class="section">Metadata data provider</h2>
+                <h2 class="section">Metadata provider</h2>
                 <p class="lead">A metadata provider is the person who created and provided the documentation and other metadata for a
                         dataset. In other words, who are you?</p>
                 </div>
@@ -226,7 +226,7 @@
                     </small>
                 </div>
                 <hr class="my-4">
-                --- The following fields are only relevant when your dataset is published/shared online. ---
+                <i>The following fields are only relevant when your dataset is published/shared online.</i>
 
                 <div class="form-group row">
                         {{form.publisher.label}}  {{ "*" if form.publisher.validators | length > 0 else "" }}<br>
@@ -258,16 +258,13 @@
                     <br>
                     {{form.temporal_coverage_start(size=80)}}
                     <small id="temporal_coverageStartHelp" class="form-text text-muted">
-                            {{ form.temporal_coverage_start.description + " " + "
-                        ".join(form.temporal_coverage_end.errors) }}
-                        {{ form.temporal_coverage_start.description + " " + " ".join(form.temporal_coverage_start.errors) }}
+                            {{ form.temporal_coverage_start.description + " " + "".join(form.temporal_coverage_end.errors) }}
                     </small>
                     {{form.temporal_coverage_end.label}}  {{ "*" if form.temporal_coverage_end.validators | length > 0 else
                     "" }}<br>
                     {{form.temporal_coverage_end(size=80)}}
                     <small id="temporal_coverageEndHelp" class="form-text text-muted">
                             {{ form.temporal_coverage_end.description + " " + " ".join(form.temporal_coverage_end.errors) }}
-                        {{ form.temporal_coverage_start.description + " " + " ".join(form.temporal_coverage_start.errors) }}
                     </small>
                 </div>
                 <br>
@@ -313,12 +310,11 @@
                     By submitting this form, you
                     <p>
                     <ul style="list-style-type:disc; padding-left: 50px;">
-                        <li>Confirm that you have the rights and/or permissions to submit the metadata provided above
+                        <li>confirm that you have the rights and/or permissions to submit the metadata provided above
                             to LTER-LIFE</li>
                         <li>consent that the metadata may be archived at NIOO-KNAW as part of LTER-LIFE's Veluwe
                             Metadata Portal.</li>
                         <li>consent that the metadata, including names and email addresses of yourselves and others, may be displayed online on the Veluwe Metadata Portal.
-I have read and agree to the terms and conditions*
                         </li>
                     </ul>
                     {{form.consent }}
