@@ -100,8 +100,8 @@ Object.entries(geo_json).forEach(dataset_items => {
             var id_code = dataset_id;
             div.innerHTML = "<h4>"+dataset.properties.title+"</h4> <br>" +
                 "Description: "+dataset.properties.description+"<br>"+
-                "Keyword(s): "+dataset.properties.keywords+"<br>"+
-                "Collection area:   " +
+                "Temporal coverage: "+dataset.properties.temporal_coverage+"<br>"+
+                "Creator: "+dataset.properties.temporal_coverage+"<br>"+
                 "<br>";
 
             var area_poly = dataset.geometry;

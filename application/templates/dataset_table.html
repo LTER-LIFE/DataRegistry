@@ -9,7 +9,7 @@
         <b>{{ dataset.title }}</b>
     </div>
     <div class="card-body">
-        {{ dataset.project_description }}
+
         <p></p>
         <div class="row">
             <div class="table-responsive col-md-4">
@@ -25,7 +25,7 @@
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Metadata_provider:</th>
-                        <td class="p-1">{{ dataset.metadata_provider }}</td>
+                        <td class="p-1">{{ dataset.dataset_metadata_provider }}</td>
                     </tr>
 <tr>
                         <th scope="row" class="p-1">Creator:</th>
@@ -33,7 +33,7 @@
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Contact point:</th>
-                        <td class="p-1">{{ dataset.contact_point}}</td>
+                        <td class="p-1">{{ dataset.dataset_contact_point }}</td>
                     </tr>
 
                                         <tr>
@@ -50,7 +50,7 @@
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Dataset publisher:</th>
-                        <td class="p-1">{{ dataset.dataset_publisher.mbox }}</td>
+                        <td class="p-1">{{ dataset.dataset_publisher }}</td>
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Dataset ID:</th>
@@ -85,6 +85,8 @@
                 </table>
             </div>
             <div class="col-md-8">
+                <b>Description: </b>
+                {{ dataset.description }}
                 <b>Keywords: </b>
                 {% for kw in dataset.dataset_keywords %}
                 <span class="badge rounded-pill bg-primary">{{ kw.name }}</span>
