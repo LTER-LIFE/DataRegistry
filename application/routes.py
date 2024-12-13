@@ -1,10 +1,7 @@
 import json
 from collections import defaultdict
-
-import shapely
 from flask import render_template, Blueprint, flash
 from flask import current_app as app
-from geoalchemy2.functions import ST_AsGeoJSON
 
 from application.database import db_session
 from application.forms import DatasetForm
