@@ -61,3 +61,11 @@ def datasets(dataset_id=None):
     datasets_shapes = []
 
     return render_template('dataset_table.html', datasets=datasets)
+
+@main_bp.route('/about')
+def about():
+    return render_template('about.html')
+
+@main_bp.route('/contact')
+def contact():
+    return render_template('contact.html')
