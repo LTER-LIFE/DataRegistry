@@ -249,7 +249,7 @@ class DatasetForm(FlaskForm):
         dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry=self.spatial_covarage.data)
 
         # licence -> LicenceDocument
-        dataset.dataset_license = LicenseDocument(label=self.license.data)
+        dataset.dataset_license = LicenseDocument(code=self.license.data)
 
         return dataset
 
