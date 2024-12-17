@@ -56,7 +56,7 @@ class DatasetForm(FlaskForm):
     creator_organisation = StringField("Organisation name", validators=[DataRequired()],
                                        description="If the creator of the dataset is an "
                                                    "organisation, provide the name of the "
-                                                   "organisation here. - If the creator of the "
+                                                   "organisation here. If the creator of the "
                                                    "dataset is a person, provide the name of the "
                                                    "organisation they are affiliated with.")
     creator_mbox = StringField("Email address", description="If the creator of the dataset is a person, please "
@@ -67,7 +67,7 @@ class DatasetForm(FlaskForm):
     # Contact point
     dataset_contact_point_name = StringField("Name", validators=[DataRequired()],
                                              description="If the contact point of the dataset is a person, please "
-                                                         "provide their first and last name. - If the contact point "
+                                                         "provide their first and last name. If the contact point "
                                                          "of the dataset is a position, please provide their role.")
     dataset_contact_point_organisation = StringField("Organisation name", validators=[],
                                                      description="The name of the organisation the contact point is "
@@ -105,16 +105,16 @@ class DatasetForm(FlaskForm):
                                             "images.")
 
     license = StringField("License", description="The license determines what rights may be available to "
-                                                 "users when using the dataset. Recommend use: choose one of "
+                                                 "users when using the dataset. Recommend to choose one of "
                                                  "the Creative Commons licenses. Examples include but are not "
                                                  "limited to: CC0, CC-BY, CC-BY-NC. Please see "
                                                  "https://creativecommons.org/share-your-work/cclicenses/ for "
                                                  "more Creative Commons licenses.")
     access_rights = StringField("Access rights", validators=[DataRequired()],
                                 description="Information that indicates how the dataset can be accessed. Recommended "
-                                            "use: choose one of: 1) open access, 2) restricted access, "
-                                            "3) closed access. For definitions of these terms, "
-                                            "check: http://purl.org/eprint/accessRights/.")
+                                            "to choose one of: embargoed access, metadata only access, "
+                                            "open access, restricted access. For definitions of these terms, "
+                                            "check: https://vocabularies.coar-repositories.org/access_rights/.")
 
     publisher = StringField("Publisher name", validators=[],
                             description="The organisation that made a citable version of the dataset available "
@@ -132,15 +132,15 @@ class DatasetForm(FlaskForm):
     temporal_coverage_start = StringField("Start date", validators=[DataRequired()],
                                           description="The period of time when the data collection started. Format: "
                                                       "either YYYY or YYYY-MM-DD.")
-    temporal_coverage_end = StringField("End date", validators=[DataRequired()],
+    temporal_coverage_end = StringField("End date", validators=[],
                                         description="The period of time when the data collection ended. NB: If data "
                                                     "collection is ongoing, please select the latest period of time "
                                                     "that is included in the current version of the dataset. Format: "
                                                     "either YYYY or YYYY-MM-DD.")
 
     temporal_resolution = StringField("Temporal resolution", validators=[],
-                                      description="The temporal resolution of the dataset is the frequency with which "
-                                                  "data is collected or acquired. ")
+                                      description="The temporal resolution of the dataset is the minimm temporal "
+                                                  "separation between records in the dataset. ")
 
     spatial_covarage = StringField("Spatial coverage", validators=[DataRequired()],
                                    description="The spatial extent that is covered by the dataset. Use the interactive "
@@ -148,8 +148,9 @@ class DatasetForm(FlaskForm):
 
     spatial_resolution = StringField("Spatial resolution", description="If the dataset contains data acquired over a "
                                                                        "range of spatial locations during each "
-                                                                       "collection period, document the spatial "
-                                                                       "resolution of the dataset.")
+                                                                       "collection period, document the minimum "
+                                                                       "spatial separation between records "
+                                                                       "in the dataset.")
 
     taxonomic_coverage = StringField("Taxonomic coverage", description="If applicable, taxonomic coverage is "
                                                                        "a description of the taxa represented "
