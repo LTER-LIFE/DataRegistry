@@ -62,23 +62,34 @@ class TestDataset(unittest.TestCase):
             dataset.publisher = Agent.add_or_update_agent(mbox=eric)
 
             # metadata_provider -> Agent
-            dataset.metadata_provider = Agent.add_or_update_agent(mbox=stefan)
+            dataset.dataset_metadata_provider = Agent.add_or_update_agent(mbox=stefan)
             # keywords -> Keyword
 
             # spatial_covarage -> Location
             # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry="POINT(5.858043 52.028838)")
+            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry="GEOMETRYCOLLECTION ("
+                                                                                        "POLYGON ((5.661704 52.067003, "
+                                                                                                  "5.848422 52.09401, "
+                                                                                                  "5.917068 52.01294, "
+                                                                                                  "5.680925 51.94527, "
+                                                                                                  "5.661704 52.067003"
+                                                                                                  "))"
+                                                                                        ")")
 
             # licence -> LicenceDocument
             dataset.license = LicenseDocument(code="CC-BY-4.0")
 
             return dataset
         dataset = to_dataset()
+
+
         db_session.add(dataset)
         db_session.commit()
         db_session.flush()
 
         all_db_datasets = db_session.query(Dataset).all()
+
+        print(all_db_datasets[0].serialize())
 
         assert len(all_db_datasets) == 1
 

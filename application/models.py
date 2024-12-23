@@ -10,11 +10,13 @@ For the help_text we are copying the description of the properties from
 the DCAT-AP specification.
 
 """
-import hashlib
+import datetime
 import json
 
+import rdflib
 import shapely
 from geoalchemy2 import Geometry
+from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
 from shapely import GeometryCollection
 from shapely.geometry import box
 from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, Float, Computed, or_, and_
@@ -23,7 +25,35 @@ from sqlalchemy.testing.schema import Table
 
 from application.database import Base, db_session
 
+DCATAP_NS = Namespace("http://data.europa.eu/r5r/")
+SCHEMA_ORG_NS = Namespace("https://schema.org/")
+EML_COV_NS = Namespace("https://eml.ecoinformatics.org/coverage-2.2.0/")
+
+VS_PREFIX = "https://lter-life-experience.org/veluwesearch"
+VSA = Namespace(f"{VS_PREFIX}/Agent/")
+VSC = Namespace(f"{VS_PREFIX}/Catalog/")
+VSDS = Namespace(f"{VS_PREFIX}/Dataset/")
+VSDT = Namespace(f"{VS_PREFIX}/DataTheme/")
+VSLD = Namespace(f"{VS_PREFIX}/LicenseDocument/")
+VSL = Namespace(f"{VS_PREFIX}/Location/")
+
 metadata = Base.metadata
+
+GRAPH_PERSIST_HELP_TEXT = """
+            .. csv-table::
+               :header: "RDF Format", "Keyword", "Notes"
+
+               "Turtle",    "turtle, ttl or turtle2",     "turtle2 is just turtle with more spacing & linebreaks"
+               "RDF/XML",   "xml or pretty-xml",     "Was the default format, rdflib < 6.0.0"
+               "JSON-LD",   "json-ld",     "There are further options for compact syntax and other JSON-LD variants"
+               "N-Triples", "ntriples, nt or nt11",     "nt11 is exactly like nt, only utf8 encoded"
+               "Notation-3","n3",     "N3 is a superset of Turtle that also caters for rules and a few other things"
+
+               "Trig",     "trig",     "Turtle-like format for RDF triples + context (RDF quads) and thus multiple
+               graphs"
+               "Trix",     "trix",     "RDF/XML-like format for RDF quads"
+               "N-Quads",   "nquads",     "N-Triples-like format for RDF quads"
+"""
 
 
 class Agent(Base):
@@ -34,37 +64,52 @@ class Agent(Base):
 
     __tablename__ = 'Agent'
 
-    # Agent id
     agent_id = Column(Integer, primary_key=True, nullable=False)
-
-    # Mandatory properties
     name = Column(String(255))
-
-    # Recommended properties
-    # A type of the agent that makes the Catalogue or Dataset available.
     type = Column(String(20), nullable=True)
-
-    # Optional properties
-    #         blank=True, null=True, help_text="An email address of the Agent."
-    # Foaf:mbox
     mbox = Column(String(128), nullable=True)
 
-    def to_jsonld(self):
-        result = dict()
-        result["foaf:name"] = self.name
+    def to_graph(self):
+        """
+
+        @return: Agent object in RDFlib graph format
+        """
+        g = Graph()
+        # Add namespaces to the graph
+        g.bind("foaf", FOAF)
+        g.bind("vp_agent", VSA)
+
+        # Create a foaf:Agent instance
+        agent = VSA[str(self.agent_id)]
+
+        # Add properties to the agent
+        g.add((agent, RDF.type, FOAF.Agent))
+        g.add((agent, FOAF.name, Literal(self.name)))
         if self.type:
-            result["@type"] = self.type
-        return result
+            g.add((agent, DCTERMS.type, Literal(self.type)))
+        if self.type:
+            g.add((agent, DCAT.mbox, Literal(self.mbox)))
+        return g
+
+    def serialize(self, out_format="json-ld"):
+        f"""
+        Runs the serialize function of RDFlib
+
+        @param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
+
+        @return:
+        """
+        return self.to_graph().serialize(format=out_format)
 
     def __str__(self):
-        if self.name and self.mbox:
-            return f"{self.name} <{self.mbox}>"
-        if self.name:
-            return self.name
-        if self.mbox:
-            return self.mbox
+        return json.dumps(self.serialize(), indent=1)
 
     def web(self):
+        """
+        A standard view to always view as much as possible for organizations and persons
+
+        @return: string containing Name,type and/or mbox
+        """
         if self.name and self.mbox:
             return f"<a href='{self.name}>{self.mbox}</a>"
         if self.name:
@@ -75,14 +120,8 @@ class Agent(Base):
     @classmethod
     def add_or_update_agent(cls, name="", organisation="", mbox="", persist=True):
         db_agent = db_session.query(Agent).filter(
-                                                  or_(
-                                                            and_(Agent.name == organisation, Agent.type ==
-                                                                 'Organisation', Agent.mbox == mbox),
-                                                            and_(Agent.name == name,
-                                                                 Agent.type == 'Person',
-                                                                 Agent.mbox == mbox)
-                                                         )
-                                                    ).first()
+            or_(and_(Agent.name == organisation, Agent.type == 'Organisation', Agent.mbox == mbox),
+                and_(Agent.name == name, Agent.type == 'Person', Agent.mbox == mbox))).first()
         if not db_agent:
             db_agent = Agent()
             if mbox != "":
@@ -117,62 +156,76 @@ class Catalog(Base):
     __tablename__ = 'Catalog'
 
     catalog_id = Column(Integer, primary_key=True, nullable=False)
-
     applicable_legislation = Column(String(255), nullable=True)
-    # catalogue =
     contact_point = Column(String(255), nullable=True)
-
     title = Column(String(255), nullable=True)
-    # A name given to the Catalogue.
     description = Column(Text, nullable=True)
-
-    # A web page that acts as the main page for the Catalogue.
     homepage = Column(String(255), nullable=True)
+
+    # Relations
 
     catalog_creator_id = Column(Integer, ForeignKey('Agent.agent_id'))
     creator = relationship("Agent", foreign_keys=[catalog_creator_id])
-
     datasets_in_catalogue = relationship("Dataset", foreign_keys='Dataset.dataset_catalog_id',
                                          back_populates="dataset_catalog", lazy=False)
 
-    # A knowledge organization system used to classify the Catalogue's Datasets.
     themes = relationship('DataTheme', secondary='dataThemeCatalog')
 
-    """
-        on_delete=models.CASCADE,
-        help_text="An entity (organisation) responsible for making the Catalogue available.",
-    )
-    """
     catalog_publisher_id = Column(Integer, ForeignKey('Agent.agent_id'))
     publisher = relationship("Agent", foreign_keys=[catalog_publisher_id])
 
-    # Recommended properties
-    """
-    models.ForeignKey(
-        "licenseDocument",
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        help_text="A license under which the Catalogue can be used or reused.",
-    )
-    """
     catalog_license_id = Column(Integer, ForeignKey('LicenseDocument.license_document_id'))
     license = relationship("LicenseDocument", foreign_keys=[catalog_license_id])
 
     # Helper table for many-to-many relation between datasets and keywords
 
-    def to_jsonld(self):
-        result = dict()
-        result["@type"] = "dcat:Catalog"
-        result["dct:title"] = self.title
-        result["dct:description"] = self.description
-        result["dct:publisher"] = self.publisher.to_jsonld()
+    def to_graph(self):
+        """
+
+        @return: Agent object in RDFlib graph format
+        """
+
+        g = Graph()
+        # Add namespaces to the graph
+        g.bind("dcatap", DCATAP_NS)
+        g.bind("vs_agent", VSA)
+        g.bind("vs_catalog", VSC)
+
+        catalog = VSC[str(self.catalog_id)]
+
+        # Add properties to the agent
+        g.add((catalog, RDF.type, DCAT.Catalog))
+        if self.applicable_legislation:
+            g.add((catalog, DCATAP_NS.applicableLegislation, Literal(self.name)))
+        if self.contact_point:
+            g.add((catalog, DCAT.contactPoint, Literal(self.contact_point)))
+        if self.title:
+            g.add((catalog, DCTERMS.title, Literal(self.title)))
+        if self.description:
+            g.add((catalog, DCTERMS.description, Literal(self.description)))
         if self.homepage:
-            result["foaf:homepage"] = {"@type": "foaf:Document", "foaf:Document": self.homepage}
+            g.add((catalog, FOAF.homepage, Literal(self.description)))
+        if self.creator:
+            g.add((catalog, DCTERMS.creator, VSA[str(self.creator.agent_id)]))
+        if self.publisher:
+            g.add((catalog, DCTERMS.publisher, VSA[str(self.publisher.agent_id)]))
+        if self.license:
+            g.add((catalog, DCTERMS.license, VSLD[str(self.license.license_id)]))
+        for dataset in self.datasets_in_catalogue:
+            g.add((catalog, DCAT.dataset, VSDS[str(dataset.dataset_id)]))
+        for theme in self.themes:
+            g.add((catalog, DCAT.themeTaxonomy, VSDT[str(theme.theme_id)]))
+        return g
 
-        result["dcat:dataset"] = [dataset.to_jsonld() for dataset in self.dataset_set.all()]
+    def serialize(self, out_format="json-ld"):
+        f"""
+        Runs the serialize function of RDFlib
 
-        return result
+        @param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
+
+        @return:
+        """
+        return self.to_graph().serialize(format=out_format)
 
     def __str__(self):
         return self.title
@@ -183,234 +236,137 @@ class Dataset(Base):
 
     __tablename__ = 'Dataset'
 
-    """
-    RDF Property: dcterms:identifier
-    RANGE: Literal:Integer
-    """
     dataset_id = Column(Integer, primary_key=True, nullable=False)
-    # Mandatory properties
-
-    ### LTER-LIFE subset
-    """
-    models.DateField(blank=True, null=True)
-    
-    This value will be automatically generated when the form is submitted.
-    
-    RDF Property:	dcterms:issued
-    Definition:	Date of formal issuance (e.g., publication) of the resource.
-    Range:	rdfs:Literal encoded using the relevant ISO 8601 Date and Time compliant string [DATETIME] and typed using 
-    the appropriate XML Schema datatype [XMLSCHEMA11-2] (xsd:gYear, xsd:gYearMonth, xsd:date, or xsd:dateTime).
-            Usage note:	This property SHOULD be set using the first known date of issuance.
-    See also:	6.5.3 Property: listing date and 6.8.3 Property: release date
-    """
     release_date = Column(DateTime, nullable=False)
-
-    """
-    RDF Property:	dcterms:language
-        Definition:	A language of the resource. This refers to the natural language used for textual metadata (i.e., 
-        titles, descriptions, etc.) of a cataloged resource (i.e., dataset or service) or the textual values of a 
-        dataset distribution
-    Range:	
-        dcterms:LinguisticSystem
-            Resources defined by the Library of Congress (ISO 639-1) should be used
-              If a ISO 639-1 (two-letter) code is defined for language, then its corresponding IRI SHOULD be used
-              
-            Form will contain EN and NL
-    """
     language = Column(String(255), nullable=False)
 
-    """
-    RDF Property: dcterms:creator
-    Range: foaf:Agent
-    """
-    # TODO: create backreference in agent
     creator_id = Column(Integer, ForeignKey('Agent.agent_id'))
     creator = relationship("Agent", foreign_keys=[creator_id])
-
-    """
-   The name of the described dataset.
-    Recommended spelling for this property is: (project attribute) subject (location attribute) (time attribute) (
-    version). The parts in brackets are not mandatory, the others are. Abbreviations are only permitted in the title 
-    if they are also written out, for example: “Large-scale Basic Map of the Netherlands (GBKN)”.
-
-    This property can only be iterated to display the value in a different language. See multilingualism for dealing 
-    with different languages.
-    
-    RDF property: 
-       dcterms:title
-    
-    Range:
-     rdfs:Literal
-
-    """
     title = Column(String(255), nullable=False)
-
-    """
-    This property contains a description of the contents of the dataset. This is preferably at least three sentences 
-    and a maximum of one paragraph long (2000 characters). The findability of the dataset is determined, among other 
-    things, by the quality of the description. This includes different users, colleagues, but also others, 
-    for whom the text must be understandable.
-
-    This property can only be iterated to display the value in a different language. See multilingualism for dealing 
-    with different languages.
-    
-    RDF property: 
-       dcterms:description
-    
-    Range:
-     rdfs:Literal
-    """
     description = Column(Text)
-
-    """
-    RDF property: 
-        dcterms:type
-    Range:
-        Literal
-    
-    """
     resource_type = Column(String(255), nullable=False)
 
-    """   
-    RDF property: dcat:contactPoint
-    Range: foaf:Agent 
-    TODO:not dcat standard which is vcard:Kind
-    """
     dataset_contact_point_id = Column(Integer, ForeignKey('Agent.agent_id'))
     dataset_contact_point = relationship("Agent", foreign_keys=[dataset_contact_point_id])
 
-    """
-    RDF property: dcterms:publischer
-    Range: foaf:Agent 
-    TODO:not dcat standard which is vcard:Kind
-    """
     dataset_publisher_id = Column(Integer, ForeignKey('Agent.agent_id'))
     dataset_publisher = relationship("Agent", foreign_keys=[dataset_publisher_id])
 
-
-    """
-    RDF property: dcterms:metadata_provider ??? TODO: makle sure this info is right 
-    Range: foaf:Agent 
-    TODO:not dcat standard which is vcard:Kind
-    """
     dataset_metadata_provider_id = Column(Integer, ForeignKey('Agent.agent_id'))
     dataset_metadata_provider = relationship("Agent", foreign_keys=[dataset_metadata_provider_id])
 
-    """
-    RDF propery: dcat:keyword
-    Range: rdf:Literal
-    """
-
     dataset_keywords = relationship('Keyword', secondary='datasetKeyword')
 
-    """
-    RDF property: dcterms:temporal
-    Range: dcterms:PeriodOfTime
-    
-    ISO 8601 start/end
-    """
     temporal_coverage_start = Column(DateTime, nullable=False)
     temporal_coverage_end = Column(DateTime, nullable=False)
 
-    """
-    RDF property: dcat:temporalResolution
-    Range: xsd:duration
-    
-    https://en.wikipedia.org/wiki/ISO_8601 tem
-    "2007-03-01T13:00:00Z/2008-05-11T15:30:00Z"
-
-    """
     temporal_resolution = Column(String(255), nullable=False)
 
-    """
-    RDF Propery: dcterms:spatial
-    Range: dcterms:location
-    
-    ISO 19115 WKT!!! TODO: check 
-    """
     dataset_spatial_covarage_id = Column(Integer, ForeignKey('Location.location_id'))
     dataset_spatial_covarage = relationship('Location', lazy=True)
 
-    """
-    RDF Properties: dcat:spatialResolutionInMeters
-    Range: rdf:Literal
-    """
     spatial_resolution = Column(String(255), nullable=False)
 
-    """
-    RDF Property: dcterms:license
-    Range: dcterms:licenseDocument
-    
-    TODO: backreferecne
-    """
     dataset_license_id = Column(Integer, ForeignKey('LicenseDocument.license_document_id'))
     dataset_license = relationship("LicenseDocument", foreign_keys=[dataset_license_id])
 
-    """
-    RDF Property: dcterms:accessRights
-    Range: dcterms:RightsStatement
-    """
     access_rights = Column(String(255), nullable=False)
 
-    ### Optional values
-
-    """
-    catalog = models.ForeignKey("Catalog", on_delete=models.CASCADE)
-    """
     dataset_catalog_id = Column(Integer, ForeignKey('Catalog.catalog_id'))
     dataset_catalog = relationship("Catalog", foreign_keys=[dataset_catalog_id], back_populates="datasets_in_catalogue")
 
-    # Recommended properties
-    # TODO: description is mandatory
-
-    """
-        models.ManyToManyField(
-        "DataTheme",
-        blank=True,
-        help_text="A category of the Dataset. A Dataset may be associated with multiple themes.",
-    )
-    """
     dataset_themes = relationship('DataTheme', secondary='datasetDataTheme')
 
-    # Optional properties
-    """
-    models.DateField(
-        blank=True,
-        null=True,
-        help_text="The most recent date on which the Dataset was changed or modified.",
-    )
-    """
     modified = Column(DateTime, nullable=False)
-
-
-    """
-    RDF property: eml:taxonomic_coverage ??? TODO: makle sure this info is right 
-    """
     taxonomic_coverage = Column(String(255), nullable=True)
-
-    """
-    RDF Property: dcat:landingPage
-    Range: foaf:Document
-    
-    we will just use address for now
-    """
     landing_page = Column(String(255), nullable=True)
-
-    """
-    RDF Property: dcat:identifier
-    Range: rdf:Literal
-
-    """
     public_id = Column(String(255), nullable=True)
 
-    def to_jsonld(self):
-        result = dict()
-        result["dct:title"] = self.title
-        if self.description:
-            result["dct:description"] = self.description
-        result["dcat:distribution"] = [d.to_jsonld() for d in self.distribution_set.all()]
+    def to_graph(self):
+        """
 
-        return result
+        @return: Agent object in RDFlib graph format
+        """
+        g = Graph()
+        # Add namespaces to the graph
+        g.bind("foaf", FOAF)
+        g.bind("dcat", DCAT)
+        g.bind("eml_cov", EML_COV_NS)
+        g.bind("dcterms", DCTERMS)
+        g.bind("vp_agent", VSA)
+        g.bind("vp_catalog", VSC)
+        g.bind("vp_license", VSLD)
+        g.bind("vp_dataset", VSDS)
+        g.bind("vp_data_theme", VSDT)
+
+        # Create a dcat:Dataset instance
+        dataset = VSDS[str(self.dataset_id)]
+
+        # Add properties to the agent
+        g.add((dataset, RDF.type, DCAT.Dataset))
+
+        if self.release_date:
+            g.add((dataset, DCTERMS.issued, Literal(self.release_date)))
+        if self.language:
+            g.add((dataset, DCTERMS.language, Literal(self.language)))
+        if self.creator:
+            g.add((dataset, DCTERMS.creator, VSA[str(self.creator.agent_id)]))
+        if self.title:
+            g.add((dataset, DCTERMS.title, Literal(self.title)))
+        if self.description:
+            g.add((dataset, DCTERMS.description, Literal(self.description)))
+        if self.resource_type:
+            g.add((dataset, DCTERMS.type, Literal(self.resource_type)))
+        if self.dataset_contact_point:
+            g.add((dataset, DCAT.contactPoint, VSA[str(self.dataset_contact_point.agent_id)]))
+        if self.dataset_publisher:
+            g.add((dataset, DCTERMS.publisher, VSA[str(self.publisher.agent_id)]))
+        if self.dataset_metadata_provider:
+            g.add((dataset, SCHEMA_ORG_NS.provider, VSA[str(self.dataset_metadata_provider.agent_id)]))
+        if self.dataset_keywords:
+            for keyword in self.dataset_keywords:
+                g.add((dataset, DCAT.keyword, Literal(keyword.name)))
+        if self.temporal_coverage_start and self.temporal_coverage_end:
+            g.add((dataset, DCTERMS.temporal, Literal(f"{self.temporal_coverage_start.isoformat()}/"
+                                                      f"{self.temporal_coverage_end.isoformat()}"
+                                                      )
+                   ))
+        if self.temporal_resolution:
+            #TODO: temporal resolution should be a xsd:duration
+            g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution)))
+        if self.dataset_spatial_covarage:
+            g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_covarage.location_id)]))
+        if self.spatial_resolution:
+            g.add((dataset, DCAT.spatialResolutionInMeters, Literal(self.spatial_resolution)))
+        if self.dataset_license:
+            g.add((dataset, DCTERMS.license, VSLD[str(self.dataset_license.dataset)]))
+        if self.access_rights:
+            #TODO: accessRights should be dcterms:RightsStatement
+            g.add((dataset, DCTERMS.accessRights, Literal(self.access_rights)))
+        if self.dataset_catalog:
+            g.add((dataset, DCAT.catalog, VSC[str(self.dataset_catalog.catalog_id)]))
+        if self.dataset_themes:
+            for theme in self.dataset_themes:
+                g.add((dataset, DCAT.theme, VSDT[str(theme.data_theme_id)]))
+        if self.modified:
+            g.add((dataset, DCTERMS.modified, Literal(self.modified)))
+        if self.taxonomic_coverage:
+            g.add((dataset, EML_COV_NS.taxonomicCoverage, Literal(self.taxonomic_coverage)))
+        if self.landing_page:
+            g.add((dataset, DCAT.landingPage, Literal(self.landing_page)))
+        if self.public_id:
+            g.add((dataset, DCTERMS.identifier, Literal(self.public_id)))
+        return g
+
+    def serialize(self, out_format="json-ld"):
+        f"""
+        Runs the serialize function of RDFlib
+
+        @param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
+
+        @return:
+        """
+        return self.to_graph().serialize(format=out_format)
 
     def __str__(self):
         return self.title
@@ -543,7 +499,6 @@ class LicenseDocument(Base):
             return self.code
         if self.label:
             return self.label
-
 
 
 class DataTheme(Base):
