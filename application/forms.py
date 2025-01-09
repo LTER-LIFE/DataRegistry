@@ -5,13 +5,15 @@
 # Use(s):
 # Import(s):
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
+from io import BytesIO
 
+from flask import request
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateField, SelectField, RadioField
+from flask_wtf.file import FileField
+from wtforms import StringField, SelectField, RadioField
 from wtforms.fields.simple import SubmitField, TextAreaField
-from wtforms.validators import DataRequired, EqualTo, AnyOf, ValidationError
-from wtforms.widgets import DateInput
+from wtforms.validators import DataRequired, AnyOf, InputRequired
 
 from application.models import Dataset, Agent, Location, LicenseDocument, Keyword
 
@@ -35,6 +37,22 @@ def parse_times(iso_time_string):
         if re.search(r"[0-2][0-9][0-9][0-9]-[0-3][0-9][0-9]", iso_time_string):
             print("Ordinal date is fully not supported yet, pick year")
             return datetime.strptime(iso_time_string[:4], "%Y")
+
+
+class RequiredOr(InputRequired):
+    # a validator which makes a field required if
+    # another field is set and has a truthy value
+
+    def __init__(self, other_field_name, *args, **kwargs):
+        self.other_field_name = other_field_name
+        super(RequiredOr, self).__init__(*args, **kwargs)
+
+    def __call__(self, form, field):
+        other_field = form._fields.get(self.other_field_name)
+        if other_field is not None:
+            raise Exception(f'One of the fields "{self.other_field_name}" or "{field.name}" should be filled in form')
+        if bool(other_field.data):
+            super(RequiredOr, self).__call__(form, field)
 
 
 class DatasetForm(FlaskForm):
@@ -95,9 +113,9 @@ class DatasetForm(FlaskForm):
                                             "and broad classes of measured parameters should also be included.")
 
     keywords = StringField("Keywords", description="Commonly used words or "
-                                                                                "phrases to describe the "
-                                                                                "dataset. Format: separate "
-                                                                                "keywords by a comma.")
+                                                   "phrases to describe the "
+                                                   "dataset. Format: separate "
+                                                   "keywords by a comma.")
 
     resource_type = StringField("Resource type", validators=[DataRequired()],
                                 description="The nature of the dataset. Examples include but are not limited to: "
@@ -122,12 +140,12 @@ class DatasetForm(FlaskForm):
                                         "Dryad, Figshare. ")
 
     public_id = StringField("Dataset ID", validators=[], description="DOI or other unique identifier "
-                                                                        "associated with the published "
-                                                                        "dataset.")
+                                                                     "associated with the published "
+                                                                     "dataset.")
 
     landing_page = StringField("Landing page", validators=[], description="The web page (URL) that can be "
-                                                                                    "navigated to in a web browser to "
-                                                                                    "gain access to the dataset.")
+                                                                          "navigated to in a web browser to "
+                                                                          "gain access to the dataset.")
 
     temporal_coverage_start = StringField("Start date", validators=[DataRequired()],
                                           description="The period of time when the data collection started. Format: "
@@ -142,9 +160,13 @@ class DatasetForm(FlaskForm):
                                       description="The temporal resolution of the dataset is the minimm temporal "
                                                   "separation between records in the dataset. ")
 
-    spatial_covarage = StringField("Spatial coverage", validators=[DataRequired()],
+    spatial_covarage = StringField("Spatial coverage", validators=[],
                                    description="The spatial extent that is covered by the dataset. Use the interactive "
                                                "map to draw the study area of your dataset.")
+
+    spatial_covarage_shapefile = FileField("Spatial coverage from file", validators=[DataRequired()],
+                                           description="Upload a zip file containing the 4 files that make up a "
+                                                       "shapefile (i.e., .shp, .shx, .dbf, .prj).")
 
     spatial_resolution = StringField("Spatial resolution", description="If the dataset contains data acquired over a "
                                                                        "range of spatial locations during each "
@@ -166,7 +188,7 @@ class DatasetForm(FlaskForm):
 
     consent = RadioField("Terms and conditions", choices=[('Y', 'Yes')],
                          validators=[AnyOf(["Y"], message="Please answer Yes to proceed")],
-                           description="I have read and agree to the terms and conditions")
+                         description="I have read and agree to the terms and conditions")
 
     # User
 
@@ -225,7 +247,6 @@ class DatasetForm(FlaskForm):
         dataset.landing_page = self.landing_page.data
         dataset.public_id = self.public_id.data
 
-
         # Fill creator -> Agent
         dataset.creator = Agent.add_or_update_agent(name=self.creator_name.data,
                                                     organisation=self.creator_organisation.data,
@@ -237,8 +258,8 @@ class DatasetForm(FlaskForm):
 
         # dataset_contact_point -> Agent
         dataset.dataset_metadata_provider = Agent.add_or_update_agent(name=self.metadata_provider_name.data,
-                                                              mbox=self.metadata_provider_mbox.data,
-                                                              organisation=self.metadata_provider_organisation.data)
+                                                                      mbox=self.metadata_provider_mbox.data,
+                                                                      organisation=self.metadata_provider_organisation.data)
 
         # publisher -> Agent
         dataset.dataset_publisher = Agent.add_or_update_agent(organisation=self.publisher.data)
@@ -247,11 +268,61 @@ class DatasetForm(FlaskForm):
 
         # spatial_covarage -> Location
         # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-        dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry=self.spatial_covarage.data)
+        if self.spatial_covarage_shapefile.data:
+            dataset.dataset_spatial_covarage = Location.from_shapefile(
+                request.files[self.spatial_covarage_shapefile.name])
+        else:
+            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry=self.spatial_covarage.data)
 
         # licence -> LicenceDocument
-        dataset.dataset_license = LicenseDocument(code=self.license.data)
+        if self.license.data != '':
+            dataset.dataset_license = LicenseDocument(code=self.license.data)
 
         return dataset
 
+    def from_dataset(self, dataset):
+        """
+        Fill the form with data from a dataset object
+
+        @param dataset:
+        @return:
+        """
+
+        # Reset the form
+        if dataset.creator.type == 'Organisation':
+            self.creator_organisation.data = dataset.creator.name
+            self.creator_mbox.data = dataset.creator.mbox
+        elif dataset.creator.type == 'Person':
+            self.creator_name.data = dataset.creator.name
+            self.creator_mbox.data = dataset.creator.mbox
+
+        if dataset.dataset_contact_point.type == 'Organisation':
+            self.dataset_contact_point_organisation.data = dataset.dataset_contact_point.name
+            self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
+        elif dataset.dataset_contact_point.type == 'Person':
+            self.dataset_contact_point_name.data = dataset.dataset_contact_point.name
+            self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
+
+        if dataset.dataset_metadata_provider.type == 'Organisation':
+            self.metadata_provider_organisation.data = dataset.dataset_metadata_provider.name
+            self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
+        elif dataset.dataset_metadata_provider.type == 'Person':
+            self.metadata_provider_name.data = dataset.dataset_metadata_provider.name
+            self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
+
+        self.release_date.data = dataset.release_date
+        self.language.data = dataset.language
+        self.title.data = dataset.title
+        self.description.data = dataset.description
+        self.resource_type.data = dataset.resource_type
+        self.publisher.data = dataset.dataset_publisher.name
+        self.public_id.data = dataset.public_id
+        self.landing_page.data = dataset.landing_page
+        self.temporal_coverage_start.data = dataset.temporal_coverage_start
+        self.temporal_coverage_end.data = dataset.temporal_coverage_end
+        self.temporal_resolution.data = dataset.temporal_resolution
+        self.spatial_covarage.data = dataset.dataset_spatial_covarage.to_shape()
+        self.spatial_resolution.data = dataset.spatial_resolution
+        self.license.data = dataset.dataset_license.code
+        self.access_rights.data = dataset.access_rights
 

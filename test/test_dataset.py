@@ -1,6 +1,10 @@
+import io
 from datetime import datetime, timedelta
 
+import shapely
 from geoalchemy2 import load_spatialite
+
+from shapely.geometry import shape
 from sqlalchemy.event import listen
 from sqlalchemy.testing import eq_
 
@@ -8,6 +12,8 @@ from application.database import db_session
 from application.models import metadata, Dataset, Agent, Location, LicenseDocument
 from sqlalchemy import create_engine
 import unittest
+import fiona
+
 from config import Config
 
 
@@ -62,23 +68,34 @@ class TestDataset(unittest.TestCase):
             dataset.publisher = Agent.add_or_update_agent(mbox=eric)
 
             # metadata_provider -> Agent
-            dataset.metadata_provider = Agent.add_or_update_agent(mbox=stefan)
+            dataset.dataset_metadata_provider = Agent.add_or_update_agent(mbox=stefan)
             # keywords -> Keyword
 
             # spatial_covarage -> Location
             # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry="POINT(5.858043 52.028838)")
+            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry="GEOMETRYCOLLECTION ("
+                                                                                        "POLYGON ((5.661704 52.067003, "
+                                                                                                  "5.848422 52.09401, "
+                                                                                                  "5.917068 52.01294, "
+                                                                                                  "5.680925 51.94527, "
+                                                                                                  "5.661704 52.067003"
+                                                                                                  "))"
+                                                                                        ")")
 
             # licence -> LicenceDocument
             dataset.license = LicenseDocument(code="CC-BY-4.0")
 
             return dataset
         dataset = to_dataset()
+
+
         db_session.add(dataset)
         db_session.commit()
         db_session.flush()
 
         all_db_datasets = db_session.query(Dataset).all()
+
+        print(all_db_datasets[0].serialize())
 
         assert len(all_db_datasets) == 1
 
@@ -130,6 +147,22 @@ class TestDataset(unittest.TestCase):
         all_db_datasets = db_session.query(Dataset).all()
 
         assert len(all_db_datasets) == 1
+
+    def test_create_dataset_from_shapefile(self):
+        shapefile_path = "shapefile/veluwe.zip"
+
+
+        Location.from_shapefile(shapefile_path, persist=True)
+
+        db_session.commit()
+        db_session.flush()
+
+        all_db_locations = db_session.query(Location).all()
+
+        assert len(all_db_locations) == 1
+
+        print(all_db_locations[0].to_shape(field="bbox", to="wkt"))
+        print(all_db_locations[0].to_shape(field="centroid", to="wkt"))
 
 
 if __name__ == '__main__':
