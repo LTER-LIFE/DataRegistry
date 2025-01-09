@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from flask import render_template, Blueprint, flash
+from flask import render_template, Blueprint, flash, request
 from flask import current_app as app
 
 from application.database import db_session
@@ -36,11 +36,28 @@ def home(dataset_id=None):
 
     return render_template('index.html', list_o_geo=datasets_shapes)
 
+
+@main_bp.route('/S3cr3T/datasets/edit/<dataset_id>')
+@main_bp.route('/S3cr3T/datasets/delete/<dataset_id>')
 @main_bp.route('/add_dataset', methods=['GET', 'POST'])
-def add_dataset():
+def add_dataset(dataset_id=None):
     name = None
     dataset_form = DatasetForm()
     # Validate the add study form
+    if request.url_rule.rule.find("edit") > -1:
+        dataset = Dataset.query.get(dataset_id)
+        dataset_form.from_dataset(dataset)
+
+    if request.url_rule.rule.find("delete") > -1:
+        dataset = Dataset.query.get(dataset_id)
+        if not dataset:
+            flash(f"{dataset_id} does not exist.", "error")
+        db_session.delete(dataset)
+        db_session.commit()
+        db_session.flush()
+
+    if request.url_rule.rule.find("copy") > -1:
+        pass
     if dataset_form.validate_on_submit():
         dataset = dataset_form.to_dataset()
         # Add to the database
@@ -53,7 +70,7 @@ def add_dataset():
 
     return render_template('dataset_form.html', form=dataset_form, name=name)
 
-@main_bp.route('/S3cr3T/datasets')
+
 @main_bp.route('/datasets')
 def datasets(dataset_id=None):
     datasets = db_session.query(Dataset).all()

@@ -5,45 +5,52 @@
 {% block content %}
 
 {% for message in get_flashed_messages() %}
-<svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-  <symbol id="check-circle-fill" viewBox="0 0 16 16">
-    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-  </symbol>
+<svg class="d-none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="check-circle-fill" viewBox="0 0 16 16">
+        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+    </symbol>
 </svg>
-    <div class="alert alert-success d-flex align-items-center fade show" role="alert">
-  <svg class="bi flex-shrink-0 me-2" role="img" aria-label="Success:"><use xlink:href="#check-circle-fill"/></svg>
-  <div>
-   {{message}}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-
+<div class="alert alert-success d-flex align-items-center fade show" role="alert">
+    <svg aria-label="Success:" class="bi flex-shrink-0 me-2" role="img">
+        <use xlink:href="#check-circle-fill"/>
+    </svg>
+    <div>
+        {{message}}
+        <button aria-label="Close" class="btn-close" data-bs-dismiss="alert" type="button"></button>
     </div>
+
+</div>
 {% endfor %}
-<div align="center"> <h1> Register your dataset </h1></div>
+<div align="center">
+    <h1> Register your dataset </h1>
+    <div>Please click <a href="">here</a> for instructions for registering your dataset in the Veluwe Metadata
+      Portal
+    </div>
+</div>
 <br/>
+<form action="" method="POST" enctype="multipart/form-data" novalidate>
 <div align="center">
 	<p>
 		Please follow these <a href="">instructions</a> when registering your dataset in the Veluwe Metadata Portal.
 	</p>
 </div>
 <br/>
-<form method="POST">
     <div class="container">
         {{form.hidden_tag()}}
 
         <div class="form-group row">
             {{form.release_date.label}} {{ "*" if form.release_date.validators | length > 0 else "" }}
             {{form.release_date}}
-            <small id="release_dateeHelp" class="form-text text-muted">
-                    {{ form.release_date.description + " " + " ".join(form.release_date.errors) }}
+            <small class="form-text text-muted" id="release_dateeHelp">
+                {{ form.release_date.description + " " + " ".join(form.release_date.errors) }}
             </small>
         </div>
         <br>
         <div class="form-group row">
             {{form.language.label}} {{ "*" if form.language.validators | length > 0 else "" }}
             {{form.language}}
-            <small id="languageHelp" class="form-text text-muted">
-                    {{ form.language.description + " " + " ".join(form.language.errors) }}
+            <small class="form-text text-muted" id="languageHelp">
+                {{ form.language.description + " " + " ".join(form.language.errors) }}
             </small>
         </div>
         <br>
@@ -53,12 +60,12 @@
         <div class="border rounded-2 m-1">
             <div class="jumbotron bg-light">
                 <div class="mt-0 m-3">
-                <h2 class="section">Metadata provider</h2>
-                <p class="lead">A metadata provider is the person who created and provided the documentation and other metadata for a
+                    <h2 class="section">Metadata provider</h2>
+                    <p class="lead">A metadata provider is the person who created and provided the documentation and
+                        other metadata for a
                         dataset. In other words, who are you?</p>
                 </div>
             </div>
-
             <div class="row m-3">
                 <div class="form-group row">
                     {{form.metadata_provider_name.label}} {{ "*" if form.metadata_provider_name.validators | length > 0
@@ -127,6 +134,7 @@
             </div>
         </div>
         <br>
+        <!-- Contact point -->
         <div class="border rounded-2 m-1">
             <div class="jumbotron bg-light">
                 <div class="mt-0 m-3">
@@ -185,25 +193,25 @@
                 <div class="form-group row">
                     {{form.title.label}} {{ "*" if form.title.validators | length > 0 else "" }}
                     {{form.title(size=80)}}
-                    <small id="titleHelp" class="form-text text-muted">
-                            {{ form.title.description + " " + " ".join(form.title.errors) }}
+                    <small class="form-text text-muted" id="titleHelp">
+                        {{ form.title.description + " " + " ".join(form.title.errors) }}
                     </small>
                 </div>
                 <br>
                 <div class="form-group row">
                     {{form.description.label}} {{ "*" if form.description.validators | length > 0 else "" }}
                     {{form.description(size=80)}}
-                    <small id="descriptionHelp" class="form-text text-muted">
-                            {{ form.description.description + " " + " ".join(form.description.errors) }}
+                    <small class="form-text text-muted" id="descriptionHelp">
+                        {{ form.description.description + " " + " ".join(form.description.errors) }}
                     </small>
                 </div>
                 <br>
 
                 <div class="form-group row">
-                    {{form.keywords.label}}  {{ "*" if form.keywords.validators | length > 0 else "" }}<br>
+                    {{form.keywords.label}} {{ "*" if form.keywords.validators | length > 0 else "" }}<br>
                     {{form.keywords(size=80)}}
-                    <small id="keywordsHelp" class="form-text text-muted">
-                            {{ form.keywords.description + " " + " ".join(form.keywords.errors) }}
+                    <small class="form-text text-muted" id="keywordsHelp">
+                        {{ form.keywords.description + " " + " ".join(form.keywords.errors) }}
                     </small>
                 </div>
                 <br>
@@ -211,49 +219,49 @@
                 <div class="form-group row">
                     {{form.resource_type.label}} {{ "*" if form.resource_type.validators | length > 0 else "" }}
                     {{form.resource_type(size=80)}}
-                    <small id="resource_typeHelp" class="form-text text-muted">
-                            {{ form.resource_type.description + " " + " ".join(form.resource_type.errors) }}
+                    <small class="form-text text-muted" id="resource_typeHelp">
+                        {{ form.resource_type.description + " " + " ".join(form.resource_type.errors) }}
                     </small>
                 </div>
                 <br>
                 <div class="form-group row">
-                    {{form.license.label}}  {{ "*" if form.license.validators | length > 0 else "" }}<br>
+                    {{form.license.label}} {{ "*" if form.license.validators | length > 0 else "" }}<br>
                     {{form.license(size=80)}}
-                    <small id="licenseHelp" class="form-text text-muted">
-                            {{ form.license.description + " " + " ".join(form.license.errors) }}
+                    <small class="form-text text-muted" id="licenseHelp">
+                        {{ form.license.description + " " + " ".join(form.license.errors) }}
                     </small>
                 </div>
                 <br>
                 <div class="form-group row">
-                    {{form.access_rights.label}}  {{ "*" if form.access_rights.validators | length > 0 else "" }}<br>
+                    {{form.access_rights.label}} {{ "*" if form.access_rights.validators | length > 0 else "" }}<br>
                     {{form.access_rights(size=80)}}
-                    <small id="access_rightsHelp" class="form-text text-muted">
-                            {{ form.access_rights.description + " " + " ".join(form.access_rights.errors) }}
+                    <small class="form-text text-muted" id="access_rightsHelp">
+                        {{ form.access_rights.description + " " + " ".join(form.access_rights.errors) }}
                     </small>
                 </div>
                 <hr class="my-4">
                 <i>The following fields are only relevant when your dataset is published/shared online.</i>
 
                 <div class="form-group row">
-                        {{form.publisher.label}}  {{ "*" if form.publisher.validators | length > 0 else "" }}<br>
-                        {{form.publisher(size=80)}}
-                    <small id="publisherHelp" class="form-text text-muted">
-                            {{ form.publisher.description + " " + " ".join(form.publisher.errors) }}
+                    {{form.publisher.label}} {{ "*" if form.publisher.validators | length > 0 else "" }}<br>
+                    {{form.publisher(size=80)}}
+                    <small class="form-text text-muted" id="publisherHelp">
+                        {{ form.publisher.description + " " + " ".join(form.publisher.errors) }}
                     </small>
                 </div>
                 <br>
                 <div class="form-group row">
-                        {{form.public_id.label}}  {{ "*" if form.public_id.validators | length > 0 else "" }}<br>
-                        {{form.public_id(size=80)}}
-                    <small id="public_idHelp" class="form-text text-muted">
-                            {{ form.public_id.description + " " + " ".join(form.public_id.errors) }}
+                    {{form.public_id.label}} {{ "*" if form.public_id.validators | length > 0 else "" }}<br>
+                    {{form.public_id(size=80)}}
+                    <small class="form-text text-muted" id="public_idHelp">
+                        {{ form.public_id.description + " " + " ".join(form.public_id.errors) }}
                     </small>
                 </div>
                 <div class="form-group row">
-                        {{form.landing_page.label}}  {{ "*" if form.landing_page.validators | length > 0 else "" }}<br>
-                        {{form.landing_page(size=80)}}
-                    <small id="landing_pageHelp" class="form-text text-muted">
-                            {{ form.landing_page.description + " " + " ".join(form.landing_page.errors) }}
+                    {{form.landing_page.label}} {{ "*" if form.landing_page.validators | length > 0 else "" }}<br>
+                    {{form.landing_page(size=80)}}
+                    <small class="form-text text-muted" id="landing_pageHelp">
+                        {{ form.landing_page.description + " " + " ".join(form.landing_page.errors) }}
                     </small>
                 </div>
                 <br>
@@ -263,69 +271,115 @@
                     {{ "*" if form.temporal_coverage_start.validators | length > 0 else "" }}
                     <br>
                     {{form.temporal_coverage_start(size=80)}}
-                    <small id="temporal_coverageStartHelp" class="form-text text-muted">
-                            {{ form.temporal_coverage_start.description + " " + "".join(form.temporal_coverage_end.errors) }}
+                    <small class="form-text text-muted" id="temporal_coverageStartHelp">
+                        {{ form.temporal_coverage_start.description + " " + "".join(form.temporal_coverage_end.errors)
+                        }}
                     </small>
-                    {{form.temporal_coverage_end.label}}  {{ "*" if form.temporal_coverage_end.validators | length > 0 else
+                    {{form.temporal_coverage_end.label}} {{ "*" if form.temporal_coverage_end.validators | length > 0
+                    else
                     "" }}<br>
                     {{form.temporal_coverage_end(size=80)}}
-                    <small id="temporal_coverageEndHelp" class="form-text text-muted">
-                            {{ form.temporal_coverage_end.description + " " + " ".join(form.temporal_coverage_end.errors) }}
+                    <small class="form-text text-muted" id="temporal_coverageEndHelp">
+                        {{ form.temporal_coverage_end.description + " " + " ".join(form.temporal_coverage_end.errors) }}
                     </small>
                 </div>
                 <br>
                 <div class="form-group row">
-                    {{form.temporal_resolution.label}}  {{ "*" if form.temporal_resolution.validators | length > 0 else ""
+                    {{form.temporal_resolution.label}} {{ "*" if form.temporal_resolution.validators | length > 0 else
+                    ""
                     }}<br>
                     {{form.temporal_resolution(size=80)}}
-                    <small id="temporal_resolutionHelp" class="form-text text-muted">
-                            {{ form.temporal_resolution.description + " " + " ".join(form.temporal_resolution.errors) }}
+                    <small class="form-text text-muted" id="temporal_resolutionHelp">
+                        {{ form.temporal_resolution.description + " " + " ".join(form.temporal_resolution.errors) }}
                     </small>
                 </div>
                 <br>
                 <div class="form-group row">
+                    <ul class="nav nav-tabs" id="spatial-resolution-tab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button aria-controls="spatial-map" aria-selected="true" class="nav-link active"
+                                    data-bs-target="#spatial-map"
+                                    data-bs-toggle="tab" id="spatial-map-tab" role="tab" type="button">
+                                Map
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button aria-controls="spatial-upload" aria-selected="false" class="nav-link"
+                                    data-bs-target="#spatial-upload"
+                                    data-bs-toggle="tab" id="spatial-upload-tab" role="tab" type="button">
+                                SHP file
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="map_content">
+                        <div aria-labelledby="spatial-map-tab" class="tab-pane fade show active" id="spatial-map"
+                         role="tabpanel">
 
-                    {{ form.spatial_covarage.label }} {{ "*" if form.spatial_covarage.validators | length > 0 else "" }}
-                    {{ form.spatial_covarage(class_=(" is-invalid" if form.spatial_covarage.errors else "")) }}
-                    <small id="spatial_covarageHelp" class="form-text text-muted">
-                        {{ form.spatial_covarage.description + " " + " ".join(form.spatial_covarage.errors) + "" }}
-                    </small>
-                    <div id="select-geo-loc" class="hidden"></div>
+                            {{ form.spatial_covarage.label }}
+                            <br>
+                            {{ "*" if form.spatial_covarage.validators | length > 0 else "" }}
+                            {{ form.spatial_covarage(size=116, class_=(" is-invalid" if form.spatial_covarage.errors
+                            else "")) }}
+                            <br>
+                            <small class="form-text text-muted" id="spatial_covarageHelp">
+                                {{ form.spatial_covarage.description + " " + " ".join(form.spatial_covarage.errors) + "" }}
+                            </small>
+                            <div class="hidden" id="select-geo-loc"></div>
+                        </div>
+                        <div aria-labelledby="spatial-upload-tab" class="tab-pane fade" id="spatial-upload"
+                         role="tabpanel">
+                            {{ form.spatial_covarage_shapefile.label }}
+                            <br>
+                            {{ "*" if form.spatial_covarage_shapefile.validators | length > 0 else "" }}
+                            {{ form.spatial_covarage_shapefile(size=116, class_=(" is-invalid" if form.spatial_covarage_shapefile.errors
+                            else "")) }}
+                            <br>
+                            <small class="form-text text-muted" id="spatial_covarage_shapefileHelp">
+                                {{ form.spatial_covarage_shapefile.description + " " + " ".join(form.spatial_covarage_shapefile.errors) + "" }}
+                            </small>
+
+                         </div>
+                    </div>
                 </div>
                 <br/>
                 <div class="form-group row">
-                    {{form.spatial_resolution.label}}  {{ "*" if form.spatial_resolution.validators | length > 0 else "" }}<br>
+                    {{form.spatial_resolution.label}} {{ "*" if form.spatial_resolution.validators | length > 0 else ""
+                    }}<br>
                     {{form.spatial_resolution(size=80)}}
-                    <small id="spatial_resolutionHelp" class="form-text text-muted">
-                            {{ form.spatial_resolution.description + " " + " ".join(form.spatial_resolution.errors) }}
+                    <small class="form-text text-muted" id="spatial_resolutionHelp">
+                        {{ form.spatial_resolution.description + " " + " ".join(form.spatial_resolution.errors) }}
                     </small>
                 </div>
 
                 <br>
                 <div class="form-group row">
-                    {{form.taxonomic_coverage.label}}  {{ "*" if form.taxonomic_coverage.validators | length > 0 else "" }}<br>
+                    {{form.taxonomic_coverage.label}} {{ "*" if form.taxonomic_coverage.validators | length > 0 else ""
+                    }}<br>
                     {{form.taxonomic_coverage}}
-                    <small id="taxonomic_coverageHelp" class="form-text text-muted">
-                            {{ form.taxonomic_coverage.description + " " + " ".join(form.taxonomic_coverage.errors) }}
+                    <small class="form-text text-muted" id="taxonomic_coverageHelp">
+                        {{ form.taxonomic_coverage.description + " " + " ".join(form.taxonomic_coverage.errors) }}
                     </small>
                 </div>
                 <br>
                 <div class="form-group row">
-                    {{form.consent.label}}  {{ "*" if form.consent.validators | length > 0 else "" }}<br>
+                    {{form.consent.label}} {{ "*" if form.consent.validators | length > 0 else "" }}<br>
                     Before you submit your metadata, please read the following terms and conditions.
                     By submitting this form, you
                     <p>
                     <ul style="list-style-type:disc; padding-left: 50px;">
                         <li>confirm that you have the rights and/or permissions to submit the metadata provided above
-                            to the Veluwe Metadata Portal;</li>
+                            to the Veluwe Metadata Portal;
+                        </li>
                         <li>consent that the metadata may be archived at NIOO-KNAW as part of the Veluwe
-                            Metadata Portal;</li>
-                        <li>consent that the metadata, including names and email addresses of yourselves and others, may be displayed online on the Veluwe Metadata Portal.
+                            Metadata Portal;
+                        </li>
+                        <li>consent that the metadata, including names and email addresses of yourselves and others, may
+                            be displayed online on the Veluwe Metadata Portal.
                         </li>
                     </ul>
                     {{form.consent }}
-                    <small id="consentHelp" class="form-text text-muted">
-                            {{ form.consent.description + " " + " ".join(form.consent.errors) }}
+                    <small class="form-text text-muted" id="consentHelp">
+                        {{ form.consent.description + " " + " ".join(form.consent.errors) }}
                     </small>
                 </div>
             </div>
