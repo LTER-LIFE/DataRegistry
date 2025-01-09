@@ -25,24 +25,26 @@
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Metadata provider:</th>
-                        <td class="p-1">{{ dataset.dataset_metadata_provider }}</td>
+                        <td class="p-1">{{ (dataset.dataset_metadata_provider.web() if
+                            dataset.dataset_metadata_provider) | safe }}</td>
                     </tr>
-<tr>
+                    <tr>
                         <th scope="row" class="p-1">Creator:</th>
-                        <td class="p-1">{{ dataset.creator }}</td>
+                        <td class="p-1">{{ dataset.creator.web() | safe }}</td>
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Contact point:</th>
-                        <td class="p-1">{{ dataset.dataset_contact_point }}</td>
+                        <td class="p-1">{{ (dataset.dataset_contact_point.web() if
+                            dataset.dataset_contact_point) | safe }}</td>
                     </tr>
 
-                                        <tr>
+                    <tr>
                         <th scope="row" class="p-1">Resource type:</th>
                         <td class="p-1">{{ dataset.resource_type }}</td>
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">License:</th>
-                        <td class="p-1">{{ dataset.dataset_license }}</td>
+                        <td class="p-1">{{ dataset.dataset_license |safe }}</td>
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Access rights:</th>
@@ -50,7 +52,8 @@
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Dataset publisher:</th>
-                        <td class="p-1">{{ dataset.dataset_publisher }}</td>
+                        <td class="p-1">{{ (dataset.dataset_publisher.web() if
+                            dataset.dataset_publisher) | safe }}</td>
                     </tr>
                     <tr>
                         <th scope="row" class="p-1">Dataset ID:</th>
