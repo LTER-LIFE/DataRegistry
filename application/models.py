@@ -10,17 +10,24 @@ For the help_text we are copying the description of the properties from
 the DCAT-AP specification.
 
 """
-import datetime
+import io
+import os.path
+import shutil
+import tempfile
+import zipfile
+
+import fiona
+import geopandas as gpd
+import shapely
 import json
 
-import rdflib
-import shapely
+from fiona.io import ZipMemoryFile
 from geoalchemy2 import Geometry
 from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
 from shapely import GeometryCollection
-from shapely.geometry import box
-from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, Float, Computed, or_, and_
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from shapely.geometry import box, shape
+from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, or_, and_
+from sqlalchemy.orm import relationship
 from sqlalchemy.testing.schema import Table
 
 from application.database import Base, db_session
@@ -28,6 +35,7 @@ from application.database import Base, db_session
 DCATAP_NS = Namespace("http://data.europa.eu/r5r/")
 SCHEMA_ORG_NS = Namespace("https://schema.org/")
 EML_COV_NS = Namespace("https://eml.ecoinformatics.org/coverage-2.2.0/")
+SPDX = Namespace("http://spdx.org/rdf/terms#")
 
 VS_PREFIX = "https://lter-life-experience.org/veluwesearch"
 VSA = Namespace(f"{VS_PREFIX}/Agent/")
@@ -36,6 +44,8 @@ VSDS = Namespace(f"{VS_PREFIX}/Dataset/")
 VSDT = Namespace(f"{VS_PREFIX}/DataTheme/")
 VSLD = Namespace(f"{VS_PREFIX}/LicenseDocument/")
 VSL = Namespace(f"{VS_PREFIX}/Location/")
+VSD = Namespace(f"{VS_PREFIX}/Distribution/")
+VSMT = Namespace(f"{VS_PREFIX}/MediaType/")
 
 metadata = Base.metadata
 
@@ -111,7 +121,7 @@ class Agent(Base):
         @return: string containing Name,type and/or mbox
         """
         if self.name and self.mbox:
-            return f"<a href='{self.name}>{self.mbox}</a>"
+            return f"<a href='mailto:{self.mbox}'>{self.name}</a>"
         if self.name:
             return self.name
         if self.mbox:
@@ -206,15 +216,15 @@ class Catalog(Base):
         if self.homepage:
             g.add((catalog, FOAF.homepage, Literal(self.description)))
         if self.creator:
-            g.add((catalog, DCTERMS.creator, VSA[str(self.creator.agent_id)]))
+            g.add((catalog, DCTERMS.creator, self.creator.to_graph()))
         if self.publisher:
-            g.add((catalog, DCTERMS.publisher, VSA[str(self.publisher.agent_id)]))
+            g.add((catalog, DCTERMS.publisher, self.publisher.to_graph()))
         if self.license:
-            g.add((catalog, DCTERMS.license, VSLD[str(self.license.license_id)]))
+            g.add((catalog, DCTERMS.license, self.license.to_graph()))
         for dataset in self.datasets_in_catalogue:
-            g.add((catalog, DCAT.dataset, VSDS[str(dataset.dataset_id)]))
+            g.add((catalog, DCAT.dataset, dataset.to_graph()))
         for theme in self.themes:
-            g.add((catalog, DCAT.themeTaxonomy, VSDT[str(theme.theme_id)]))
+            g.add((catalog, DCAT.themeTaxonomy, theme.to_graph()))
         return g
 
     def serialize(self, out_format="json-ld"):
@@ -318,21 +328,19 @@ class Dataset(Base):
         if self.resource_type:
             g.add((dataset, DCTERMS.type, Literal(self.resource_type)))
         if self.dataset_contact_point:
-            g.add((dataset, DCAT.contactPoint, VSA[str(self.dataset_contact_point.agent_id)]))
+            g.add((dataset, DCAT.contactPoint, self.dataset_contact_point.to_graph()))
         if self.dataset_publisher:
-            g.add((dataset, DCTERMS.publisher, VSA[str(self.publisher.agent_id)]))
+            g.add((dataset, DCTERMS.publisher, self.dataset_publisher.to_graph()))
         if self.dataset_metadata_provider:
-            g.add((dataset, SCHEMA_ORG_NS.provider, VSA[str(self.dataset_metadata_provider.agent_id)]))
+            g.add((dataset, SCHEMA_ORG_NS.provider, self.dataset_metadata_provider.to_graph()))
         if self.dataset_keywords:
             for keyword in self.dataset_keywords:
                 g.add((dataset, DCAT.keyword, Literal(keyword.name)))
         if self.temporal_coverage_start and self.temporal_coverage_end:
             g.add((dataset, DCTERMS.temporal, Literal(f"{self.temporal_coverage_start.isoformat()}/"
-                                                      f"{self.temporal_coverage_end.isoformat()}"
-                                                      )
-                   ))
+                                                      f"{self.temporal_coverage_end.isoformat()}")))
         if self.temporal_resolution:
-            #TODO: temporal resolution should be a xsd:duration
+            # TODO: temporal resolution should be a xsd:duration
             g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution)))
         if self.dataset_spatial_covarage:
             g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_covarage.location_id)]))
@@ -341,10 +349,10 @@ class Dataset(Base):
         if self.dataset_license:
             g.add((dataset, DCTERMS.license, VSLD[str(self.dataset_license.dataset)]))
         if self.access_rights:
-            #TODO: accessRights should be dcterms:RightsStatement
+            # TODO: accessRights should be dcterms:RightsStatement
             g.add((dataset, DCTERMS.accessRights, Literal(self.access_rights)))
         if self.dataset_catalog:
-            g.add((dataset, DCAT.catalog, VSC[str(self.dataset_catalog.catalog_id)]))
+            g.add((dataset, DCAT.catalog, self.dataset_catalog.to_graph()))
         if self.dataset_themes:
             for theme in self.dataset_themes:
                 g.add((dataset, DCAT.theme, VSDT[str(theme.data_theme_id)]))
@@ -387,31 +395,52 @@ class Distribution(Base):
     dataset = models.ForeignKey("Dataset", on_delete=models.CASCADE)
     """
     distribution_dataset_id = Column(Integer, ForeignKey('Dataset.dataset_id'))
-    catalog = relationship("Dataset", foreign_keys=[distribution_dataset_id])
+    dataset = relationship("Dataset", foreign_keys=[distribution_dataset_id])
 
     title = Column(String(255), nullable=True)
     description = Column(String(255), nullable=True)
-    external_download_url = Column(String(255), nullable=True)
-    external_access_url = Column(String(255), nullable=True)
+    download_url = Column(String(255), nullable=True)
+    access_url = Column(String(255), nullable=True)
 
     distribution_mediatype_id = Column(Integer, ForeignKey('MediaType.mediatype_id'))
-    format = relationship("MediaType", foreign_keys=[distribution_mediatype_id])
+    distribution_format = relationship("MediaType", foreign_keys=[distribution_mediatype_id])
 
     distribution_license_id = Column(Integer, ForeignKey('LicenseDocument.license_document_id'))
-    license = relationship("LicenseDocument", foreign_keys=[distribution_license_id])
+    distribution_license = relationship("LicenseDocument", foreign_keys=[distribution_license_id])
 
     distribution_checksum_id = Column(Integer, ForeignKey('Checksum.checksum_id'))
-    checksum = relationship("Checksum", foreign_keys=[distribution_checksum_id])
+    distribution_checksum = relationship("Checksum", foreign_keys=[distribution_checksum_id])
 
-    def to_jsonld(self):
-        result = dict()
-        result["@type"] = "dcat:Distribution"
-        result["dcat:accessURL"] = self.access_url
-        if self.title:
-            result["dct:title"] = self.title
+    def to_graph(self):
+        """
+
+        @return: Agent object in RDFlib graph format
+        """
+        g = Graph()
+        # Add namespaces to the graph
+        g.bind("foaf", FOAF)
+        g.bind("vp_agent", VSA)
+
+        # Create a foaf:Agent instance
+        distribution = VSD[str(self.distribution_id)]
+
+        # Add properties to the agent
+        g.add((distribution, RDF.type, DCAT.Distribution))
+        g.add((distribution, DCTERMS.title, Literal(self.title)))
         if self.description:
-            result["dct:description"] = self.description
-        return result
+            g.add((distribution, DCTERMS.description, Literal(self.description)))
+        if self.download_url:
+            g.add((distribution, DCAT.downloadURL, Literal(self.download_url)))
+        if self.access_url:
+            g.add((distribution, DCAT.accessURL, Literal(self.access_url)))
+        if self.distribution_format:
+            g.add((distribution, DCTERMS.format, self.distribution_format.to_graph()))
+        if self.distribution_license:
+            g.add((distribution, DCTERMS.license, self.distribution_license.to_graph()))
+        if self.distribution_checksum:
+            g.add((distribution, SPDX.Checksup, self.distribution_checksum.to_graph()))
+
+        return g
 
     def __str__(self):
         return self.title
@@ -450,6 +479,35 @@ class DataService(Base):
 
     format = relationship('MediaType', secondary='dataserviceMediaType')
 
+    def to_graph(self):
+        """
+
+        @return: Agent object in RDFlib graph format
+        """
+        g = Graph()
+        # Add namespaces to the graph
+        g.bind("foaf", FOAF)
+        g.bind("vp_agent", VSA)
+
+        # Create a foaf:Agent instance
+        data_service = VSDS[str(self.dataservice_id)]
+
+        # Add properties to the agent
+        g.add((data_service, RDF.type, DCAT.DataService))
+        g.add((data_service, DCTERMS.title, Literal(self.title)))
+        if self.description:
+            g.add((data_service, DCTERMS.description, Literal(self.description)))
+        if self.endpoint_url:
+            g.add((data_service, DCAT.endpointURL, Literal(self.endpoint_url)))
+        if self.access_url:
+            g.add((data_service, DCAT.Catalog, self.catalog.to_graph()))
+        if self.distribution_format:
+            g.add((data_service, DCTERMS.LicenseDocument, self.license.to_graph()))
+        if self.distribution_license:
+            g.add((data_service, DCTERMS.format, self.format.to_graph()))
+
+        return g
+
 
 class MediaType(Base):
     """A set of media types from the DCAT-AP vocabulary."""
@@ -462,6 +520,33 @@ class MediaType(Base):
     code = Column(String(10), nullable=True, unique=True)
     media_type = Column(String(50), nullable=True)
     description = Column(Text, nullable=True)
+
+    def to_graph(self):
+        """
+        TODO: some are a bit guessed
+        @return: MediaType object in RDFlib graph format
+        """
+        g = Graph()
+        # Add namespaces to the graph
+        g.bind("foaf", FOAF)
+        g.bind("vp_agent", VSA)
+
+        # Create a foaf:Agent instance
+        media_type = VSMT[str(self.mediatype_id)]
+
+        # Add properties to the agent
+        g.add((media_type, RDF.type, DCTERMS.MediaType))
+
+        if self.description:
+            g.add((media_type, DCTERMS.description, Literal(self.description)))
+        if self.extension:
+            g.add((media_type, DCTERMS.extent, Literal(self.extension)))
+        if self.code:
+            g.add((media_type, DCTERMS.format, self.catalog.to_graph()))
+        if self.media_type:
+            g.add((media_type, DCTERMS.type, self.license.to_graph()))
+
+        return g
 
     def __str__(self):
         return self.extension
@@ -491,6 +576,7 @@ class LicenseDocument(Base):
             return self.code
         if self.label:
             return self.label
+        return ""
 
     def web(self):
         if self.label and self.code:
@@ -605,6 +691,39 @@ class Location(Base):
                 db_session.commit()
                 db_session.flush()
         return db_location
+
+    @classmethod
+    def from_shapefile(cls, shapefile, persist=True):
+        try:
+            zipfile_ob = zipfile.ZipFile(shapefile)
+            tmpdirname = None
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                shape_files = []
+                for zipped_shape_file in zipfile_ob.filelist:
+                    if not zipped_shape_file.is_dir():
+                        extracted_shape_file = f'{tmpdirname}/{zipped_shape_file.filename.split("/")[-1]}'
+                        with open(extracted_shape_file, 'wb') as f:
+                            f.write(zipfile_ob.read(zipped_shape_file.filename))
+                            shape_files.append(extracted_shape_file)
+
+                shape_file = [shp for shp in shape_files if shp.endswith(".shp")][0]
+
+                shape_dataframe = gpd.read_file(shape_file)
+                shape_dataframe = shape_dataframe.to_crs(4326)
+                geoms = []
+                for idx, record in shape_dataframe.iterrows():
+                    # Get the geometry from the record
+                    geometry = shape(record['geometry'])
+                    geoms.append(geometry)
+                    spatial_coverage_wkb = GeometryCollection(geoms)
+                    spatial_coverage_wkt = shapely.to_wkt(spatial_coverage_wkb)
+
+                    # To location
+                    return cls.add_or_update_location(geometry=spatial_coverage_wkt, persist=persist)
+
+        finally:
+            if os.path.exists(tmpdirname):
+                shutil.rmtree(tmpdirname)
 
     def to_shape(self, field="geometry", to="wkt"):
         if field in self.__dict__.keys():

@@ -1,6 +1,10 @@
+import io
 from datetime import datetime, timedelta
 
+import shapely
 from geoalchemy2 import load_spatialite
+
+from shapely.geometry import shape
 from sqlalchemy.event import listen
 from sqlalchemy.testing import eq_
 
@@ -8,6 +12,8 @@ from application.database import db_session
 from application.models import metadata, Dataset, Agent, Location, LicenseDocument
 from sqlalchemy import create_engine
 import unittest
+import fiona
+
 from config import Config
 
 
@@ -141,6 +147,22 @@ class TestDataset(unittest.TestCase):
         all_db_datasets = db_session.query(Dataset).all()
 
         assert len(all_db_datasets) == 1
+
+    def test_create_dataset_from_shapefile(self):
+        shapefile_path = "shapefile/veluwe.zip"
+
+
+        Location.from_shapefile(shapefile_path, persist=True)
+
+        db_session.commit()
+        db_session.flush()
+
+        all_db_locations = db_session.query(Location).all()
+
+        assert len(all_db_locations) == 1
+
+        print(all_db_locations[0].to_shape(field="bbox", to="wkt"))
+        print(all_db_locations[0].to_shape(field="centroid", to="wkt"))
 
 
 if __name__ == '__main__':
