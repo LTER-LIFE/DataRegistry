@@ -860,14 +860,14 @@ template {
 
 @font-face {
     font-family: 'EB Garamond';
-    src: url(../themes/fonts/EB_Garamond/static/EBGaramond-Regular.ttf) format("truetype");
+    src: url(/static/themes/fonts/EB_Garamond/static/EBGaramond-Regular.ttf) format("truetype");
     font-style: normal;
     font-display: fallback
 }
 
 @font-face {
     font-family: 'EB Garamond';
-    src: url(../themes/fonts/EBGaramond-SemiBold.ttf) format("truetype");
+    src: url(/static/themes/fonts/EBGaramond-SemiBold.ttf) format("truetype");
     font-weight: 600;
     font-style: normal;
     font-display: fallback
@@ -875,7 +875,7 @@ template {
 
 @font-face {
     font-family: 'Open Sans';
-    src: url(../themes/fonts/OpenSans-Regular.ttf) format("truetype");
+    src: url(/static/themes/fonts/OpenSans-Regular.ttf) format("truetype");
     font-weight: 400;
     font-style: normal;
     nioo/assetsfont-display: fallback
@@ -883,7 +883,7 @@ template {
 
 @font-face {
     font-family: 'Open Sans';
-    src: url(../themes/fonts/OpenSans-SemiBold.ttf) format("truetype");
+    src: url(/static/themes/fonts/OpenSans-SemiBold.ttf) format("truetype");
     font-weight: 600;
     font-style: normal;
     font-display: fallback
@@ -891,7 +891,7 @@ template {
 
 @font-face {
     font-family: 'Open Sans';
-    src: url(../themes/fonts/OpenSans-Bold.ttf) format("truetype");
+    src: url(/static/themes/fonts/OpenSans-Bold.ttf) format("truetype");
     font-weight: 700;
     font-style: normal;
     font-display: fallback
