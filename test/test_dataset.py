@@ -1,10 +1,5 @@
-import io
 from datetime import datetime, timedelta
-
-import shapely
 from geoalchemy2 import load_spatialite
-
-from shapely.geometry import shape
 from sqlalchemy.event import listen
 from sqlalchemy.testing import eq_
 
@@ -12,7 +7,6 @@ from application.database import db_session
 from application.models import metadata, Dataset, Agent, Location, LicenseDocument
 from sqlalchemy import create_engine
 import unittest
-import fiona
 
 from config import Config
 
