@@ -46,7 +46,10 @@ def add_dataset(dataset_id=None):
     # Validate the add study form
     if request.url_rule.rule.find("edit") > -1:
         dataset = Dataset.query.get(dataset_id)
-        dataset_form.from_dataset(dataset)
+        if not dataset:
+            flash(f"{dataset_id} does not exist.", "error")
+        else:
+            dataset_form.from_dataset(dataset)
 
     if request.url_rule.rule.find("delete") > -1:
         dataset = Dataset.query.get(dataset_id)
@@ -82,6 +85,10 @@ def datasets(dataset_id=None):
 @main_bp.route('/about')
 def about():
     return render_template('about.html')
+
+@main_bp.route('/instructions')
+def instructions():
+    return render_template('veluwe-metadata-portal-instructions.html')
 
 @main_bp.route('/contact')
 def contact():

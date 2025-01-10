@@ -101,7 +101,7 @@ class Agent(Base):
             g.add((agent, DCAT.mbox, Literal(self.mbox)))
         return g
 
-    def serialize(self, out_format="json-ld"):
+    def rdf_serialize(self, out_format="json-ld"):
         f"""
         Runs the serialize function of RDFlib
 
@@ -112,7 +112,7 @@ class Agent(Base):
         return self.to_graph().serialize(format=out_format)
 
     def __str__(self):
-        return json.dumps(self.serialize(), indent=1)
+        return self.web()
 
     def web(self):
         """
@@ -227,7 +227,7 @@ class Catalog(Base):
             g.add((catalog, DCAT.themeTaxonomy, theme.to_graph()))
         return g
 
-    def serialize(self, out_format="json-ld"):
+    def rdf_serialize(self, out_format="json-ld"):
         f"""
         Runs the serialize function of RDFlib
 
@@ -366,7 +366,7 @@ class Dataset(Base):
             g.add((dataset, DCTERMS.identifier, Literal(self.public_id)))
         return g
 
-    def serialize(self, out_format="json-ld"):
+    def rdf_serialize(self, out_format="json-ld"):
         f"""
         Runs the serialize function of RDFlib
 
