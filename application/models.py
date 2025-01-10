@@ -10,18 +10,13 @@ For the help_text we are copying the description of the properties from
 the DCAT-AP specification.
 
 """
-import io
 import os.path
 import shutil
 import tempfile
 import zipfile
 
-import fiona
 import geopandas as gpd
 import shapely
-import json
-
-from fiona.io import ZipMemoryFile
 from geoalchemy2 import Geometry
 from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
 from shapely import GeometryCollection
