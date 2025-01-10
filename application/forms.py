@@ -310,19 +310,25 @@ class DatasetForm(FlaskForm):
             self.metadata_provider_name.data = dataset.dataset_metadata_provider.name
             self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
 
+        if dataset.dataset_publisher:
+            self.publisher.data = dataset.dataset_publisher.name
+
+        if dataset.dataset_spatial_covarage:
+            self.spatial_covarage.data = dataset.dataset_spatial_covarage.to_shape()
+
+        if dataset.dataset_license:
+            self.license.data = dataset.dataset_license.code
+
         self.release_date.data = dataset.release_date
         self.language.data = dataset.language
         self.title.data = dataset.title
         self.description.data = dataset.description
         self.resource_type.data = dataset.resource_type
-        self.publisher.data = dataset.dataset_publisher.name
         self.public_id.data = dataset.public_id
         self.landing_page.data = dataset.landing_page
         self.temporal_coverage_start.data = dataset.temporal_coverage_start
         self.temporal_coverage_end.data = dataset.temporal_coverage_end
         self.temporal_resolution.data = dataset.temporal_resolution
-        self.spatial_covarage.data = dataset.dataset_spatial_covarage.to_shape()
         self.spatial_resolution.data = dataset.spatial_resolution
-        self.license.data = dataset.dataset_license.code
         self.access_rights.data = dataset.access_rights
 
