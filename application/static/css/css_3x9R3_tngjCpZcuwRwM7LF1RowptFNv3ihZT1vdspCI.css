@@ -891,7 +891,7 @@ template {
 
 @font-face {
     font-family: 'Open Sans';
-    src: url(themes/fonts/OpenSans-Bold.ttf) format("truetype");
+    src: url(../static/themes/fonts/OpenSans-Bold.ttf) format("truetype");
     font-weight: 700;
     font-style: normal;
     font-display: fallback
