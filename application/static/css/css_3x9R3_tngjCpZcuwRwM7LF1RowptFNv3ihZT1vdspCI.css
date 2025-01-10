@@ -860,14 +860,14 @@ template {
 
 @font-face {
     font-family: 'EB Garamond';
-    src: url(static/themes/fonts/EB_Garamond/static/EBGaramond-Regular.ttf) format("truetype");
+    src: url(../static/themes/fonts/EB_Garamond/static/EBGaramond-Regular.ttf) format("truetype");
     font-style: normal;
     font-display: fallback
 }
 
 @font-face {
     font-family: 'EB Garamond';
-    src: url(static/themes/fonts/EBGaramond-SemiBold.ttf) format("truetype");
+    src: url(../static/themes/fonts/EBGaramond-SemiBold.ttf) format("truetype");
     font-weight: 600;
     font-style: normal;
     font-display: fallback
@@ -875,7 +875,7 @@ template {
 
 @font-face {
     font-family: 'Open Sans';
-    src: url(static/themes/fonts/OpenSans-Regular.ttf) format("truetype");
+    src: url(../static/themes/fonts/OpenSans-Regular.ttf) format("truetype");
     font-weight: 400;
     font-style: normal;
     nioo/assetsfont-display: fallback
@@ -883,7 +883,7 @@ template {
 
 @font-face {
     font-family: 'Open Sans';
-    src: url(static/themes/fonts/OpenSans-SemiBold.ttf) format("truetype");
+    src: url(../static/themes/fonts/OpenSans-SemiBold.ttf) format("truetype");
     font-weight: 600;
     font-style: normal;
     font-display: fallback
@@ -891,7 +891,7 @@ template {
 
 @font-face {
     font-family: 'Open Sans';
-    src: url(static/themes/fonts/OpenSans-Bold.ttf) format("truetype");
+    src: url(themes/fonts/OpenSans-Bold.ttf) format("truetype");
     font-weight: 700;
     font-style: normal;
     font-display: fallback
@@ -989,7 +989,7 @@ details input[data-textual-input=true] {
 }
 
 select {
-    background-image: url(/themes/nioo/assets/images/chevron-down.svg);
+    background-image: url(../static/themes/nioo/assets/images/chevron-down.svg);
     background-size: 1em .44em;
     background-repeat: no-repeat;
     padding-right: 4.3em;
@@ -1399,7 +1399,7 @@ ul>li:before {
     padding-left: 2em;
     background-position: 0 .7em;
     background-repeat: no-repeat;
-    background-image: url(/themes/nioo/assets/images/bullet-blue.svg)
+    background-image: url(../static/themes/nioo/assets/images/bullet-blue.svg)
 }
 
 .ck-editor__editable ul+*,
@@ -4125,7 +4125,7 @@ a.skip-link.is-active {
     height: 2rem;
     text-indent: -9999px;
     padding: 2.2rem;
-    background-image: url(/themes/nioo/assets/images/cross-white.svg);
+    background-image: url(../static/themes/nioo/assets/images/cross-white.svg);
     fill: #fff
 }
 
@@ -6466,7 +6466,7 @@ html.header--menu-top--oh-active .site-logo span.site-name {
 .paragraph--type--map-switcher div[role=tablist] button.switcher.map {
     padding-left: 16px;
     background-size: 11px 16px;
-    background-image: url(/themes/nioo/assets/images/location-inversed.svg);
+    background-image: url(../static/themes/nioo/assets/images/location-inversed.svg);
     padding-right: 1.25rem;
     border-right: .1rem solid var(--palette-border, #e2dfdc)
 }
@@ -6474,7 +6474,7 @@ html.header--menu-top--oh-active .site-logo span.site-name {
 .paragraph--type--map-switcher div[role=tablist] button.switcher.list {
     padding-left: 22px;
     background-size: 17px 14px;
-    background-image: url(/themes/nioo/assets/images/list.svg)
+    background-image: url(../static/themes/nioo/assets/images/list.svg)
 }
 
 .paragraph--type--map-switcher div[role=tablist] button.switcher.active {
