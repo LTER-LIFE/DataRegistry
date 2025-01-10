@@ -23,15 +23,12 @@
 {% endfor %}
 <div align="center">
     <h1> Register your dataset </h1>
-    <div>Please click <a href="">here</a> for instructions for registering your dataset in the Veluwe Metadata
-      Portal
-    </div>
-</div>
 <br/>
 <form action="" method="POST" enctype="multipart/form-data" novalidate>
 <div align="center">
 	<p>
-		Please follow these <a href="">instructions</a> when registering your dataset in the Veluwe Metadata Portal.
+		Please follow these <a href="{{url_for('main_bp.instructions')}}" target="popup">instructions</a>
+        when registering your dataset in the Veluwe Metadata Portal.
 	</p>
 </div>
 <br/>
