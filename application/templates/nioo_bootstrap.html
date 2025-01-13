@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="icon" href="{{url_for('static', filename='favicon.ico')}}" type="image/vnd.microsoft.icon">
-    <title>{% block title %}{% endblock %} (beta)</title>
+    <title>{% block title %}{% endblock %}</title>
 
     <!-- LTER LIFE CSS STYLESHEETS adaptation of LTER-LIFE, used with permission of NIOO-KNAW/LTER-LIFE -->
     <link rel="stylesheet" media="all" href="{{ url_for('static', filename='css/css_XSv616_-UZHUts9fFuyg9mffzNV0U85G4aYefDjhuYk.css')}}" type="text/css">
@@ -135,7 +135,7 @@
                     </div>
                 </div>
                 <div class="region page-header--without-branding header-title-section">
-                    <span class="site-name">Veluwe Metadata Portal</span>
+                    <span class="site-name">{% block title %}{% endblock %}</span>
                 </div>
                 <div class="page-header--without-branding">
                     <div class="region region-header">
