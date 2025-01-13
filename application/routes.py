@@ -16,6 +16,8 @@ url_prefix = f"{proxy_prefix}/".replace("//", "/") if proxy_prefix else "/"
 # Blueprint Configuration
 main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_folder="static", url_prefix=url_prefix)
 
+
+TITLE = "Veluwe Metadata Portal (Beta)"
 @main_bp.route('/')
 def home(dataset_id=None):
     datasets = db_session.query(Dataset).all()
@@ -34,7 +36,7 @@ def home(dataset_id=None):
                                       }
         datasets_shapes[dataset.dataset_id] = dataset_dict
 
-    return render_template('index.html', list_o_geo=datasets_shapes)
+    return render_template('index.html', list_o_geo=datasets_shapes, title=TITLE)
 
 
 @main_bp.route('/S3cr3T/datasets/edit/<dataset_id>')
@@ -71,7 +73,7 @@ def add_dataset(dataset_id=None):
         # Feedback
         flash(("Entry '{}' is now being reviewed!").format(dataset.title))
 
-    return render_template('dataset_form.html', form=dataset_form, name=name)
+    return render_template('dataset_form.html', form=dataset_form, name=name, title=TITLE)
 
 
 @main_bp.route('/datasets')
@@ -80,16 +82,16 @@ def datasets(dataset_id=None):
 
     datasets_shapes = []
 
-    return render_template('dataset_table.html', datasets=datasets)
+    return render_template('dataset_table.html', datasets=datasets, title=TITLE)
 
 @main_bp.route('/about')
 def about():
-    return render_template('about.html')
+    return render_template('about.html', title=TITLE)
 
 @main_bp.route('/instructions')
 def instructions():
-    return render_template('veluwe-metadata-portal-instructions.html')
+    return render_template('veluwe-metadata-portal-instructions.html', title=TITLE)
 
 @main_bp.route('/contact')
 def contact():
-    return render_template('contact.html')
+    return render_template('contact.html', title=TITLE)
