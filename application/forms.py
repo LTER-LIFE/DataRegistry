@@ -150,7 +150,7 @@ class DatasetForm(FlaskForm):
     temporal_coverage_start = StringField("Start date", validators=[DataRequired()],
                                           description="The period of time when the data collection started. Format: "
                                                       "either YYYY or YYYY-MM-DD.")
-    temporal_coverage_end = StringField("End date", validators=[],
+    temporal_coverage_end = StringField("End date", validators=[DataRequired()],
                                         description="The period of time when the data collection ended. NB: If data "
                                                     "collection is ongoing, please select the latest period of time "
                                                     "that is included in the current version of the dataset. Format: "
