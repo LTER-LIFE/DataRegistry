@@ -13,7 +13,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from wtforms import StringField, SelectField, RadioField
 from wtforms.fields.simple import SubmitField, TextAreaField
-from wtforms.validators import DataRequired, AnyOf, InputRequired
+from wtforms.validators import DataRequired, AnyOf, InputRequired, ValidationError
 
 from application.models import Dataset, Agent, Location, LicenseDocument, Keyword
 
@@ -32,27 +32,38 @@ def parse_times(iso_time_string):
     except ValueError as e:
         if re.search(r"[0-2][0-9][0-9][0-9]-[0-1][0-9]", iso_time_string):
             return datetime.strptime(iso_time_string, "%Y-%m")
-        if re.search(r"[0-2][0-9][0-9][0-9]", iso_time_string):
+        elif re.search(r"[0-2][0-9][0-9][0-9][0-1][0-9]", iso_time_string):
+            return datetime.strptime(iso_time_string, "%Y%m")
+        elif re.search(r"[0-2][0-9][0-9][0-9]", iso_time_string):
             return datetime.strptime(iso_time_string, "%Y")
-        if re.search(r"[0-2][0-9][0-9][0-9]-[0-3][0-9][0-9]", iso_time_string):
+        elif re.search(r"[0-2][0-9][0-9][0-9]-[0-3][0-9][0-9]", iso_time_string):
             print("Ordinal date is fully not supported yet, pick year")
             return datetime.strptime(iso_time_string[:4], "%Y")
 
 
-class RequiredOr(InputRequired):
+class RequiredOr(object):
     # a validator which makes a field required if
     # another field is set and has a truthy value
 
-    def __init__(self, other_field_name, *args, **kwargs):
+    def __init__(self, other_field_name, message=None):
         self.other_field_name = other_field_name
-        super(RequiredOr, self).__init__(*args, **kwargs)
+        self.field_name = None
+        self.message = message
+        if not self.message:
+            self.message = f'One of the fields "{self.other_field_name}" or "{self.field_name}" should be filled in ' \
+                           f'form'
 
     def __call__(self, form, field):
+        self.field_name = field.name
         other_field = form._fields.get(self.other_field_name)
         if other_field is not None:
-            raise Exception(f'One of the fields "{self.other_field_name}" or "{field.name}" should be filled in form')
-        if bool(other_field.data):
-            super(RequiredOr, self).__call__(form, field)
+            if bool(other_field.data) is False and bool(field.data) is False:
+                raise ValidationError(self.message)
+        else:
+            if bool(field.data) is not None:
+                if bool(other_field.data) is True and bool(field.data) is True:
+                    raise ValidationError(self.message)
+
 
 
 class DatasetForm(FlaskForm):
@@ -160,11 +171,11 @@ class DatasetForm(FlaskForm):
                                       description="The temporal resolution of the dataset is the minimm temporal "
                                                   "separation between records in the dataset. ")
 
-    spatial_covarage = StringField("Spatial coverage", validators=[],
+    spatial_covarage = StringField("Spatial coverage", validators=[RequiredOr("spatial_covarage_shapefile")],
                                    description="The spatial extent that is covered by the dataset. Use the interactive "
                                                "map to draw the study area of your dataset.")
 
-    spatial_covarage_shapefile = FileField("Spatial coverage from file", validators=[DataRequired()],
+    spatial_covarage_shapefile = FileField("Spatial coverage from file", validators=[RequiredOr("spatial_covarage")],
                                            description="Upload a zip file containing the 4 files that make up a "
                                                        "shapefile (i.e., .shp, .shx, .dbf, .prj).")
 

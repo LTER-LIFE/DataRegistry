@@ -860,7 +860,7 @@ template {
 
 @font-face {
     font-family: 'EB Garamond';
-    src: url(../static/themes/fonts/EB_Garamond/static/EBGaramond-Regular.ttf) format("truetype");
+    src: url(../static/themes/fonts/EBGaramond-Regular.ttf) format("truetype");
     font-style: normal;
     font-display: fallback
 }
