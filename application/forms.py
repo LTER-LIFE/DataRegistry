@@ -176,7 +176,8 @@ class DatasetForm(FlaskForm):
                                                "map to draw the study area of your dataset.")
 
     spatial_covarage_shapefile = FileField("Spatial coverage from file", validators=[RequiredOr("spatial_covarage")],
-                                           description="Upload a zip file containing the 4 files that make up a "
+                                           description="The spatial extent that is covered by the dataset. "
+                                                       "Upload a zip file containing the 4 files that make up a "
                                                        "shapefile (i.e., .shp, .shx, .dbf, .prj).")
 
     spatial_resolution = StringField("Spatial resolution", description="If the dataset contains data acquired over a "
