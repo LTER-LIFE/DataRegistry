@@ -49,7 +49,7 @@ def home(dataset_id=None):
 @main_bp.route('/S3cr3T/datasets/delete/<dataset_id>')
 @main_bp.route('/add_dataset', methods=['GET', 'POST'])
 def add_dataset(dataset_id=None):
-    try:
+    #
         name = None
         dataset_form = DatasetForm()
         # Validate the add study form
@@ -60,6 +60,7 @@ def add_dataset(dataset_id=None):
             else:
                 dataset_form.from_dataset(dataset)
 
+
         if request.url_rule.rule.find("delete") > -1:
             dataset = Dataset.query.get(dataset_id)
             if not dataset:
@@ -67,6 +68,7 @@ def add_dataset(dataset_id=None):
             db_session.delete(dataset)
             db_session.commit()
             db_session.flush()
+            flash(f"Deleted dataset {dataset_id}", "success")
 
         if request.url_rule.rule.find("copy") > -1:
             pass
@@ -78,14 +80,14 @@ def add_dataset(dataset_id=None):
             db_session.commit()
             db_session.flush()
             # Feedback
-            flash(("Entry '{}' is now being reviewed!").format(dataset.title))
+            flash(f"Added dataset with title {dataset.title}.", "success")
 
         page = render_template('dataset_form.html', form=dataset_form, name=name, title=TITLE)
 
-    except Exception as e:
-        abort(500, description="Failed to mutate dataset.", original_exception=e)
+    #except Exception as e:
+    #    abort(500, description="Failed to mutate dataset.", original_exception=e)
 
-    return page
+        return page
 
 @main_bp.route('/datasets')
 def datasets(dataset_id=None):
