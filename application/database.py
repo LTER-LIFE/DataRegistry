@@ -1,9 +1,9 @@
 from geoalchemy2 import load_spatialite
-from sqlalchemy import create_engine, NullPool
+from sqlalchemy import create_engine
 from sqlalchemy.event import listen
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy_utils import database_exists
 from config import Config
 
 if Config.SQLALCHEMY_DATABASE_URI.find("sqlite") > -1:
@@ -26,9 +26,10 @@ Base.query = db_session.query_property()
 
 
 def validate_db():
+    """
+    Create database if not excist, does not work very well
+    """
     if not database_exists(engine.url):
-        #from .models import Agent
-
         Base.metadata.create_all(bind=engine) # Create new DB
         print(f"Database Created {engine.url}")  # Verifies if database is there or not.
     else:
