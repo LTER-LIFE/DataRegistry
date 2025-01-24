@@ -11,10 +11,17 @@ from flask_jwt_extended import JWTManager
 import identity.web
 
 import logging
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
-def create_app():
 
+
+def create_app():
+    """
+    Create app is ran to fire up the flask application.
+
+    :return: Flask application object
+    """
     proxy_prefix = environ.get('PROXY_PREFIX')
     url_prefix = f"/{proxy_prefix}/".rstrip("/") if proxy_prefix else ""
 
@@ -39,13 +46,10 @@ def create_app():
 
         app.register_blueprint(blueprint=routes.main_bp, url_prefix=url_prefix)
 
-        app.msal = identity.web.Auth(
-            session=session,
-            authority=app.config.get("AUTHORITY_URL"),
-            client_id=app.config.get("AZURE_CLIENT_ID"),
-            client_credential=app.config.get("AZURE_CLIENT_SECRET"),
-
-        )
+        app.msal = identity.web.Auth(session=session, authority=app.config.get("AUTHORITY_URL"),
+                                     client_id=app.config.get("AZURE_CLIENT_ID"),
+                                     client_credential=app.config.get("AZURE_CLIENT_SECRET")
+                                     )
 
         app.jwt = JWTManager(app)
 

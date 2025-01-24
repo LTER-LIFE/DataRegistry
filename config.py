@@ -9,6 +9,7 @@ if socket.gethostname() == "NIOO0035":
 else:
     load_dotenv(path.join(basedir, "config/ecosearch_local.conf"))
 
+
 class Config(object):
     SERVER_NAME = environ.get('SERVER_NAME') or "localhost:5000"
     SECRET_KEY = environ.get('SECRET_KEY') or urandom(24)

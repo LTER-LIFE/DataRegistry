@@ -14,6 +14,9 @@ from config import Config
 class TestDataset(unittest.TestCase):
 
     def setUp(self):
+        """
+        Setup function to build flask application in memory
+        """
         print("Run setup")
         engine = create_engine(echo=True, connect_args={"check_same_thread": False}, url='sqlite:///:memory:')
 
@@ -31,6 +34,9 @@ class TestDataset(unittest.TestCase):
         print("Finished running setup")
 
     def tearDown(self):
+        """
+        Teardown database after use
+        """
         db_session.remove()
 
     def test_create_dataset(self):
@@ -69,19 +75,19 @@ class TestDataset(unittest.TestCase):
             # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
             dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry="GEOMETRYCOLLECTION ("
                                                                                         "POLYGON ((5.661704 52.067003, "
-                                                                                                  "5.848422 52.09401, "
-                                                                                                  "5.917068 52.01294, "
-                                                                                                  "5.680925 51.94527, "
-                                                                                                  "5.661704 52.067003"
-                                                                                                  "))"
+                                                                                        "5.848422 52.09401, "
+                                                                                        "5.917068 52.01294, "
+                                                                                        "5.680925 51.94527, "
+                                                                                        "5.661704 52.067003"
+                                                                                        "))"
                                                                                         ")")
 
             # licence -> LicenceDocument
             dataset.license = LicenseDocument(code="CC-BY-4.0")
 
             return dataset
-        dataset = to_dataset()
 
+        dataset = to_dataset()
 
         db_session.add(dataset)
         db_session.commit()
@@ -127,12 +133,15 @@ class TestDataset(unittest.TestCase):
 
             # spatial_covarage -> Location
             # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry="POLYGON((5.675194 52.089633, 5.675194 52.15877, 5.776763 52.15877, 5.776763 52.089633, 5.675194 52.089633))")
+            dataset.dataset_spatial_covarage = Location.add_or_update_location(
+                geometry="POLYGON((5.675194 52.089633, 5.675194 52.15877, 5.776763 52.15877, 5.776763 52.089633, "
+                         "5.675194 52.089633))")
 
             # licence -> LicenceDocument
             dataset.license = LicenseDocument(code="CC-BY-4.0")
 
             return dataset
+
         dataset = to_dataset()
         db_session.add(dataset)
         db_session.commit()
@@ -144,7 +153,6 @@ class TestDataset(unittest.TestCase):
 
     def test_create_dataset_from_shapefile(self):
         shapefile_path = "shapefile/veluwe.zip"
-
 
         Location.from_shapefile(shapefile_path, persist=True)
 
