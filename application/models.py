@@ -100,9 +100,9 @@ class Agent(Base):
         f"""
         Runs the serialize function of RDFlib
 
-        @param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
+        :param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
 
-        @return:
+        :return: the searialized graph in the format passed in out_fomat
         """
         return self.to_graph().serialize(format=out_format)
 
@@ -124,6 +124,17 @@ class Agent(Base):
 
     @classmethod
     def add_or_update_agent(cls, name="", organisation="", mbox="", persist=True):
+        """
+        Add or update an agent to the database, using a name, organization, mailbox
+
+        An Agent can be a Person or an Organization
+
+        :param name: name of person
+        :param organisation: Name of organization
+        :param mbox: usually an email address
+        :param persist: True to persist in the database False to just create the objects
+        :return: An Agent Object
+        """
         db_agent = db_session.query(Agent).filter(
             or_(and_(Agent.name == organisation, Agent.type == 'Organisation', Agent.mbox == mbox),
                 and_(Agent.name == name, Agent.type == 'Person', Agent.mbox == mbox))).first()
@@ -557,6 +568,10 @@ class LicenseDocument(Base):
     # Recommended properties
     @property
     def type(self):
+        """
+
+        :return: url or label
+        """
         return self.url_general or self.label
 
     label = Column(String(255), nullable=True)
@@ -574,6 +589,10 @@ class LicenseDocument(Base):
         return ""
 
     def web(self):
+        """
+
+        :return: a web viewable version of a license
+        """
         if self.label and self.code:
             return f"<a href='{self.name}>{self.mbox}</a>"
         if self.code:
@@ -630,14 +649,14 @@ class Keyword(Base):
     @classmethod
     def add_or_update_keywords(cls, keyword_names=None, keyword_ids=None, persist=True):
         """
-        Add or Update a user, Add a user to the database, if it does not yet exist.
+        Add or Update a keyword, Add a keyword to the database, if it does not yet exist.
 
 
-        @param keyword_names:
-        @param keyword_ids: TODO: does this need to stay?
-        @param persist: default True, if persist false is selected, just the data model will be built, but nothing will
+        :param keyword_names:
+        :param keyword_ids: TODO: does this need to stay?
+        :param persist: default True, if persist false is selected, just the data model will be built, but nothing will
                     be saved in database
-        @return:
+        :return:
         """
         db_keywords = []
         for keyword in keyword_names.split(","):
@@ -668,7 +687,16 @@ class Location(Base):
 
     # datasets_at_location = relationship("Dataset", back_populates="dataset_spatial_coverage", lazy=False)
     @classmethod
-    def add_or_update_location(cls, location_id=None, bbox=None, centroid=None, geometry=None, persist=True):
+    def add_or_update_location(cls, geometry=None, persist=True):
+        """
+        Add or update a Location object to the database, using a geometry
+
+        An Agent can be a Person or an Organization
+
+        :param geometry:
+        :param persist:
+        :return:
+        """
         db_location = db_session.query(Location).filter_by(geometry=geometry).first()
         if not db_location:
             db_location = Location()
@@ -689,6 +717,15 @@ class Location(Base):
 
     @classmethod
     def from_shapefile(cls, shapefile, persist=True):
+        """
+        Create a Location object from a zipped shapefile
+        :param shapefile: ARCgis shapefile in zip format
+        :param persist: just create object or persist in database
+
+        TODO: Warning the input size of the shapefile is not checked, shapes larger then N should be simplefied
+
+        :return: Location object
+        """
         try:
             zipfile_ob = zipfile.ZipFile(shapefile)
             tmpdirname = None
@@ -721,6 +758,13 @@ class Location(Base):
                 shutil.rmtree(tmpdirname)
 
     def to_shape(self, field="geometry", to="wkt"):
+        """
+        Print the Location as a shape
+
+        :param field: the field of Location can be either [geometry, bbox or centroid]
+        :param to: output format can be either [geogson or wkt]
+        :return:
+        """
         if field in self.__dict__.keys():
             wkb_value = str(self.__dict__.get(field, "POLYGON EMPTY"))
             if wkb_value == 'None':
@@ -775,3 +819,4 @@ dataserviceMediaType = Table('dataserviceMediaType', Base.metadata,
 #    __tablename__ = 'DataSetSeries'
 #
 #    pass
+

@@ -6,14 +6,12 @@
 # Import(s):
 import re
 from datetime import datetime
-from io import BytesIO
-
 from flask import request
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from wtforms import StringField, SelectField, RadioField
 from wtforms.fields.simple import SubmitField, TextAreaField
-from wtforms.validators import DataRequired, AnyOf, InputRequired, ValidationError
+from wtforms.validators import DataRequired, AnyOf, ValidationError
 
 from application.models import Dataset, Agent, Location, LicenseDocument, Keyword
 
@@ -25,6 +23,9 @@ def parse_times(iso_time_string):
      - Reduced precision dates are not currently supported (YYYY-MM, YYYY).
      - Extended date representations are not currently supported (±YYYYYY-MM-DD).
      - Ordinal dates are not currently supported (YYYY-OOO).
+
+    :param iso_time_string: a string that contains an isostring compatible format
+
 
     """
     try:
@@ -42,8 +43,10 @@ def parse_times(iso_time_string):
 
 
 class RequiredOr(object):
-    # a validator which makes a field required if
-    # another field is set and has a truthy value
+    """
+    a validator which makes a field required if
+    another field is set and has a truthy value
+    """
 
     def __init__(self, other_field_name, message=None):
         self.other_field_name = other_field_name
@@ -60,13 +63,16 @@ class RequiredOr(object):
             if bool(other_field.data) is False and bool(field.data) is False:
                 raise ValidationError(self.message)
         else:
-            if bool(field.data) is not None:
+            if bool(field.data) is not None and other_field is not None:
                 if bool(other_field.data) is True and bool(field.data) is True:
                     raise ValidationError(self.message)
 
 
-
 class DatasetForm(FlaskForm):
+    """
+    The Dataset form created in WTForms
+
+    """
     # Metadata provider
     metadata_provider_name = StringField("Name", validators=[DataRequired()], description="Your first and last name.")
     metadata_provider_organisation = StringField("Organisation name", validators=[],
@@ -213,6 +219,9 @@ class DatasetForm(FlaskForm):
         self.release_date.data = datetime.strftime(datetime.now(), "%Y-%m-%d")
 
     def clean(self):
+        """
+        Empty all fields in the form
+        """
         # Reset the form
         self.creator_name.data = ''
         self.creator_organisation.data = ''
@@ -243,6 +252,11 @@ class DatasetForm(FlaskForm):
         self.access_rights.data = ''
 
     def to_dataset(self):
+        """
+        Create a Dataset object from the form
+
+        :return: Dataset object filled with data from form fields
+        """
         dataset = Dataset()
         dataset.modified = datetime.now()
         dataset.release_date = parse_times(self.release_date.data)
@@ -343,4 +357,3 @@ class DatasetForm(FlaskForm):
         self.temporal_resolution.data = dataset.temporal_resolution
         self.spatial_resolution.data = dataset.spatial_resolution
         self.access_rights.data = dataset.access_rights
-
