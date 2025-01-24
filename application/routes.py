@@ -1,7 +1,12 @@
 import json
+import logging
 from collections import defaultdict
-from flask import render_template, Blueprint, flash, request, abort
+from datetime import datetime
+
+import requests
+from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for
 from flask import current_app as app
+import jwt
 
 from application.database import db_session
 from application.forms import DatasetForm
@@ -37,21 +42,22 @@ def home():
             dataset_dict = {
                 "centroid": json.loads(dataset.dataset_spatial_covarage.to_shape(field="centroid", to="geojson")),
                 "geometry": json.loads(dataset.dataset_spatial_covarage.to_shape(field="geometry", to="geojson")),
-                "properties": {"id": dataset.title, "title": dataset.title, "description": dataset.description,
-                               "creator": str(dataset.creator),
+                "properties": {"id": dataset.title, "user_logged_intitle": dataset.title,
+                               "description": dataset.description, "creator": str(dataset.creator),
                                "temporal_coverage": f"{dataset.temporal_coverage_start} / "
                                                     f"{dataset.temporal_coverage_end}"}}
 
             datasets_shapes[dataset.dataset_id] = dataset_dict
+        user_logged_in = is_logged_in()
 
-        page = render_template('index.html', list_o_geo=datasets_shapes, title=TITLE)
+        page = render_template('index.html', list_o_geo=datasets_shapes, title=TITLE, user=user_logged_in)
         return page
     except Exception as e:
         abort(500, description="Failed to fetch datasets and render to map.", original_exception=e)
 
 
-@main_bp.route('/S3cr3T/datasets/edit/<dataset_id>')
-@main_bp.route('/S3cr3T/datasets/delete/<dataset_id>')
+@main_bp.route('/datasets/edit/<dataset_id>')
+@main_bp.route('/datasets/delete/<dataset_id>')
 @main_bp.route('/add_dataset', methods=['GET', 'POST'])
 def add_dataset(dataset_id=None):
     """
@@ -74,14 +80,18 @@ def add_dataset(dataset_id=None):
                 dataset_form.from_dataset(dataset)
 
         # Delete the dataset
-        if request.url_rule.rule.find("delete") > -1:
+        if request.url_rule.rule.find("delete") > -1 or request.url_rule.rule.find("edit") > -1:
             dataset = Dataset.query.get(dataset_id)
             if not dataset:
                 flash(f"{dataset_id} does not exist.", "error")
-            db_session.delete(dataset)
-            db_session.commit()
-            db_session.flush()
-            flash(f"Deleted dataset {dataset_id}", "success")
+            if not is_logged_in():
+                flash(f"Please login to modify a dataset.", "error")
+                return redirect(url_for("main_bp.login"))
+            if request.url_rule.rule.find("delete") > -1:
+                db_session.delete(dataset)
+                db_session.commit()
+                db_session.flush()
+                flash(f"Deleted dataset {dataset_id}", "success")
 
         # Copy the dataset (not implemented yet)
         if request.url_rule.rule.find("copy") > -1:
@@ -123,6 +133,36 @@ def datasets(dataset_id=None):
         return page
     except Exception as e:
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
+
+
+@main_bp.route('/login')
+def login():
+    """
+
+    :return:
+    """
+    return redirect(requests.get(url=app.config['SURF_DOTWELLKNOWN_CONFIG']['authorization_endpoint'],
+                                 params={"response_type": "code", "client_id": app.config['SURF_CLIENT_ID'],
+                                         "scope": "openid profile email",
+                                         "redirect_uri": app.config['SURF_REDIRECT_URI'],
+                                         "code_challenge": app.config['CODE_CHALLENGE'],
+                                         "code_challenge_method": "S256"}, allow_redirects=False).url)
+
+
+@main_bp.route('/authorized/')
+def authorized():
+    code = request.args.get('code')
+
+    token_params = {'grant_type': 'authorization_code', 'code': code, 'client_id': app.config['SURF_CLIENT_ID'],
+                    'client_secret': app.config['SURF_CLIENT_SECRET'], 'redirect_uri': app.config['SURF_REDIRECT_URI'],
+                    'code_verifier': app.config['CODE_VERIFIER'], }
+
+    access_token = requests.post(app.config['SURF_DOTWELLKNOWN_CONFIG']['token_endpoint'], data=token_params).json()
+
+    if access_token is None:
+        return "Error while getting access token"
+    session['access_token'] = access_token
+    return redirect('/')
 
 
 @main_bp.route('/about')
@@ -174,3 +214,48 @@ def internal_server_error(e):
     :return: rendered flask template from templates/errors/500.html
     """
     return render_template("errors/500.html", error=e), 500
+
+
+def valid_token(token):
+    """
+    @param: token is a dictionary containing msal token
+    @return: Boolean for the validity of the token
+
+    according to M$ @ https://learn.microsoft.com/en-us/azure/active-directory/develop/id-tokens
+
+     - Timestamps: the iat, nbf, and exp timestamps should all fall before or after the current time, as appropriate.
+     - Audience: the aud claim should match the app ID for your application.
+     - Nonce: the nonce claim in the payload must match the nonce parameter passed into the /authorize endpoint during
+       the initial request.
+
+    """
+    try:
+        if not token:
+            return False
+        if token.get("error"):
+            logging.warning(f"login failed: {token.get('error_description')}")
+            return False
+        if datetime.fromtimestamp(token.get("exp")) < datetime.now():
+            return False
+        if datetime.fromtimestamp(token.get("iat")) > datetime.now():
+            return False
+        if token.get("client_id") != app.config.get("SURF_CLIENT_ID"):
+            return False
+    except Exception as e:
+        logging.warning(f"login failed: {token} with {e}")
+        return False
+
+    return True
+
+
+def is_logged_in():
+    """
+    Check if the user is logged in correctly
+    :return:
+    """
+    if not session.get("access_token", None):
+        return False
+    else:
+        token_extract = jwt.decode(session["access_token"]["access_token"], algorithms=["ES256"],
+                                   options={"verify_signature": False})
+        return valid_token(token_extract)
