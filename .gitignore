@@ -4,4 +4,4 @@
 *.pyc
 __pycache__
 flask_session/*
-/config/
+/config/*
