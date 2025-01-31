@@ -11,6 +11,7 @@ if Config.SQLALCHEMY_DATABASE_URI.find("sqlite") > -1:
 else:
     connect_args = {}
 
+print(Config.SQLALCHEMY_DATABASE_URI)
 engine = create_engine(Config.SQLALCHEMY_DATABASE_URI,
                        echo=True, connect_args=connect_args)
 

@@ -10,7 +10,7 @@ import requests
 from dotenv import load_dotenv
 
 basedir = path.abspath(path.dirname(__file__))
-if socket.gethostname() == "NIOO0035":
+if socket.gethostname() == "nioo0061":
     load_dotenv(path.join(basedir, "config/ecosearch_test.conf"))
 else:
     load_dotenv(path.join(basedir, "config/ecosearch_local.conf"))
