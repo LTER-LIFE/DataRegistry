@@ -51,7 +51,7 @@ def home():
             datasets_shapes[dataset.dataset_id] = dataset_dict
         user_logged_in = is_logged_in()
         if user_logged_in:
-            user_info = get_userinfo(session["access_token"])
+            user_info = get_userinfo(session.get("access_token"))
 
         page = render_template('index.html', list_o_geo=datasets_shapes, title=TITLE, user=user_logged_in)
         return page
@@ -178,7 +178,7 @@ def authorized():
     if access_token is None:
         return "Error while getting access token"
     session['access_token'] = access_token
-    return redirect('/')
+    return redirect(url_for("home"))
 
 
 @main_bp.route('/about')

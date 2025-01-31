@@ -40,7 +40,8 @@ def get_userinfo(access_token):
     :param access_token:
     :return: dictionary containing the userinfo
     """
-
+    if not access_token:
+        return None
     result = requests.post(url=Config.SURF_DOTWELLKNOWN_CONFIG['userinfo_endpoint'], data=access_token)
 
     if result.status_code != 200:
@@ -57,5 +58,5 @@ def in_editor_group(access_token):
     :param access_token:
     :return: boolean
     """
-    user_info = get_userinfo(access_token)
+    user_info = get_userinfo(access_token, {})
     return Config.SURF_EDITOR_GROUP in user_info.get('eduperson_entitlement', [])
