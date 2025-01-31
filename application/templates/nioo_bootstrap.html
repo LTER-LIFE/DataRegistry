@@ -175,37 +175,6 @@
         </header>
 
         <!-- Modal -->
-{% if form.errors | length > 0 %}
-<div class="modal" id="staticBackdrop" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <i class="bi bi-exclamation-triangle text-warning"></i>
-
-                <h3 class="modal-title" id="staticBackdropLabel">&nbsp;Warning</h3>
-                <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
-            </div>
-            <div class="modal-body">
-                Not all required fields are filled in correctly. Please check:
-                <ul>
-                {% for error in form.errors %}
-                    <li> {{ error }} </li>
-                {% endfor %}
-                </ul>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" data-bs-dismiss="modal" type="button">OK</button>
-            </div>
-        </div>
-    </div>
-</div>
-<script type="text/javascript">
-    $(window).on('load', function() {
-        $('#staticBackdrop').modal('show');
-    });
-</script>
-{% endif %}
-
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
