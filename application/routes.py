@@ -43,7 +43,7 @@ def home():
             dataset_dict = {
                 "centroid": json.loads(dataset.dataset_spatial_covarage.to_shape(field="centroid", to="geojson")),
                 "geometry": json.loads(dataset.dataset_spatial_covarage.to_shape(field="geometry", to="geojson")),
-                "properties": {"id": dataset.title, "user_logged_intitle": dataset.title,
+                "properties": {"id": dataset.title, "title": dataset.title,
                                "description": dataset.description, "creator": str(dataset.creator),
                                "temporal_coverage": f"{dataset.temporal_coverage_start} / "
                                                     f"{dataset.temporal_coverage_end}"}}
