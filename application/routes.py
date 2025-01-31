@@ -1,5 +1,6 @@
 import json
 import logging
+import traceback
 from collections import defaultdict
 from datetime import datetime
 
@@ -56,6 +57,7 @@ def home():
         page = render_template('index.html', list_o_geo=datasets_shapes, title=TITLE, user=user_logged_in)
         return page
     except Exception as e:
+        logging.error(traceback.format_exc())
         abort(500, description="Failed to fetch datasets and render to map.", original_exception=e)
 
 
@@ -117,6 +119,7 @@ def add_dataset(dataset_id=None):
         page = render_template('dataset_form.html', form=dataset_form, name=name, title=TITLE)
         return page
     except Exception as e:
+        logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
 
 
@@ -138,6 +141,7 @@ def datasets(dataset_id=None):
         page = render_template('dataset_table.html', datasets=datasets_table, title=TITLE)
         return page
     except Exception as e:
+        logging.error(traceback.format_exc())
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
 
 
@@ -178,7 +182,7 @@ def authorized():
     if access_token is None:
         return "Error while getting access token"
     session['access_token'] = access_token
-    return redirect(url_for("home"))
+    return redirect(url_for("main_bp.home"))
 
 
 @main_bp.route('/about')
@@ -221,7 +225,7 @@ def page_not_found(e):
     return render_template("errors/400.html", error=e), 400
 
 
-@main_bp.errorhandler(500)
+#@main_bp.errorhandler(500)
 def internal_server_error(e):
     """
     Prints a 500 error message
@@ -240,6 +244,9 @@ def is_logged_in():
     if not session.get("access_token", None):
         return False
     else:
+        if session["access_token"].get("error", None):
+            return False
+
         token_extract = jwt.decode(session["access_token"]["access_token"], algorithms=["ES256"],
                                    options={"verify_signature": False})
 
