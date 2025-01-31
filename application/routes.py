@@ -180,6 +180,7 @@ def authorized():
     access_token = requests.post(app.config['SURF_DOTWELLKNOWN_CONFIG']['token_endpoint'], data=token_params).json()
 
     if access_token is None:
+        logging.error("Error while getting access token")
         return "Error while getting access token"
     session['access_token'] = access_token
     return redirect(url_for("main_bp.home"))
@@ -242,9 +243,11 @@ def is_logged_in():
     :return:
     """
     if not session.get("access_token", None):
+        logging.info("Not logged in")
         return False
     else:
         if session["access_token"].get("error", None):
+            logging.error(session["access_token"])
             return False
 
         token_extract = jwt.decode(session["access_token"]["access_token"], algorithms=["ES256"],
