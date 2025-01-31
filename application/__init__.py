@@ -45,12 +45,6 @@ def create_app():
         from application import routes
 
         app.register_blueprint(blueprint=routes.main_bp, url_prefix=url_prefix)
-
-        app.msal = identity.web.Auth(session=session, authority=app.config.get("AUTHORITY_URL"),
-                                     client_id=app.config.get("AZURE_CLIENT_ID"),
-                                     client_credential=app.config.get("AZURE_CLIENT_SECRET")
-                                     )
-
         app.jwt = JWTManager(app)
 
         validate_db()
