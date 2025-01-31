@@ -8,6 +8,7 @@ from flask import render_template, Blueprint, flash, request, abort, redirect, s
 from flask import current_app as app
 import jwt
 
+from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
 from application.forms import DatasetForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
@@ -49,6 +50,8 @@ def home():
 
             datasets_shapes[dataset.dataset_id] = dataset_dict
         user_logged_in = is_logged_in()
+        if user_logged_in:
+            user_info = get_userinfo(session["access_token"])
 
         page = render_template('index.html', list_o_geo=datasets_shapes, title=TITLE, user=user_logged_in)
         return page
@@ -87,6 +90,9 @@ def add_dataset(dataset_id=None):
             if not is_logged_in():
                 flash(f"Please login to modify a dataset.", "error")
                 return redirect(url_for("main_bp.login"))
+            if not in_editor_group(session.get('access_token')):
+                flash(f"Please ask for editor access to an admin.", "error")
+                return redirect(url_for("main_bp.home"))
             if request.url_rule.rule.find("delete") > -1:
                 db_session.delete(dataset)
                 db_session.commit()
@@ -138,12 +144,18 @@ def datasets(dataset_id=None):
 @main_bp.route('/login')
 def login():
     """
+    Redirect to surfconnext for login information
 
-    :return:
+    :return: Redirect to an url that is formed from the surf authorization endpoint, Scopes, SURF_CLIENT_ID,
+    redirect_uri, code challenge, code challenge method
     """
     return redirect(requests.get(url=app.config['SURF_DOTWELLKNOWN_CONFIG']['authorization_endpoint'],
                                  params={"response_type": "code", "client_id": app.config['SURF_CLIENT_ID'],
-                                         "scope": "openid profile email",
+                                         "scope": "openid aarc eduperson_entitlement "
+                                                  "eduperson_orcid "
+                                                  "eduperson_principal_name eduperson_scoped_affiliation email"
+                                                  "entitlements orcid profile uid "
+                                                  "voperson_external_affiliation voperson_external_id voperson_id",
                                          "redirect_uri": app.config['SURF_REDIRECT_URI'],
                                          "code_challenge": app.config['CODE_CHALLENGE'],
                                          "code_challenge_method": "S256"}, allow_redirects=False).url)
@@ -151,6 +163,10 @@ def login():
 
 @main_bp.route('/authorized/')
 def authorized():
+    """
+
+    :return:
+    """
     code = request.args.get('code')
 
     token_params = {'grant_type': 'authorization_code', 'code': code, 'client_id': app.config['SURF_CLIENT_ID'],
@@ -216,38 +232,6 @@ def internal_server_error(e):
     return render_template("errors/500.html", error=e), 500
 
 
-def valid_token(token):
-    """
-    @param: token is a dictionary containing msal token
-    @return: Boolean for the validity of the token
-
-    according to M$ @ https://learn.microsoft.com/en-us/azure/active-directory/develop/id-tokens
-
-     - Timestamps: the iat, nbf, and exp timestamps should all fall before or after the current time, as appropriate.
-     - Audience: the aud claim should match the app ID for your application.
-     - Nonce: the nonce claim in the payload must match the nonce parameter passed into the /authorize endpoint during
-       the initial request.
-
-    """
-    try:
-        if not token:
-            return False
-        if token.get("error"):
-            logging.warning(f"login failed: {token.get('error_description')}")
-            return False
-        if datetime.fromtimestamp(token.get("exp")) < datetime.now():
-            return False
-        if datetime.fromtimestamp(token.get("iat")) > datetime.now():
-            return False
-        if token.get("client_id") != app.config.get("SURF_CLIENT_ID"):
-            return False
-    except Exception as e:
-        logging.warning(f"login failed: {token} with {e}")
-        return False
-
-    return True
-
-
 def is_logged_in():
     """
     Check if the user is logged in correctly
@@ -258,4 +242,5 @@ def is_logged_in():
     else:
         token_extract = jwt.decode(session["access_token"]["access_token"], algorithms=["ES256"],
                                    options={"verify_signature": False})
+
         return valid_token(token_extract)

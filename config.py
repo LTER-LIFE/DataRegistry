@@ -3,8 +3,8 @@ import hashlib
 import json
 import os
 import re
-from os import environ, path, urandom
 import socket
+from os import environ, path, urandom
 
 import requests
 from dotenv import load_dotenv
@@ -22,6 +22,7 @@ def get_well_known_config(url):
         return json.loads(result.content)
     return {}
 
+
 def get_code_challenge():
     code_verifier = base64.urlsafe_b64encode(os.urandom(40)).decode('utf-8')
     code_verifier = re.sub('[^a-zA-Z0-9]+', '', code_verifier)
@@ -29,6 +30,7 @@ def get_code_challenge():
     code_challenge = base64.urlsafe_b64encode(code_challenge).decode('utf-8')
     code_challenge = code_challenge.replace('=', '')
     return code_verifier, code_challenge
+
 
 class Config(object):
     SERVER_NAME = environ.get('SERVER_NAME') or "localhost:5000"
@@ -45,5 +47,8 @@ class Config(object):
     SURF_CLIENT_SECRET = environ.get("SURF_CLIENT_SECRET", "None")
     SURF_DOTWELLKNOWN_CONFIG = get_well_known_config(environ.get("SURF_DOTWELLKNOWN", "None"))
     SURF_REDIRECT_URI = environ.get("SURF_REDIRECT_URI", "None")
-    CODE_VERIFIER, CODE_CHALLENGE = get_code_challenge()
+    SURF_SRAM_GROUP_PREFIX = environ.get("SURF_SRAM_GROUP_PREFIX", "urn:mace:surf.nl:sram:group:")
+    SURF_SRAM_GROUP_POSTFIX = environ.get("SURF_SRAM_GROUP_POSTFIX", "knaw:datamanagement:knawopenidtestap-ll_editor")
+    SURF_EDITOR_GROUP = f"{SURF_SRAM_GROUP_PREFIX}{SURF_SRAM_GROUP_POSTFIX}"
 
+    CODE_VERIFIER, CODE_CHALLENGE = get_code_challenge()
