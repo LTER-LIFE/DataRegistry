@@ -61,8 +61,8 @@ def home():
         abort(500, description="Failed to fetch datasets and render to map.", original_exception=e)
 
 
-@main_bp.route('/datasets/edit/<dataset_id>')
-@main_bp.route('/datasets/delete/<dataset_id>')
+@main_bp.route('/datasets/edit/<dataset_id>', methods=['GET', 'POST'])
+@main_bp.route('/datasets/delete/<dataset_id>', methods=['GET'])
 @main_bp.route('/add_dataset', methods=['GET', 'POST'])
 def add_dataset(dataset_id=None):
     """
@@ -76,17 +76,12 @@ def add_dataset(dataset_id=None):
     try:
         name = None
         dataset_form = DatasetForm()
-        # Validate the add study form
-        if request.url_rule.rule.find("edit") > -1:
-            dataset = Dataset.query.get(dataset_id)
-            if not dataset:
-                flash(f"{dataset_id} does not exist.", "error")
-            else:
-                dataset_form.from_dataset(dataset)
+        dataset = None
 
-        # Delete the dataset
+        # Delete the dataset or edit
         if request.url_rule.rule.find("delete") > -1 or request.url_rule.rule.find("edit") > -1:
             dataset = Dataset.query.get(dataset_id)
+
             if not dataset:
                 flash(f"{dataset_id} does not exist.", "error")
             if not is_logged_in():
@@ -100,19 +95,24 @@ def add_dataset(dataset_id=None):
                 db_session.commit()
                 db_session.flush()
                 flash(f"Deleted dataset {dataset_id}", "success")
-
-        # Copy the dataset (not implemented yet)
-        if request.url_rule.rule.find("copy") > -1:
-            pass
+            elif request.url_rule.rule.find("edit") > -1 or request.url_rule.rule.find("copy") > -1:
+                dataset_form.from_dataset(dataset)
 
         # If the form validates
         if dataset_form.validate_on_submit():
-            dataset = dataset_form.to_dataset()
-            # Add to the database
-            db_session.add(dataset)
-            # Commit study to the database
-            db_session.commit()
-            db_session.flush()
+            if request.url_rule.rule.find("edit") > -1:
+                dataset = dataset_form.to_dataset(dataset)
+                dataset = dataset_form.to_dataset(dataset)
+                # Commit study to the database
+                db_session.commit()
+                db_session.flush()
+            else:
+                dataset = dataset_form.to_dataset(dataset)
+                # Add to the database
+                db_session.add(dataset)
+                # Commit study to the database
+                db_session.commit()
+                db_session.flush()
             # Feedback
             flash(f"Added dataset with title {dataset.title}.", "success")
 

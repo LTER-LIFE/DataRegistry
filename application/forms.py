@@ -28,6 +28,9 @@ def parse_times(iso_time_string):
 
 
     """
+    if type(iso_time_string) == datetime:
+        return iso_time_string
+
     try:
         return datetime.fromisoformat(iso_time_string)
     except ValueError as e:
@@ -251,13 +254,14 @@ class DatasetForm(FlaskForm):
         self.license.data = ''
         self.access_rights.data = ''
 
-    def to_dataset(self):
+    def to_dataset(self, dataset=None):
         """
         Create a Dataset object from the form
 
         :return: Dataset object filled with data from form fields
         """
-        dataset = Dataset()
+        if not dataset:
+            dataset = Dataset()
         dataset.modified = datetime.now()
         dataset.release_date = parse_times(self.release_date.data)
         dataset.language = self.language.data
