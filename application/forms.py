@@ -349,6 +349,9 @@ class DatasetForm(FlaskForm):
         if dataset.dataset_license:
             self.license.data = dataset.dataset_license.code
 
+        if dataset.dataset_keywords:
+            self.keywords.data = ",".join(dataset.dataset_keywords)
+
         self.release_date.data = dataset.release_date
         self.language.data = dataset.language
         self.title.data = dataset.title
