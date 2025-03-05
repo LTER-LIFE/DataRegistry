@@ -12,14 +12,14 @@ else:
     connect_args = {}
 
 engine = create_engine(Config.SQLALCHEMY_DATABASE_URI,
-                       echo=True, connect_args=connect_args)
+                       echo=True, connect_args=connect_args, pool_pre_ping=True)
 
 if Config.SQLALCHEMY_DATABASE_URI.find("sqlite") > -1:
     listen(engine, "connect", load_spatialite)
 else:
     connect_args = {}
 
-db_session = scoped_session(sessionmaker(autoflush=False,
+db_session = scoped_session(sessionmaker(autoflush=True,
                                          bind=engine))
 Base = declarative_base()
 Base.query = db_session.query_property()

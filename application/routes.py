@@ -212,7 +212,7 @@ def contact():
 
     :return: rendered flask template from templates/contact.html
     """
-    return render_template('contact.html', title=TITLE)
+    return render_template('about.html', title=TITLE)
 
 
 @main_bp.errorhandler(404)
