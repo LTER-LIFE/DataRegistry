@@ -22,9 +22,10 @@ def create_app():
     :return: Flask application object
     """
     proxy_prefix = environ.get('PROXY_PREFIX')
-    url_prefix = f"/{proxy_prefix}/".rstrip("/") if proxy_prefix else ""
+    url_prefix = f"/{proxy_prefix}/".rstrip("/").rstrip("/") if proxy_prefix else ""
 
     app = Flask(__name__, static_url_path=f'{url_prefix}/')
+    app.url_map.strict_slashes = False
 
     # Configure the flask app instance
     app.config.from_object(Config)
