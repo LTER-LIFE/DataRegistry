@@ -274,7 +274,7 @@ class Dataset(Base):
     dataset_keywords = relationship('Keyword', secondary='datasetKeyword')
 
     temporal_coverage_start = Column(DateTime, nullable=False)
-    temporal_coverage_end = Column(DateTime, nullable=False)
+    temporal_coverage_end = Column(DateTime, nullable=True)
 
     temporal_resolution = Column(String(255), nullable=False)
 

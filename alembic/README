@@ -6,6 +6,6 @@ All Spatialite / postgis tables are removed.
 
 use alembic upgrade head to go to the latest version of the database
 
-On an existing database without alembic run alembic stamp o0adc47bf122
+On an existing database without alembic run alembic stamp 00adc47bf122
 
 

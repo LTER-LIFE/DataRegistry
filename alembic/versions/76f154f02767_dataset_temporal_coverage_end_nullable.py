@@ -21,6 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """
+    Alter column temporal_coverage_end on Dataset to make it nullable
     """
     if Config.SQLALCHEMY_DATABASE_URI.find("sqlite:") > -1:
         with op.batch_alter_table('Dataset', schema=None) as batch_dataset_op:
@@ -33,6 +34,8 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """
+    Alter column temporal_coverage_end on Dataset to make it not nullable again,
+    the database will then be at revision 00adc47bf122
     """
     if Config.SQLALCHEMY_DATABASE_URI.find("sqlite:") > -1:
         with op.batch_alter_table('Dataset', schema=None) as batch_dataset_op:
