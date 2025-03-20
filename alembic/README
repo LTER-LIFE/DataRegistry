@@ -1,0 +1,11 @@
+Generic single-database configuration.
+
+This is the databasee configuration of the Veluwe search engine.
+00adc47bf122_init_db only contains the tables of the models.py file.
+All Spatialite / postgis tables are removed.
+
+use alembic upgrade head to go to the latest version of the database
+
+On an existing database without alembic run alembic stamp o0adc47bf122
+
+

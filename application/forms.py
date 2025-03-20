@@ -157,7 +157,7 @@ class DatasetForm(FlaskForm):
     publisher = StringField("Publisher name", validators=[],
                             description="The organisation that made a citable version of the dataset available "
                                         "online. Examples include but are not limited to: GBIF, Dataverse NL, Zenodo, "
-                                        "Dryad, Figshare. ")
+                                        "Dryad, Figshare.")
 
     public_id = StringField("Dataset ID", validators=[], description="DOI or other unique identifier "
                                                                      "associated with the published "
@@ -170,15 +170,15 @@ class DatasetForm(FlaskForm):
     temporal_coverage_start = StringField("Start date", validators=[DataRequired()],
                                           description="The period of time when the data collection started. Format: "
                                                       "either YYYY or YYYY-MM-DD.")
-    temporal_coverage_end = StringField("End date", validators=[DataRequired()],
+    temporal_coverage_end = StringField("End date", validators=[],
                                         description="The period of time when the data collection ended. NB: If data "
-                                                    "collection is ongoing, please select the latest period of time "
-                                                    "that is included in the current version of the dataset. Format: "
-                                                    "either YYYY or YYYY-MM-DD.")
+                                                    "collection is ongoing, leave empty or select the latest period of time "
+                                                    "that is included in the current version of the dataset (format: "
+                                                    "either YYYY or YYYY-MM-DD).")
 
     temporal_resolution = StringField("Temporal resolution", validators=[],
                                       description="The temporal resolution of the dataset is the minimm temporal "
-                                                  "separation between records in the dataset. ")
+                                                  "separation between records in the dataset.")
 
     spatial_covarage = StringField("Spatial coverage", validators=[RequiredOr("spatial_covarage_shapefile")],
                                    description="The spatial extent that is covered by the dataset. Use the interactive "
@@ -209,7 +209,7 @@ class DatasetForm(FlaskForm):
 
     consent = RadioField("Terms and conditions", choices=[('Y', 'Yes')],
                          validators=[AnyOf(["Y"], message="Please answer Yes to proceed")],
-                         description="I have read and agree to the terms and conditions")
+                         description="I have read and agree to the terms and conditions.")
 
     # User
 
