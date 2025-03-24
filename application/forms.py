@@ -28,6 +28,8 @@ def parse_times(iso_time_string):
 
 
     """
+    if not iso_time_string:
+        return None
     if type(iso_time_string) == datetime:
         return iso_time_string
 
@@ -263,50 +265,50 @@ class DatasetForm(FlaskForm):
         if not dataset:
             dataset = Dataset()
         dataset.modified = datetime.now()
-        dataset.release_date = parse_times(self.release_date.data)
-        dataset.language = self.language.data
-        dataset.title = self.title.data
-        dataset.description = self.description.data
-        dataset.resource_type = self.resource_type.data
-        dataset.temporal_coverage_start = parse_times(self.temporal_coverage_start.data)
-        dataset.temporal_coverage_end = parse_times(self.temporal_coverage_end.data)
-        dataset.temporal_resolution = self.temporal_resolution.data
-        dataset.spatial_resolution = self.spatial_resolution.data
-        dataset.taxonomic_coverage = self.taxonomic_coverage.data
-        dataset.access_rights = self.access_rights.data
-        dataset.landing_page = self.landing_page.data
-        dataset.public_id = self.public_id.data
+        dataset.release_date = parse_times(self.release_date.raw_data[0])
+        dataset.language = self.language.raw_data[0]
+        dataset.title = self.title.raw_data[0]
+        dataset.description = self.description.raw_data[0]
+        dataset.resource_type = self.resource_type.raw_data[0]
+        dataset.temporal_coverage_start = parse_times(self.temporal_coverage_start.raw_data[0])
+        dataset.temporal_coverage_end = parse_times(self.temporal_coverage_end.raw_data[0])
+        dataset.temporal_resolution = self.temporal_resolution.raw_data[0]
+        dataset.spatial_resolution = self.spatial_resolution.raw_data[0]
+        dataset.taxonomic_coverage = self.taxonomic_coverage.raw_data[0]
+        dataset.access_rights = self.access_rights.raw_data[0]
+        dataset.landing_page = self.landing_page.raw_data[0]
+        dataset.public_id = self.public_id.raw_data[0]
 
         # Fill creator -> Agent
-        dataset.creator = Agent.add_or_update_agent(name=self.creator_name.data,
-                                                    organisation=self.creator_organisation.data,
-                                                    mbox=self.creator_mbox.data)
+        dataset.creator = Agent.add_or_update_agent(name=self.creator_name.raw_data[0],
+                                                    organisation=self.creator_organisation.raw_data[0],
+                                                    mbox=self.creator_mbox.raw_data[0])
         # dataset_contact_point -> Agent
-        dataset.dataset_contact_point = Agent.add_or_update_agent(name=self.dataset_contact_point_name.data,
-                                                                  organisation=self.dataset_contact_point_organisation.data,
-                                                                  mbox=self.dataset_contact_point_mbox.data)
+        dataset.dataset_contact_point = Agent.add_or_update_agent(name=self.dataset_contact_point_name.raw_data[0],
+                                                                  organisation=self.dataset_contact_point_organisation.raw_data[0],
+                                                                  mbox=self.dataset_contact_point_mbox.raw_data[0])
 
         # dataset_contact_point -> Agent
-        dataset.dataset_metadata_provider = Agent.add_or_update_agent(name=self.metadata_provider_name.data,
-                                                                      mbox=self.metadata_provider_mbox.data,
-                                                                      organisation=self.metadata_provider_organisation.data)
+        dataset.dataset_metadata_provider = Agent.add_or_update_agent(name=self.metadata_provider_name.raw_data[0],
+                                                                      mbox=self.metadata_provider_mbox.raw_data[0],
+                                                                      organisation=self.metadata_provider_organisation.raw_data[0])
 
         # publisher -> Agent
-        dataset.dataset_publisher = Agent.add_or_update_agent(organisation=self.publisher.data)
+        dataset.dataset_publisher = Agent.add_or_update_agent(organisation=self.publisher.raw_data[0])
 
-        dataset.dataset_keywords = Keyword.add_or_update_keywords(keyword_names=self.keywords.data)
+        dataset.dataset_keywords = Keyword.add_or_update_keywords(keyword_names=self.keywords.raw_data[0])
 
         # spatial_covarage -> Location
         # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-        if self.spatial_covarage_shapefile.data:
+        if self.spatial_covarage_shapefile.raw_data[0]:
             dataset.dataset_spatial_covarage = Location.from_shapefile(
                 request.files[self.spatial_covarage_shapefile.name])
         else:
-            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry=self.spatial_covarage.data)
+            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry=self.spatial_covarage.raw_data[0])
 
         # licence -> LicenceDocument
-        if self.license.data != '':
-            dataset.dataset_license = LicenseDocument(code=self.license.data)
+        if self.license.raw_data[0] != '':
+            dataset.dataset_license = LicenseDocument(code=self.license.raw_data[0])
 
         return dataset
 
@@ -350,7 +352,7 @@ class DatasetForm(FlaskForm):
             self.license.data = dataset.dataset_license.code
 
         if dataset.dataset_keywords:
-            self.keywords.data = ",".join(dataset.dataset_keywords)
+            self.keywords.data = ",".join([kw.name for kw in dataset.dataset_keywords])
 
         self.release_date.data = dataset.release_date
         self.language.data = dataset.language
