@@ -41,11 +41,12 @@ def home():
 
         datasets_shapes = defaultdict(dict)
         for dataset in all_datasets:
+
             dataset_dict = {
                 "centroid": json.loads(dataset.dataset_spatial_covarage.to_shape(field="centroid", to="geojson")),
                 "geometry": json.loads(dataset.dataset_spatial_covarage.to_shape(field="geometry", to="geojson")),
-                "properties": {"id": dataset.title, "title": dataset.title,
-                               "description": dataset.description, "creator": str(dataset.creator),
+                "properties": {"id": _json_safe_string(dataset.title), "title": _json_safe_string(dataset.title),
+                               "description": _json_safe_string(dataset.description), "creator": str(dataset.creator),
                                "temporal_coverage": f"{dataset.temporal_coverage_start} / "
                                                     f"{dataset.temporal_coverage_end}"}}
 
@@ -254,3 +255,10 @@ def is_logged_in():
                                    options={"verify_signature": False})
 
         return valid_token(token_extract)
+
+
+def _json_safe_string(string):
+    """
+    Some fields can contain breaking code for json, this function can be used to clean this fields
+    """
+    return string.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")

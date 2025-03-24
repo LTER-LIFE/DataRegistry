@@ -85,7 +85,7 @@ var MarkerGroup = L.featureGroup().addTo(map)
      Areagroup.clearLayers();
  });
 
-let geo_json = JSON.parse('{{ list_o_geo |tojson}}');
+let geo_json = JSON.parse('{{ list_o_geo |tojson | safe}}');
 // add a new marker with a popup overtop
 let all_points = [];
 Object.entries(geo_json).forEach(dataset_items => {
