@@ -300,7 +300,7 @@ class DatasetForm(FlaskForm):
 
         # spatial_covarage -> Location
         # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-        if self.spatial_covarage_shapefile.raw_data[0]:
+        if self.spatial_covarage_shapefile.data:
             dataset.dataset_spatial_covarage = Location.from_shapefile(
                 request.files[self.spatial_covarage_shapefile.name])
         else:
