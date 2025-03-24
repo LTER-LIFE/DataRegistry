@@ -142,9 +142,13 @@ class Agent(Base):
             db_agent = Agent()
             if mbox != "":
                 db_agent.mbox = mbox
+            else:
+                db_agent.mbox = None
             if organisation != "":
                 db_agent.name = organisation
                 db_agent.type = 'Organisation'
+            else:
+                db_agent.type = 'Person'
             if name != "":
                 db_agent.name = name
                 db_agent.type = 'Person'
