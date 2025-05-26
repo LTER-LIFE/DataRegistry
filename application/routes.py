@@ -8,6 +8,7 @@ import requests
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for
 from flask import current_app as app
 import jwt
+from sqlalchemy import exc
 
 from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
@@ -57,6 +58,12 @@ def home():
 
         page = render_template('index.html', list_o_geo=datasets_shapes, title=TITLE, user=user_logged_in)
         return page
+    except exc.PendingRollbackError as pre:
+        db_session.rollback()
+        logging.error(traceback.format_exc())
+        abort(500, description="Database error rolled back last change, please refresh. (F5/Ctrl+r)",
+              original_exception=pre)
+
     except Exception as e:
         logging.error(traceback.format_exc())
         abort(500, description="Failed to fetch datasets and render to map.", original_exception=e)
