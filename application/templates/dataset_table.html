@@ -40,8 +40,8 @@
                                 <td class="p-1">{{ dataset.resource_type }}</td>
                             </tr>
                             <tr>
-                                <th scope="row" class="p-1">License:</th>
-                                <td class="p-1">{{ dataset.dataset_license |safe }}</td>
+                                <th scope="row" class="p-1 col-md-4">License:</th>
+                                <td class="p-1 col-md-8">{{ dataset.dataset_license |safe }}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Access rights:</th>
@@ -85,14 +85,16 @@
                         </table>
                     </div>
                     <div class="col-md-8">
-                        <b>Description: </b>
-                        {{ dataset.description }}
-                        <br>
-                        <b>Keywords: </b>
-                        {% for kw in dataset.dataset_keywords %}
-                            <span class="badge rounded-pill bg-primary">{{ kw.name }}</span>
-                        {% endfor %}
-                        <br/>
+                        <div class="h-25">
+                            <b>Description: </b>
+                            {{ dataset.description }}
+                            <br>
+                            <b>Keywords: </b>
+                            {% for kw in dataset.dataset_keywords %}
+                                <span class="badge rounded-pill bg-primary">{{ kw.name }}</span>
+                            {% endfor %}
+                            <br/>
+                        </div>
                         <b>Spatial coverage:</b>
                         <div class="h-75" id="geo-{{ dataset.dataset_id }}"></div>
                     </div>

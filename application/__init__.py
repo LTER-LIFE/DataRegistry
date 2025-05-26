@@ -3,7 +3,7 @@ from os import environ
 from flask import Flask, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from application.database import validate_db
+from application.database import validate_db, db_session
 from config import Config
 from flask_login import LoginManager
 from flask_session import Session
@@ -47,6 +47,6 @@ def create_app():
         app.register_blueprint(blueprint=routes.main_bp, url_prefix=url_prefix)
         app.jwt = JWTManager(app)
 
-        validate_db()
+        validate_db(app)
 
     return app

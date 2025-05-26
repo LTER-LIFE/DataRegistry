@@ -25,9 +25,18 @@ Base = declarative_base()
 Base.query = db_session.query_property()
 
 
-def validate_db():
+def validate_db(app):
     """
-    Create database if not excist, does not work very well
+    Create database if not exist,
+
+    Initialize the SQLAlchemy session and register teardown logic with the Flask app.
+
+    This function sets up a scoped SQLAlchemy session and ensures that the session is properly
+    removed at the end of each Flask application context. This helps prevent issues with
+    dangling or invalid sessions, especially after failed transactions.
+
+    Parameters:
+        app (Flask): The Flask application instance.
     """
     if not database_exists(engine.url):
         Base.metadata.create_all(bind=engine) # Create new DB
@@ -35,8 +44,12 @@ def validate_db():
     else:
         print(f"Database {engine.url} Already Exists")
 
-
-
+    @app.teardown_appcontext
+    def remove_session(exception=None):
+        """
+        Register teardown to clean up session
+        """
+        db_session.remove()
 
 
 
