@@ -85,6 +85,17 @@ class Agent(Base):
             "mbox": self.mbox
         }
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        if not data:
+            return None
+        return cls(
+            agent_id=data.get('agent_id'),
+            mbox=data.get('mbox'),
+            name=data.get('name'),
+            type=data.get('type')
+        )
+
     def to_graph(self):
         """
 
@@ -932,13 +943,39 @@ class Location(Base):
     @classmethod
     def add_or_update_location(cls, geometry=None, persist=True):
         """
-        Add or update a Location object to the database, using a geometry
+        Adds a new Location object to the database or retrieves an existing one.
 
-        An Agent can be a Person or an Organization
+        This class method checks if a Location with the given geometry already
+        exists in the database. If it does, the existing object is returned.
+        If not, a new Location object is created.
 
-        :param geometry:
-        :param persist:
-        :return:
+        If a geometry string is provided for a new Location, the method attempts
+        to parse it from Well-Known Text (WKT) format using `shapely.from_wkt`.
+        It includes a critical validity check and attempts to fix invalid
+        geometries using the `buffer(0)` technique (or `shapely.make_valid`
+        in newer shapely versions). If the geometry is successfully processed
+        (either valid initially or fixed), its WKT representation, the WKT
+        of its centroid, and the WKT of its bounding box are stored in the
+        new Location object.
+
+        If `persist` is True, the new or updated Location object is added to
+        the database session and committed immediately.
+
+        :param cls: The class itself (standard for class methods).
+        :type cls: type
+        :param geometry: The geometry of the location in Well-Known Text (WKT) format.
+                         If None, a Location object without geometry is created (though
+                         this might violate schema constraints depending on the table definition).
+        :type geometry: str, optional
+        :param persist: If True, the new or updated Location object is added to
+                        the database session and committed immediately.
+        :type persist: bool, optional
+        :returns: The existing or newly created :class:`Location` object from the database.
+                  Returns None if the provided `geometry` string is invalid WKT,
+                  or if the geometry is invalid and cannot be fixed by the
+                  automatic repair mechanism, or if any other error occurs
+                  during geometry processing.
+        :rtype: :class:`Location` or None
         """
         db_location = db_session.query(Location).filter_by(geometry=geometry).first()
         if not db_location:
@@ -951,7 +988,7 @@ class Location(Base):
                         print(f"Error parsing WKT in add_or_update_location: {e} - {geometry}")
                         return None
 
-                    # --- CRITICAL VALIDITY CHECK AND FIX ---
+                    # TODO: --- CRITICAL VALIDITY CHECK AND FIX ---
                     if not geometry_shape.is_valid:
                         print(
                             f"Warning: Geometry is invalid ({geometry_shape.geom_type}). Attempting to fix. Reason: "

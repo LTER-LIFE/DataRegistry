@@ -1,16 +1,14 @@
 import json
 import unittest
-from textwrap import indent
-
-from elasticsearch import Elasticsearch, helpers
 from geoalchemy2 import load_spatialite
 from sqlalchemy import create_engine
 from sqlalchemy.event import listen
 from sqlalchemy.testing import eq_
 
-from application import db_session
+from application import db_session, validate_index
 from application.models import metadata, Dataset, Location
-from application.search_index import SearchIndex
+from application.search_index import MAPPING
+
 from config import Config
 from mock_objects import MockObjects
 
@@ -36,6 +34,9 @@ class TestElasticDataset(unittest.TestCase):
         self.mock_objects = MockObjects()
 
 
+        self.es = validate_index()
+
+        """
         print("Run setup")
         self.es = Elasticsearch(['https://localhost:9200/'],
             basic_auth=("elastic", "wqv-7S75rA3tMKra7qvT"),
@@ -43,7 +44,7 @@ class TestElasticDataset(unittest.TestCase):
             ca_certs="/home/eric/Apps/elasticsearch-9.0.2/config/certs/http_ca.crt"
 
             )
-
+        """
 
         self.mock_objects = MockObjects()
 
@@ -66,7 +67,7 @@ class TestElasticDataset(unittest.TestCase):
     def test_create_single_dataset_and_index_it(self):
         self.recreate_index(self.INDEX_NAME)
 
-        dataset = self.mock_objects.generate_datasets(1)
+        dataset = self.mock_objects.create_mock_dataset("-one")
         db_session.add(dataset)
         db_session.commit()
         db_session.flush()
@@ -77,8 +78,9 @@ class TestElasticDataset(unittest.TestCase):
         assert len(datasets) == 1
 
         actions = []
-        for dataset in datasets:
-            print(self.es.index(index=self.INDEX_NAME, body=dataset.to_dict()))
+
+        #for dataset in datasets:
+        #    print(self.es.index(index=self.INDEX_NAME, body=dataset.to_dict()))
 
         print(f"indexed {len(datasets)} documents into Elasticsearch.")
         self.es.indices.refresh(index=self.INDEX_NAME)
@@ -94,9 +96,9 @@ class TestElasticDataset(unittest.TestCase):
         instances = db_session.query(Dataset).all()
         eq_(0, len(instances))
 
-        dataset = self.mock_objects.create_mock_dataset("one")
+        dataset = self.mock_objects.generate_datasets(1, "dataset")
 
-        db_session.add(dataset)
+        db_session.add_all(dataset)
         db_session.commit()
         db_session.flush()
 
@@ -107,12 +109,14 @@ class TestElasticDataset(unittest.TestCase):
         assert len(all_db_datasets) == 1
 
     def recreate_index(self, index_name):
+        if not self.es:
+            self.es = validate_index()
         if not self.es.indices.exists(index=index_name):
-            self.es.indices.create(index=index_name, mappings=SearchIndex.MAPPING)
+            self.es.indices.create(index=index_name, mappings=MAPPING)
             print(f"Index '{index_name}' created with mapping.")
         else:
             self.es.indices.delete(index=index_name)
-            self.es.indices.create(index=index_name, mappings=SearchIndex.MAPPING)
+            self.es.indices.create(index=index_name, mappings=MAPPING)
             print(f"Index '{index_name}' recreated.")
 if __name__ == '__main__':
     unittest.main()
