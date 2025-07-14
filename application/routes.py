@@ -1,10 +1,12 @@
+import io
 import logging
 import time
 import traceback
+import zipfile
 from collections import defaultdict
 
 import requests
-from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for
+from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file
 from flask import current_app as app
 import jwt
 from sqlalchemy import exc
@@ -187,6 +189,27 @@ def remove_from_cart(dataset_id):
 def empty_cart():
     session.pop('cart', None)
     return redirect(url_for('cart'))
+
+
+@app.route('/export')
+def export_cart():
+    dataset_ids = session.get('cart', [])
+    if len(dataset_ids) > 0:
+        stream = io.BytesIO()
+
+        # Create Zip archive
+        with zipfile.ZipFile(stream, 'w') as zf:
+            for dataset_id in dataset_ids:
+                dataset = Dataset.query.get(dataset_id)
+                # Add dataset file to Zip archive
+                with zf.open(f'{dataset_id}.jsonld', 'w') as f:
+                    f.write(dataset.rdf_serialize(out_format="json-ld").encode())
+
+        stream.seek(0)
+        return send_file(stream,
+                         mimetype='application/zip',
+                         as_attachment=True,
+                         download_name='datasets.zip')
 
 
 @main_bp.route('/rebuild')

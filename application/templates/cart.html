@@ -13,6 +13,7 @@
         {% endfor %}
         </ul>
 
+        <a href="{{ url_for('export_cart') }}">Export Cart</a><br><br>
         <a href="{{ url_for('empty_cart') }}">Empty Cart</a>
     {% else %}
         <p>Your cart is empty.</p>
