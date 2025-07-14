@@ -153,6 +153,39 @@ def datasets(dataset_id=None):
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
 
 
+@app.route('/cart')
+def cart():
+    dataset_ids = session.get('cart', [])
+    cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
+    return render_template('cart.html', cart=cart_items)
+
+
+@app.route('/cart/add/<dataset_id>')
+def add_to_cart(dataset_id):
+    if 'cart' not in session:
+        session['cart'] = []
+    if dataset_id not in session['cart']:
+        session['cart'].append(dataset_id)
+        session.modified = True
+    return redirect(url_for('main_bp.datasets'))
+
+
+@app.route('/cart/remove/<dataset_id>')
+def remove_from_cart(dataset_id):
+    cart = session.get('cart', [])
+    if dataset_id in cart:
+        cart.remove(dataset_id)
+        session['cart'] = cart
+        session.modified = True
+    return redirect(url_for('cart'))
+
+
+@app.route('/cart/empty')
+def empty_cart():
+    session.pop('cart', None)
+    return redirect(url_for('cart'))
+
+
 @main_bp.route('/login')
 def login():
     """
