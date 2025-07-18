@@ -48,8 +48,8 @@ def home():
         for es_dataset in es_datasets.body["hits"]["hits"]:
 
             dataset_dict = {
-                "centroid": es_dataset.get("_source").get("dataset_spatial_covarage").get("centroid"),
-                "geometry": es_dataset.get("_source").get("dataset_spatial_covarage").get("geometry"),
+                "centroid": es_dataset.get("_source").get("dataset_spatial_coverage").get("centroid"),
+                "geometry": es_dataset.get("_source").get("dataset_spatial_coverage").get("geometry"),
                 "properties": {"id": _json_safe_string(es_dataset.get("_source").get("title")),
                                "title": _json_safe_string(es_dataset.get("_source").get("title")),
                                "description": _json_safe_string(es_dataset.get("_source").get("description")),

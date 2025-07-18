@@ -17,7 +17,7 @@ MAPPING = {"properties": {"dataset_id": {"type": "integer"}, "release_date": {"t
     "dataset_keywords": {"type": "keyword"},  # Array of strings
     "temporal_coverage_start": {"type": "date"}, "temporal_coverage_end": {"type": "date"},
     "temporal_resolution": {"type": "keyword"},
-    "dataset_spatial_covarage": {"type": "object", "properties": {"geometry": {"type": "geo_shape"},  # Add geometry
+    "dataset_spatial_coverage": {"type": "object", "properties": {"geometry": {"type": "geo_shape"},  # Add geometry
         "bbox": {"type": "geo_shape"},  # Add bbox
         "centroid": {"type": "geo_point"}  # Add centroid
     }}, "spatial_resolution": {"type": "keyword"},
