@@ -199,8 +199,9 @@ def export_cart():
             for dataset_id in dataset_ids:
                 dataset = Dataset.query.get(dataset_id)
                 # Add dataset file to Zip archive
-                with zf.open(f'{dataset_id}.jsonld', 'w') as f:
-                    f.write(dataset.rdf_serialize(out_format="json-ld").encode())
+                with zf.open(f'{dataset_id}.json', 'w') as f:
+                    txt = _geojson_dump(dataset.to_dict())
+                    f.write(txt.encode())
 
         stream.seek(0)
         return send_file(stream,
@@ -325,3 +326,16 @@ def _json_safe_string(string):
     Some fields can contain breaking code for json, this function can be used to clean this fields
     """
     return string.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+
+
+def _geojson_dump(dataset):
+    """
+    Encode dataset into GeoJSON
+    """
+    dataset_ = dataset.copy()
+    dataset_spatial_coverage = dataset_.pop('dataset_spatial_coverage', {})
+    geometry = dataset_spatial_coverage.pop('geometry', {})
+    properties = {**dataset_, **dataset_spatial_coverage}
+    return json.dumps(dict(type="Feature",
+                           geometry=geometry,
+                           properties=properties))
