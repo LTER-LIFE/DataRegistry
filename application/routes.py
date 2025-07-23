@@ -1,14 +1,16 @@
+import json
 import logging
 import time
 import traceback
 from collections import defaultdict
 
 import requests
-from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for
+from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, jsonify
 from flask import current_app as app
 import jwt
 from sqlalchemy import exc
 
+import config
 from application import search_index
 from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
@@ -185,6 +187,27 @@ def rebuild_index():
                            database_datasets_stats=database_datasets_stats,
                            index_datasets_stats=index_datasets_stats)
 
+@main_bp.route('/query')
+def query_index():
+    """
+    Renders a form to show all datasets in a table form. When a dataset_id is given only one dataset is shown
+
+    :param dataset_id: The param dataset id can be used to Edit or Delete datasets
+
+    :return: rendered flask template from templates/dataset_table.html
+    """
+    try:
+        query = request.args.get('query', "")
+        if not query == "{}":
+            query_obj = json.loads(query)
+            es_datasets = search_index.query(query_obj)
+        else:
+            es_datasets = search_index.fetch_all()
+        return jsonify(es_datasets.raw["hits"])
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        abort(500, description="Failed to query .", original_exception=e)
+
 
 @main_bp.route('/dashboard')
 def dashboard():
@@ -216,7 +239,7 @@ def login():
     Redirect to surfconnext for login information
 
     :return: Redirect to an url that is formed from the surf authorization endpoint, Scopes, SURF_CLIENT_ID,
-    redirect_uri, code challenge, code challenge method
+        redirect_uri, code challenge, code challenge method
     """
     return redirect(requests.get(url=app.config['SURF_DOTWELLKNOWN_CONFIG']['authorization_endpoint'],
                                  params={"response_type": "code", "client_id": app.config['SURF_CLIENT_ID'],

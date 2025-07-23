@@ -39,19 +39,19 @@ def validate_index():
             basic_auth=(Config.ELASTIC_USER, Config.ELASTIC_PASSWORD),
             verify_certs=Config.ELASTIC_USE_SSL,
             ca_certs=Config.ELASTIC_CA_CERT)
+        # Test connection
+        if es.ping():
+            print("Connected to Elasticsearch!")
+        else:
+            print(f"Could not connect to Elasticsearch")
+            exit()
 
         if not es.indices.exists(index=INDEX_NAME):
             es.indices.create(index=INDEX_NAME, mappings=MAPPING)
             print(f"Index '{INDEX_NAME}' created with mapping.")
         else:
             print(f"Index '{INDEX_NAME}' already exists.")
-        # Test connection
-        try:
-            es.ping()
-            print("Connected to Elasticsearch!")
-        except Exception as e:
-            print(f"Could not connect to Elasticsearch: {e}")
-            exit()
+
         return es
 
 def rebuild_index(datasets):
@@ -101,3 +101,7 @@ def delete_document(object):
 def fetch_all():
     all_documents_query = {"query": {"match_all": {}}}
     return es.search(index=INDEX_NAME, body=all_documents_query)
+
+def query(query):
+
+    return es.search(index=INDEX_NAME, body=query)
