@@ -15,7 +15,7 @@
     <link rel="stylesheet" media="screen and (min-width:48em)" href="{{ url_for('static', filename ='css/css_OFR5IUwHcbZlx-zQN9BKV9G_1paNngrg7w3y57V1nrI.css')}}">
     <link rel="stylesheet" media="screen and (min-width:64em)" href="{{ url_for('static', filename ='css/css_vCK22n3_rX1DQQkuogIsBJ4FqhfoqY9N1ztUV6L3HFU.css')}}">
     <link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_omgXSRZ-fOOCEP3kgfsAhK69nWepWMx6zaACIRBudAQ.css')}}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/deps/bootstrap-icons.min.1.11.3.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.min.1.13.1.css')}}">
 
     <link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
     <link rel="stylesheet" media="all" href="{{ url_for('static', filename='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
@@ -26,7 +26,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/nioo_bootstrap.css') }}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/popover.css')}}">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="/resources/demos/style.css">
 
+
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
     <script src="{{ url_for('static', filename='js/deps/jquery-3.6.0.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/moment.min.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/js/bootstrap.bundle.min.js')}}"></script>
@@ -119,20 +124,11 @@
                                     <span class="site-logo-visual">
                                         <img width height
                                              src="{{url_for('static', filename='img/LTER-LIFE-logo.svg')}}">
-
                                     </span>
-
                                     </a>
-
                                 </div>
-
-
                             </div>
-
-
                         </div>
-
-
                     </div>
                 </div>
                 <div class="region page-header--without-branding header-title-section">
@@ -180,8 +176,7 @@
     {% for category, message in messages %}
         {% if category == "success" %}
             <div aria-hidden="false" aria-labelledby="successBackdropLabel" class="modal fade" data-bs-backdrop="static"
-                 data-bs-keyboard="false"
-                 id="successBackdrop" tabindex="-1">
+                 data-bs-keyboard="false" id="successBackdrop" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -208,8 +203,9 @@
     {% endfor %}
   {% endif %}
 {% endwith %}
-
+    <div class="container mt-8">
         {% block content %}{% endblock %}
+    </div>
 </body>
     <script src="{{ url_for('static', filename='js/deps/bootstrap-tagsinput.min.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/typeahead.bundle.js')}}"></script>

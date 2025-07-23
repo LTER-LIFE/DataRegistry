@@ -8,6 +8,27 @@ function createGeoJSONFromWkt(wktString) {
 };
 
 function loadDatasetMap(datasetId, wkt_string) {
+
+    // Replace old coordinates by new
+    let single_regex = /^[+-]?\d+.\d+, [+-]?\d+.\d+/g;
+    // (51.15437, 11.85132), (49.89729, 15.10448)
+    let block_regex = /^\([+-]?\d+.\d+, [+-]?\d+.\d+\), \([+-]?\d+.\d+, [+-]?\d+.\d+\)/g;
+
+    if (single_regex.test(wkt_string)) {
+        const coords = wkt_string.split(", ");
+        wkt_string = "POINT("+ coords[1] + " " + coords[0] + ")"
+    } else if (block_regex.test(wkt_string)) {
+        wkt_string = wkt_string.replace(/[()]/gi, "");
+        const coords = wkt_string.split(", ");
+        wkt_string = `POLYGON((${coords[1]} ${coords[2]}, ${coords[1]} ${coords[0]}, ${coords[3]} ${coords[0]}, ${coords[3]} ${coords[2]}, ${coords[1]} ${coords[2]}))`
+    } else if (wkt_string === "None") {
+        wkt_string = "GEOMETRYCOLLECTION EMPTY"
+    }
+    geoJson = JSON.parse(createGeoJSONFromWkt(wkt_string));
+    loadDatasetMapJson(datasetId, geoJson);
+};
+
+function loadDatasetMapJson(datasetId, geoJson) {
     var osmUrl='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
     var osmAttribution='© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors';
     var esriUrl='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
@@ -25,21 +46,6 @@ function loadDatasetMap(datasetId, wkt_string) {
     osm.addTo(map)
     var map_set = "osm";
 
-    // Replace old coordinates by new
-    let single_regex = /^[+-]?\d+.\d+, [+-]?\d+.\d+/g;
-    // (51.15437, 11.85132), (49.89729, 15.10448)
-    let block_regex = /^\([+-]?\d+.\d+, [+-]?\d+.\d+\), \([+-]?\d+.\d+, [+-]?\d+.\d+\)/g;
-
-    if (single_regex.test(wkt_string)) {
-        const coords = wkt_string.split(", ");
-        wkt_string = "POINT("+ coords[1] + " " + coords[0] + ")"
-    } else if (block_regex.test(wkt_string)) {
-        wkt_string = wkt_string.replace(/[()]/gi, "");
-        const coords = wkt_string.split(", ");
-        wkt_string = `POLYGON((${coords[1]} ${coords[2]}, ${coords[1]} ${coords[0]}, ${coords[3]} ${coords[0]}, ${coords[3]} ${coords[2]}, ${coords[1]} ${coords[2]}))`
-    } else if (wkt_string === "None") {
-        wkt_string = "GEOMETRYCOLLECTION EMPTY"
-    }
 
     // Add Layercontrol
     var baseMaps = {
@@ -48,7 +54,6 @@ function loadDatasetMap(datasetId, wkt_string) {
     };
     var layerControl = L.control.layers(baseMaps).addTo(map);
 
-    geoJson = JSON.parse(createGeoJSONFromWkt(wkt_string));
     if (geoJson.type !== undefined) {
         geoJsonLayer = L.geoJSON(geoJson);
         geoJsonLayer.addTo(map);
@@ -56,7 +61,5 @@ function loadDatasetMap(datasetId, wkt_string) {
             map.fitBounds(geoJsonLayer.getBounds());
             map.setZoom(8);
         };
-    }
-
-
+    };
 }

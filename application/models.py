@@ -160,7 +160,6 @@ class Agent(Base):
                 db_session.flush()
         return db_agent
 
-
 class Catalog(Base):
     """A catalogue that hosts the Datasets or Data Services being described.
 
