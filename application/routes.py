@@ -5,6 +5,7 @@ import traceback
 from collections import defaultdict
 
 import requests
+import shapely
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, jsonify
 from flask import current_app as app
 import jwt
@@ -203,6 +204,25 @@ def query_index():
             es_datasets = search_index.query(query_obj)
         else:
             es_datasets = search_index.fetch_all()
+
+
+        for hit in es_datasets.raw["hits"]["hits"]:
+            source = {}
+            for key, value in hit.get("_source").items():
+                if isinstance(value, dict):
+                    if value.get("agent_id", None):
+                        source[key] = Agent.from_dict(value).web()
+                    elif value.get("keyword_id", None):
+                        source[key] = value
+                    elif value.get("license_document_id", None):
+                        source[key] = value["code"]
+                    else:
+                        source[key] = value
+                else:
+                    source[key] = value
+            hit["_source"] = source
+
+
         return jsonify(es_datasets.raw["hits"])
     except Exception as e:
         logging.error(traceback.format_exc())
