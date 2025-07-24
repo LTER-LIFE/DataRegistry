@@ -15,6 +15,7 @@ import os.path
 import shutil
 import tempfile
 import zipfile
+from tkinter.font import names
 
 import geopandas as gpd
 import shapely
@@ -779,6 +780,13 @@ class LicenseDocument(Base):
             'url_general': self.url_general,
             'url_document': self.url_document
         }
+    @classmethod
+    def from_dict(self, licence_document_dict):
+        self.license_document_id = licence_document_dict.get("license_document_id", None)
+        self.label = licence_document_dict.get("label", None)
+        self.code = licence_document_dict.get("code", None)
+        self.url_general = licence_document_dict.get("url_general", None)
+        self.url_document = licence_document_dict.get("url_document", None)
 
     def __str__(self):
         if self.label and self.code:
@@ -895,6 +903,13 @@ class Keyword(Base):
             'name': self.name,
             'slug': self.slug
         }
+    @classmethod
+    def from_dict(self, keyword_dict):
+        """
+        """
+        self.keyword_id = keyword_dict.get("keyword_id", None)
+        self.name = keyword_dict.get("name", None)
+        self.slug = keyword_dict.get("slug", None)
 
     def __str__(self):
         return self.name
@@ -976,7 +991,9 @@ class Location(Base):
                   during geometry processing.
         :rtype: :class:`Location` or None
         """
-        db_location = db_session.query(Location).filter_by(geometry=geometry).first()
+        db_location = None
+        if persist:
+            db_location = db_session.query(Location).filter_by(geometry=geometry).first()
         if not db_location:
             db_location = Location()
             if geometry:
@@ -1109,6 +1126,11 @@ class Location(Base):
         #    data["datasets_at_location_ids"] = [d.dataset_id for d in self.datasets_at_location]
 
         return data
+
+    def from_dict(self, location_dict):
+        self.bbox = shapely.from_geojson(location_dict.get("bbox", None))
+        self.centroid = shapely.from_geojson(location_dict.get("centroid", None))
+        self.geometry = shapely.from_geojson(location_dict.get("geometry", None))
 
 
 dataThemeCatalog = Table('dataThemeCatalog', Base.metadata,
