@@ -4,7 +4,7 @@
     {% for dataset in datasets %}
         <div class="card">
             <div class="card-header">
-                <b>{{ dataset.title }}</b>
+                <b>{{ dataset.title }}</b> - <a href="{{ url_for('add_to_cart', dataset_id=dataset.dataset_id) }}">Add to Cart</a>
             </div>
             <div class="card-body">
                 <p></p>
@@ -103,7 +103,7 @@
             </div>
         </div>
         <script type="application/javascript">
-            loadDatasetMap({{dataset.dataset_id}}, "{{dataset.dataset_spatial_covarage.to_shape()}}");
+            loadDatasetMap({{dataset.dataset_id}}, "{{dataset.dataset_spatial_coverage.to_shape()}}");
         </script>
     {% endfor %}
 {% endblock %}

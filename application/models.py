@@ -10,6 +10,7 @@ For the help_text we are copying the description of the properties from
 the DCAT-AP specification.
 
 """
+import json
 import os.path
 import shutil
 import tempfile
@@ -21,6 +22,7 @@ from geoalchemy2 import Geometry
 from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
 from shapely import GeometryCollection
 from shapely.geometry import box, shape
+from shapely.validation import explain_validity
 from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, or_, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.testing.schema import Table
@@ -73,6 +75,26 @@ class Agent(Base):
     name = Column(String(255))
     type = Column(String(20), nullable=True)
     mbox = Column(String(128), nullable=True)
+
+    def to_dict(self, seen=None):
+        "Returns an Agent as python dictionary"
+        return {
+            "agent_id": self.agent_id,
+            "name": self.name,
+            "type": self.type,
+            "mbox": self.mbox
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        if not data:
+            return None
+        return cls(
+            agent_id=data.get('agent_id'),
+            mbox=data.get('mbox'),
+            name=data.get('name'),
+            type=data.get('type')
+        )
 
     def to_graph(self):
         """
@@ -197,7 +219,40 @@ class Catalog(Base):
     catalog_license_id = Column(Integer, ForeignKey('LicenseDocument.license_document_id'))
     license = relationship("LicenseDocument", foreign_keys=[catalog_license_id])
 
-    # Helper table for many-to-many relation between datasets and keywords
+    def to_dict(self, seen=None):
+        """
+        @argument: seen a set which adds the instance to prevent infinite recursion.
+        @return Catalog object in python dict format
+        """
+
+        if seen is None:
+            seen = set()
+        if self in seen: # Check if this specific instance has been seen
+            return {"catalog_id": self.catalog_id, "title": self.title, "_is_recursive_ref": True} # Or just its ID
+
+        seen.add(self)
+        data = {
+            "catalog_id": self.catalog_id,
+            "applicable_legislation": self.applicable_legislation,
+            "contact_point": self.contact_point,
+            "title": self.title,
+            "description": self.description,
+            "homepage": self.homepage
+        }
+
+        # Handle relationships, potentially nesting their dictionary representations
+        if self.creator:
+            data["creator"] = self.creator.to_dict(seen)
+        if self.datasets_in_catalogue:
+            data["datasets_in_catalogue"] = [ds.to_dict(seen) for ds in self.datasets_in_catalogue]
+        if self.themes:
+            data["themes"] = self.themes.to_dict(seen)
+        if self.publisher:
+            data["publisher"] = self.publisher.to_dict(seen)
+        if self.license:
+            data["license"] = self.license.to_dict(seen)
+
+        return data
 
     def to_graph(self):
         """
@@ -282,8 +337,8 @@ class Dataset(Base):
 
     temporal_resolution = Column(String(255), nullable=False)
 
-    dataset_spatial_covarage_id = Column(Integer, ForeignKey('Location.location_id'))
-    dataset_spatial_covarage = relationship('Location', lazy=True)
+    dataset_spatial_coverage_id = Column(Integer, ForeignKey('Location.location_id'))
+    dataset_spatial_coverage = relationship('Location', lazy=True)
 
     spatial_resolution = Column(String(255), nullable=False)
 
@@ -301,6 +356,58 @@ class Dataset(Base):
     taxonomic_coverage = Column(String(255), nullable=True)
     landing_page = Column(String(255), nullable=True)
     public_id = Column(String(255), nullable=True)
+
+    def to_dict(self, seen=None):
+        """
+        @return Catalog object in python dict format
+        """
+
+        if seen is None:
+            seen = set()
+        if self in seen: # Check if this specific instance has been seen
+            return {"dataset_id": self.dataset_id, "title": self.title, "_is_recursive_ref": True} # Or just its ID
+
+        seen.add(self)
+
+        data = {
+            "dataset_id": self.dataset_id,
+            "release_date": self.release_date.isoformat() if self.release_date else None,
+            "language": self.language,
+            "title": self.title,
+            "description": self.description,
+            "resource_type": self.resource_type,
+            "temporal_coverage_start": self.temporal_coverage_start.isoformat() if self.temporal_coverage_start else None,
+            "temporal_coverage_end": self.temporal_coverage_end.isoformat() if self.temporal_coverage_end else None,
+            "temporal_resolution": self.temporal_resolution,
+            "spatial_resolution": self.spatial_resolution,
+            "access_rights": self.access_rights,
+            "modified": self.modified.isoformat() if self.modified else None,
+            "taxonomic_coverage": self.taxonomic_coverage,
+            "landing_page": self.landing_page,
+            "public_id": self.public_id,
+        }
+
+        # Handle relationships, potentially nesting their dictionary representations
+        if self.creator:
+            data["creator"] = self.creator.to_dict(seen)
+        if self.dataset_contact_point:
+            data["dataset_contact_point"] = self.dataset_contact_point.to_dict(seen)
+        if self.dataset_publisher:
+            data["dataset_publisher"] = self.dataset_publisher.to_dict(seen)
+        if self.dataset_metadata_provider:
+            data["dataset_metadata_provider"] = self.dataset_metadata_provider.to_dict(seen)
+        if self.dataset_keywords:
+            data["dataset_keywords"] = [keyword.name for keyword in self.dataset_keywords]  # Or keyword.to_dict()
+        if self.dataset_spatial_coverage:
+            data["dataset_spatial_coverage"] = self.dataset_spatial_coverage.to_dict(seen)
+        if self.dataset_license:
+            data["dataset_license"] = self.dataset_license.to_dict(seen)
+        if self.dataset_catalog:
+            data["dataset_catalog"] = self.dataset_catalog.to_dict(seen)
+        if self.dataset_themes:
+            data["dataset_themes"] = [theme.name for theme in self.dataset_themes]  # Or theme.to_dict()
+
+        return data
 
     def to_graph(self):
         """
@@ -352,8 +459,8 @@ class Dataset(Base):
         if self.temporal_resolution:
             # TODO: temporal resolution should be a xsd:duration
             g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution)))
-        if self.dataset_spatial_covarage:
-            g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_covarage.location_id)]))
+        if self.dataset_spatial_coverage:
+            g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_coverage.location_id)]))
         if self.spatial_resolution:
             g.add((dataset, DCAT.spatialResolutionInMeters, Literal(self.spatial_resolution)))
         if self.dataset_license:
@@ -420,6 +527,40 @@ class Distribution(Base):
 
     distribution_checksum_id = Column(Integer, ForeignKey('Checksum.checksum_id'))
     distribution_checksum = relationship("Checksum", foreign_keys=[distribution_checksum_id])
+
+    def to_dict(self, seen=None):
+        """
+        @return Distribution object in python dict format
+        """
+
+        if seen is None:
+            seen = set()
+        if self in seen: # Check if this specific instance has been seen
+            return {"distribution_id": self.distribution_id, "title": self.title, "_is_recursive_ref": True} # Or just
+            # its ID
+
+        seen.add(self)
+
+        distribution_dict = {"distribution_id": self.distribution_id,
+                             "title": self.title,
+                             "description": self.description,
+                             "download_url": self.download_url,
+                             "access_url": self.access_url,
+                             }
+
+        # Handle relationships, potentially nesting their dictionary representations
+        if self.dataset:
+            distribution_dict["dataset"] = self.dataset.to_dict(seen)
+        if self.dataset_contact_point:
+            distribution_dict["distribution_format"] = self.dataset_contact_point.to_dict(seen)
+        if self.dataset_publisher:
+            distribution_dict["distribution_license"] = self.distribution_license.to_dict(seen)
+        if self.distribution_license:
+            distribution_dict["distribution_checksum"] = self.distribution_license.to_dict(seen)
+
+        return distribution_dict
+
+
 
     def to_graph(self):
         """
@@ -489,10 +630,32 @@ class DataService(Base):
 
     format = relationship('MediaType', secondary='dataserviceMediaType')
 
+    def to_dict(self, seen=False):
+        """
+        @return data_service object in python dict format
+        """
+
+        if seen is None:
+            seen = set()
+        if self in seen: # Check if this specific instance has been seen
+            return {"data_service_id": self.dataservice_id, "title": self.title, "_is_recursive_ref": True} # Or just
+            # its ID
+        data_service_dict = {
+            "data_service_id": self.dataservice_id,
+        }
+        if self.catalog:
+            data_service_dict["catalog"] = self.catalog.to_dict(seen)
+        if self.license:
+            data_service_dict["license"] = self.license.to_dict(seen)
+        if self.format:
+            data_service_dict["format"] = self.format.to_dict(seen)
+        return data_service_dict
+
     def to_graph(self):
         """
 
         @return: Agent object in RDFlib graph format
+        :return:
         """
         g = Graph()
         # Add namespaces to the graph
@@ -530,6 +693,21 @@ class MediaType(Base):
     code = Column(String(10), nullable=True, unique=True)
     media_type = Column(String(50), nullable=True)
     description = Column(Text, nullable=True)
+
+    def to_dict(self, seen=None):
+
+        if seen is None:
+            seen = set()
+        if self in seen: # Check if this specific instance has been seen
+            return {"mediatype_id": self.mediatype_id, 'media_type': self.media_type, "_is_recursive_ref": True} # Or just
+            # its ID
+        return {
+            'mediatype_id': self.mediatype_id,
+            'extension': self.extension,
+            'code': self.code,
+            'media_type': self.media_type,
+            'description': self.description
+        }
 
     def to_graph(self):
         """
@@ -583,6 +761,26 @@ class LicenseDocument(Base):
     url_general = Column(String(255), nullable=True)
     url_document = Column(String(255), nullable=True)
 
+    def to_dict(self, seen=None):
+        """
+        Convert the LicenseDocument object to a dictionary.
+
+        :param seen: A set of objects that have already been converted to dictionaries
+                     to avoid infinite recursion in case of circular references.
+        :return: A dictionary representation of the LicenseDocument object.
+        """
+        if seen is None:
+            seen = set()
+        if self in seen:  # Check if this specific instance has been seen
+            return {"license_document_id": self.license_document_id, 'label': self.label, "_is_recursive_ref": True}
+        return {
+            'license_document_id': self.license_document_id,
+            'label': self.label,
+            'code': self.code,
+            'url_general': self.url_general,
+            'url_document': self.url_document
+        }
+
     def __str__(self):
         if self.label and self.code:
             return f"{self.name} <{self.mbox}>"
@@ -622,6 +820,24 @@ class DataTheme(Base):
     label = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
 
+    def to_dict(self, seen=None):
+        """Convert the DataTheme object to a dictionary.
+
+        :param seen: A set of objects that have already been converted to dictionaries
+                     to avoid infinite recursion in case of circular references.
+        :return: A dictionary representation of the DataTheme object.
+        """
+        if seen is None:
+            seen = set()
+        if self in seen:  # Check if this specific instance has been seen
+            return {"data_theme_id": self.data_theme_id, 'label': self.label, "_is_recursive_ref": True}
+        return {
+            'data_theme_id': self.data_theme_id,
+            'code': self.code,
+            'label': self.label,
+            'description': self.description
+        }
+
     def __str__(self):
         return self.label
 
@@ -635,6 +851,23 @@ class Checksum(Base):
     checksum_value = Column(String(255), nullable=False)
     algorithm = Column(String(10), nullable=True)
 
+    def to_dict(self, seen=None):
+        """Convert the Checksum object to a dictionary.
+
+        :param seen: A set of objects that have already been converted to dictionaries
+                     to avoid infinite recursion in case of circular references.
+        :return: A dictionary representation of the Checksum object.
+        """
+        if seen is None:
+            seen = set()
+        if self in seen:  # Check if this specific instance has been seen before
+            return {"checksum_id": self.checksum_id, "_is_recursive": True}
+        return {
+            'checksum_id': self.checksum_id,
+            'checksum_value': self.checksum_value,
+            'algorithm': self.algorithm
+        }
+
     def __str__(self):
         return f"{self.checksum_value} ({self.algorithm})"
 
@@ -646,6 +879,23 @@ class Keyword(Base):
     keyword_id = Column(Integer, primary_key=True, nullable=False)
     name = Column(String(50), nullable=False)
     slug = Column(String(50), nullable=True)
+
+    def to_dict(self, seen=None):
+        """Convert the Keyword object to a dictionary.
+
+        :param seen: A set of objects that have already been converted to dictionaries
+                     to avoid infinite recursion in case of circular references.
+        :return: A dictionary representation of the Keyword object.
+        """
+        if seen is None:
+            seen = set()
+        if self in seen:  # Check if this specific instance has been seen before
+            return {"keyword_id": self.keyword_id, "name": self.name, "_is_recursive": True}
+        return {
+            'keyword_id': self.keyword_id,
+            'name': self.name,
+            'slug': self.slug
+        }
 
     def __str__(self):
         return self.name
@@ -693,19 +943,66 @@ class Location(Base):
     @classmethod
     def add_or_update_location(cls, geometry=None, persist=True):
         """
-        Add or update a Location object to the database, using a geometry
+        Adds a new Location object to the database or retrieves an existing one.
 
-        An Agent can be a Person or an Organization
+        This class method checks if a Location with the given geometry already
+        exists in the database. If it does, the existing object is returned.
+        If not, a new Location object is created.
 
-        :param geometry:
-        :param persist:
-        :return:
+        If a geometry string is provided for a new Location, the method attempts
+        to parse it from Well-Known Text (WKT) format using `shapely.from_wkt`.
+        It includes a critical validity check and attempts to fix invalid
+        geometries using the `buffer(0)` technique (or `shapely.make_valid`
+        in newer shapely versions). If the geometry is successfully processed
+        (either valid initially or fixed), its WKT representation, the WKT
+        of its centroid, and the WKT of its bounding box are stored in the
+        new Location object.
+
+        If `persist` is True, the new or updated Location object is added to
+        the database session and committed immediately.
+
+        :param cls: The class itself (standard for class methods).
+        :type cls: type
+        :param geometry: The geometry of the location in Well-Known Text (WKT) format.
+                         If None, a Location object without geometry is created (though
+                         this might violate schema constraints depending on the table definition).
+        :type geometry: str, optional
+        :param persist: If True, the new or updated Location object is added to
+                        the database session and committed immediately.
+        :type persist: bool, optional
+        :returns: The existing or newly created :class:`Location` object from the database.
+                  Returns None if the provided `geometry` string is invalid WKT,
+                  or if the geometry is invalid and cannot be fixed by the
+                  automatic repair mechanism, or if any other error occurs
+                  during geometry processing.
+        :rtype: :class:`Location` or None
         """
         db_location = db_session.query(Location).filter_by(geometry=geometry).first()
         if not db_location:
             db_location = Location()
             if geometry:
-                geometry_shape = shapely.from_wkt(geometry)
+                if geometry:
+                    try:
+                        geometry_shape = shapely.from_wkt(geometry)
+                    except Exception as e:
+                        print(f"Error parsing WKT in add_or_update_location: {e} - {geometry}")
+                        return None
+
+                    # TODO: --- CRITICAL VALIDITY CHECK AND FIX ---
+                    if not geometry_shape.is_valid:
+                        print(
+                            f"Warning: Geometry is invalid ({geometry_shape.geom_type}). Attempting to fix. Reason: "
+                            f"{explain_validity(geometry_shape)}")
+                        try:
+                            # buffer(0) is a common trick to fix invalid geometries
+                            # In newer Shapely (2.0+), shapely.make_valid(geometry_shape) is more explicit
+                            geometry_shape = geometry_shape.buffer(0)
+                            if not geometry_shape.is_valid:
+                                print(
+                                    "Warning: Geometry still invalid after buffer(0). This might lead to indexing issues.")
+                        except Exception as e:
+                            print(f"Error during geometry buffering/fix: {e}")
+                            return None  # Indicate failure if fix also fails
 
                 if shapely.get_type_id(geometry_shape) != 7:
                     geometry_shape = GeometryCollection(geometry_shape)
@@ -769,6 +1066,7 @@ class Location(Base):
         :param to: output format can be either [geogson or wkt]
         :return:
         """
+        shape_return = None
         if field in self.__dict__.keys():
             wkb_value = str(self.__dict__.get(field, "POLYGON EMPTY"))
             if wkb_value == 'None':
@@ -776,9 +1074,42 @@ class Location(Base):
             else:
                 spatial_coverage_wkb = shapely.wkb.loads(wkb_value)
             if to == "wkt":
-                return shapely.to_wkt(spatial_coverage_wkb)
+                shape_return = shapely.to_wkt(spatial_coverage_wkb)
             if to == "geojson":
-                return shapely.to_geojson(spatial_coverage_wkb)
+                shape_return = json.loads(shapely.to_geojson(spatial_coverage_wkb))
+        return shape_return
+
+    def to_dict(self, seen=None):
+        """
+        Converts the Location object to a dictionary for indexing.
+        Converts geographical data to GeoJSON strings.
+        """
+        if seen is None:
+            seen = set()
+        if self in seen:
+            # Return a simplified representation to prevent infinite recursion
+            return {"location_id": self.location_id, "_recursive_ref": True}
+        seen.add(self)
+
+        data = {
+            "location_id": self.location_id,
+        }
+
+        # Convert PostGIS geometries (WKB) to GeoJSON strings
+        if self.geometry:
+            data["geometry"] = self.to_shape(field="geometry", to="geojson")
+        if self.bbox:
+            data["bbox"] = self.to_shape(field="bbox", to="geojson")
+        if self.centroid:
+            data["centroid"] = self.to_shape(field="centroid", to="geojson")
+
+        # If you had a 'datasets_at_location' relationship and wanted to include
+        # a list of dataset IDs, you would do it here, but *without* recursing
+        # back into the full Dataset objects.
+        # if self.datasets_at_location:
+        #    data["datasets_at_location_ids"] = [d.dataset_id for d in self.datasets_at_location]
+
+        return data
 
 
 dataThemeCatalog = Table('dataThemeCatalog', Base.metadata,
