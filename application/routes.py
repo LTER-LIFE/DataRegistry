@@ -48,14 +48,15 @@ def home():
         for es_dataset in es_datasets.body["hits"]["hits"]:
 
             dataset_dict = {
-                "centroid": es_dataset.get("_source").get("dataset_spatial_coverage").get("centroid"),
-                "geometry": es_dataset.get("_source").get("dataset_spatial_coverage").get("geometry"),
-                "properties": {"id": _json_safe_string(es_dataset.get("_source").get("title")),
-                               "title": _json_safe_string(es_dataset.get("_source").get("title")),
-                               "description": _json_safe_string(es_dataset.get("_source").get("description")),
-                               "creator": str(Agent.from_dict(es_dataset.get("_source").get("creator"))),
-                               "temporal_coverage": f"{es_dataset.get("_source").get("temporal_coverage_start")} / "
-                                                    f"{es_dataset.get("_source").get("temporal_coverage_end")}"}}
+                "centroid": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("centroid", None),
+                "geometry": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("geometry", None),
+                "properties": {"id": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
+                               "title": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
+                               "description": _json_safe_string(es_dataset.get("_source", {}).get("description", None)),
+                               "creator": str(Agent.from_dict(es_dataset.get("_source", {}).get("creator", None))),
+                               "temporal_coverage":
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start"), None} / "
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}"}}
 
             datasets_shapes[es_dataset.get("_source").get("dataset_id")] = dataset_dict
         user_logged_in = is_logged_in()
