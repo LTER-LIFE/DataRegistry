@@ -1,13 +1,16 @@
+import io
 import json
 import logging
 import traceback
+import zipfile
 from collections import defaultdict
 from datetime import datetime
 
 import requests
-from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for
+from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file
 from flask import current_app as app
 import jwt
+import shapely
 from sqlalchemy import exc
 
 from application.authentication import get_userinfo, valid_token, in_editor_group
@@ -44,8 +47,8 @@ def home():
         for dataset in all_datasets:
 
             dataset_dict = {
-                "centroid": json.loads(dataset.dataset_spatial_coverage.to_shape(field="centroid", to="geojson")),
-                "geometry": json.loads(dataset.dataset_spatial_coverage.to_shape(field="geometry", to="geojson")),
+                "centroid": dataset.dataset_spatial_coverage.to_shape(field="centroid", to="geojson"),
+                "geometry": dataset.dataset_spatial_coverage.to_shape(field="geometry", to="geojson"),
                 "properties": {"id": _json_safe_string(dataset.title), "title": _json_safe_string(dataset.title),
                                "description": _json_safe_string(dataset.description), "creator": str(dataset.creator),
                                "temporal_coverage": f"{dataset.temporal_coverage_start} / "
@@ -151,6 +154,61 @@ def datasets(dataset_id=None):
     except Exception as e:
         logging.error(traceback.format_exc())
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
+
+
+@app.route('/cart')
+def cart():
+    dataset_ids = session.get('cart', [])
+    cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
+    return render_template('cart.html', cart=cart_items)
+
+
+@app.route('/cart/add/<dataset_id>')
+def add_to_cart(dataset_id):
+    if 'cart' not in session:
+        session['cart'] = []
+    if dataset_id not in session['cart']:
+        session['cart'].append(dataset_id)
+        session.modified = True
+    return redirect(url_for('main_bp.datasets'))
+
+
+@app.route('/cart/remove/<dataset_id>')
+def remove_from_cart(dataset_id):
+    cart = session.get('cart', [])
+    if dataset_id in cart:
+        cart.remove(dataset_id)
+        session['cart'] = cart
+        session.modified = True
+    return redirect(url_for('cart'))
+
+
+@app.route('/cart/empty')
+def empty_cart():
+    session.pop('cart', None)
+    return redirect(url_for('cart'))
+
+
+@app.route('/export')
+def export_cart():
+    dataset_ids = session.get('cart', [])
+    if len(dataset_ids) > 0:
+        stream = io.BytesIO()
+
+        # Create Zip archive
+        with zipfile.ZipFile(stream, 'w') as zf:
+            for dataset_id in dataset_ids:
+                dataset = Dataset.query.get(dataset_id)
+                # Add dataset file to Zip archive
+                with zf.open(f'{dataset_id}.json', 'w') as f:
+                    txt = _geojson_dump(dataset.to_dict())
+                    f.write(txt.encode())
+
+        stream.seek(0)
+        return send_file(stream,
+                         mimetype='application/zip',
+                         as_attachment=True,
+                         download_name='datasets.zip')
 
 
 @main_bp.route('/login')
@@ -269,3 +327,32 @@ def _json_safe_string(string):
     Some fields can contain breaking code for json, this function can be used to clean this fields
     """
     return string.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+
+
+def _geojson_dump(dataset):
+    """
+    Encode dataset into GeoJSON
+    """
+    dataset_ = dataset.copy()
+    dataset_spatial_coverage = dataset_.pop('dataset_spatial_coverage', {})
+    geometry = dataset_spatial_coverage.pop('geometry', {})
+    geometry = _drop_geometry_collection(geometry)
+    properties = {**dataset_, **dataset_spatial_coverage}
+    return json.dumps(dict(type="Feature",
+                           geometry=geometry,
+                           properties=properties))
+
+
+def _drop_geometry_collection(geometry):
+    """
+    Drop the geometry collection for collections with a single element
+    """
+    if geometry:
+        geom = shapely.from_geojson(json.dumps(geometry))
+        # if we have a geometry collection (.is_simple is False) and the number
+        # of elements is equal to one, extract the geometry entry and map it to
+        # GeoJSON
+        if (not geom.is_simple) and (len(geom.geoms) == 1):
+            geom = geom.geoms[0]
+            geometry = json.loads(shapely.to_geojson(geom))
+    return geometry
