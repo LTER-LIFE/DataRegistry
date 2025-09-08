@@ -71,9 +71,9 @@ class TestDataset(unittest.TestCase):
             dataset.dataset_metadata_provider = Agent.add_or_update_agent(mbox=stefan)
             # keywords -> Keyword
 
-            # spatial_covarage -> Location
-            # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry="GEOMETRYCOLLECTION ("
+            # spatial_coverage -> Location
+            # db_location = Location.add_or_update_location(geometry=self.spatial_coverage.data)
+            dataset.dataset_spatial_coverage = Location.add_or_update_location(geometry="GEOMETRYCOLLECTION ("
                                                                                         "POLYGON ((5.661704 52.067003, "
                                                                                         "5.848422 52.09401, "
                                                                                         "5.917068 52.01294, "
@@ -131,9 +131,9 @@ class TestDataset(unittest.TestCase):
             dataset.metadata_provider = Agent.add_or_update_agent(mbox=stefan)
             # keywords -> Keyword
 
-            # spatial_covarage -> Location
-            # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-            dataset.dataset_spatial_covarage = Location.add_or_update_location(
+            # spatial_coverage -> Location
+            # db_location = Location.add_or_update_location(geometry=self.spatial_coverage.data)
+            dataset.dataset_spatial_coverage = Location.add_or_update_location(
                 geometry="POLYGON((5.675194 52.089633, 5.675194 52.15877, 5.776763 52.15877, 5.776763 52.089633, "
                          "5.675194 52.089633))")
 
