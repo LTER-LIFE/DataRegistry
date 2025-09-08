@@ -387,8 +387,8 @@ class Dataset(Base):
             data["dataset_metadata_provider"] = self.dataset_metadata_provider.to_dict(seen)
         if self.dataset_keywords:
             data["dataset_keywords"] = [keyword.name for keyword in self.dataset_keywords]  # Or keyword.to_dict()
-        if self.dataset_spatial_covarage:
-            data["dataset_spatial_covarage"] = self.dataset_spatial_covarage.to_dict(seen)
+        if self.dataset_spatial_coverage:
+            data["dataset_spatial_coverage"] = self.dataset_spatial_coverage.to_dict(seen)
         if self.dataset_license:
             data["dataset_license"] = self.dataset_license.to_dict(seen)
         if self.dataset_catalog:

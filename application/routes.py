@@ -47,8 +47,8 @@ def home():
         for dataset in all_datasets:
 
             dataset_dict = {
-                "centroid": dataset.dataset_spatial_covarage.to_shape(field="centroid", to="geojson"),
-                "geometry": dataset.dataset_spatial_covarage.to_shape(field="geometry", to="geojson"),
+                "centroid": dataset.dataset_spatial_coverage.to_shape(field="centroid", to="geojson"),
+                "geometry": dataset.dataset_spatial_coverage.to_shape(field="geometry", to="geojson"),
                 "properties": {"id": _json_safe_string(dataset.title), "title": _json_safe_string(dataset.title),
                                "description": _json_safe_string(dataset.description), "creator": str(dataset.creator),
                                "temporal_coverage": f"{dataset.temporal_coverage_start} / "

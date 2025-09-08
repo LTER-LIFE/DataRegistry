@@ -66,7 +66,7 @@ class MockObjects:
             points.append((lon, lat))
         polygon = Polygon(points)
         geometry_wkt = shapely.to_wkt(GeometryCollection([polygon]))
-        dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry=geometry_wkt)
+        dataset.dataset_spatial_coverage = Location.add_or_update_location(geometry=geometry_wkt)
 
         dataset.temporal_coverage_start = fake.date_time_between(start_date="-5y", end_date="-3y")
         dataset.temporal_coverage_end = fake.date_time_between(start_date="-2y", end_date="now")
