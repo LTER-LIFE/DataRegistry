@@ -3,8 +3,8 @@
 
 A portal to manage and visualize ecological metadata from the Veluwe region.
 
-**Authors:**  
-- **Sander Vlugter** – Internship project at NIOO-KNAW, part of the WUR MSc Bioinformatics programme, 2024  
+**Authors:**
+- **Sander Vlugter** – Internship project at NIOO-KNAW, part of the WUR MSc Bioinformatics programme, 2024
 - **Eric Kuijt** – Maintainer and developer
 
 ---
@@ -100,16 +100,6 @@ ALTER TABLE "DataSet" OWNER TO datamanagement_test_app;
 
 ---
 
-## 🔍 ElasticSearch
-
-To install Elasticsearch locally:
-
-```bash
-curl -fsSL https://elastic.co/start-local | sh
-```
-
----
-
 ## 🛠️ Running the App
 
 1. Copy and enable the service:
@@ -182,7 +172,7 @@ Update navigation in:
 
 ## 🤝 Contributing
 
-Pull requests are welcome!  
+Pull requests are welcome!
 Please open an issue first to discuss major changes.
 
 ---
