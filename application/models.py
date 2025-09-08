@@ -282,8 +282,8 @@ class Dataset(Base):
 
     temporal_resolution = Column(String(255), nullable=False)
 
-    dataset_spatial_covarage_id = Column(Integer, ForeignKey('Location.location_id'))
-    dataset_spatial_covarage = relationship('Location', lazy=True)
+    dataset_spatial_coverage_id = Column(Integer, ForeignKey('Location.location_id'))
+    dataset_spatial_coverage = relationship('Location', lazy=True)
 
     spatial_resolution = Column(String(255), nullable=False)
 
@@ -352,8 +352,8 @@ class Dataset(Base):
         if self.temporal_resolution:
             # TODO: temporal resolution should be a xsd:duration
             g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution)))
-        if self.dataset_spatial_covarage:
-            g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_covarage.location_id)]))
+        if self.dataset_spatial_coverage:
+            g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_coverage.location_id)]))
         if self.spatial_resolution:
             g.add((dataset, DCAT.spatialResolutionInMeters, Literal(self.spatial_resolution)))
         if self.dataset_license:

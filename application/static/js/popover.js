@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    $('#spatial_covarage').click(function() {
+    $('#spatial_coverage').click(function() {
         selectGeoLoc = $('#select-geo-loc');
         selectGeoLoc.toggleClass('hidden');
         if (selectGeoLoc.hasClass('hidden')) {
@@ -109,7 +109,7 @@ function loadMap(osm) {
 
     map.addControl(drawControl);
 
-    wkt_string = document.getElementById("spatial_covarage").value;
+    wkt_string = document.getElementById("spatial_coverage").value;
     if (wkt_string !== "") {
          // Replace old coordinates by wkt string
         let single_regex = /^[+-]?\d+.\d+, [+-]?\d+.\d+/g;
@@ -153,7 +153,7 @@ function loadMap(osm) {
         layerGeoJSON = editableLayers.toGeoJSON();
         var out = createWktFromGeoJSON(layerGeoJSON);
 
-        document.getElementById("spatial_covarage").value = out;
+        document.getElementById("spatial_coverage").value = out;
 
     });
 
@@ -165,7 +165,7 @@ function loadMap(osm) {
         layerGeoJSON = editableLayers.toGeoJSON();
         var out = createWktFromGeoJSON(layerGeoJSON);
 
-        document.getElementById("spatial_covarage").value = out;
+        document.getElementById("spatial_coverage").value = out;
         //$('#select-geo-loc').addClass("hidden");
     });
 
@@ -176,7 +176,7 @@ function loadMap(osm) {
         layerGeoJSON = editableLayers.toGeoJSON();
         var out = createWktFromGeoJSON(layerGeoJSON);
 
-        document.getElementById("spatial_covarage").value = out;
+        document.getElementById("spatial_coverage").value = out;
 
     });
 }
