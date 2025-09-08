@@ -1,4 +1,3 @@
-import json
 from datetime import datetime, timedelta
 from geoalchemy2 import load_spatialite
 from sqlalchemy.event import listen
@@ -10,7 +9,6 @@ from sqlalchemy import create_engine
 import unittest
 
 from config import Config
-from mock_objects import MockObjects
 
 
 class TestDataset(unittest.TestCase):
@@ -33,9 +31,6 @@ class TestDataset(unittest.TestCase):
 
         # To create tables, you typically do:
         metadata.create_all(engine)
-
-        self.mock_objects = MockObjects()
-
         print("Finished running setup")
 
     def tearDown(self):
@@ -48,7 +43,51 @@ class TestDataset(unittest.TestCase):
         instances = db_session.query(Dataset).all()
         eq_(0, len(instances))
 
-        dataset = self.mock_objects.create_mock_dataset("one")
+        def to_dataset():
+            dataset = Dataset()
+            dataset.modified = datetime.now()
+            dataset.release_date = datetime.now()
+            dataset.language = "EN"
+            dataset.title = "Title of the mock dataset"
+            dataset.description = "Description of the mock dataset"
+            dataset.resource_type = "Resource type of the mock dataset"
+            dataset.temporal_coverage_start = datetime.now() - timedelta(days=1)
+            dataset.temporal_coverage_end = datetime.now() + timedelta(days=1)
+            dataset.temporal_resolution = "1"
+            dataset.spatial_resolution = "1"
+            dataset.taxonomic_coverage = "Rabbit"
+            dataset.access_rights = "OPEN"
+
+            eric = "e.kuijt@nioo.knaw.nl"
+            stefan = "s.vriend@nioo.knaw.nl"
+            # Fill creator -> Agent
+            dataset.creator = Agent.add_or_update_agent(mbox=eric)
+            # dataset_contact_point -> Agent
+            dataset.dataset_contact_point = Agent.add_or_update_agent(mbox=eric)
+            # publisher -> Agent
+            dataset.publisher = Agent.add_or_update_agent(mbox=eric)
+
+            # metadata_provider -> Agent
+            dataset.dataset_metadata_provider = Agent.add_or_update_agent(mbox=stefan)
+            # keywords -> Keyword
+
+            # spatial_covarage -> Location
+            # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
+            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry="GEOMETRYCOLLECTION ("
+                                                                                        "POLYGON ((5.661704 52.067003, "
+                                                                                        "5.848422 52.09401, "
+                                                                                        "5.917068 52.01294, "
+                                                                                        "5.680925 51.94527, "
+                                                                                        "5.661704 52.067003"
+                                                                                        "))"
+                                                                                        ")")
+
+            # licence -> LicenceDocument
+            dataset.license = LicenseDocument(code="CC-BY-4.0")
+
+            return dataset
+
+        dataset = to_dataset()
 
         db_session.add(dataset)
         db_session.commit()
@@ -56,7 +95,7 @@ class TestDataset(unittest.TestCase):
 
         all_db_datasets = db_session.query(Dataset).all()
 
-        print(json.dumps(all_db_datasets[0].to_dict(), indent=1))
+        print(all_db_datasets[0].serialize())
 
         assert len(all_db_datasets) == 1
 
@@ -64,7 +103,46 @@ class TestDataset(unittest.TestCase):
         instances = db_session.query(Dataset).all()
         eq_(0, len(instances))
 
-        dataset = self.mock_objects.create_mock_dataset("two")
+        def to_dataset():
+            dataset = Dataset()
+            dataset.modified = datetime.now()
+            dataset.release_date = datetime.now()
+            dataset.language = "EN"
+            dataset.title = "Title of the mock dataset"
+            dataset.description = "Description of the mock dataset"
+            dataset.resource_type = "Resource type of the mock dataset"
+            dataset.temporal_coverage_start = datetime.now() - timedelta(days=1)
+            dataset.temporal_coverage_end = datetime.now() + timedelta(days=1)
+            dataset.temporal_resolution = "1"
+            dataset.spatial_resolution = "1"
+            dataset.taxonomic_coverage = "Rabbit"
+            dataset.access_rights = "OPEN"
+
+            eric = "e.kuijt@nioo.knaw.nl"
+            stefan = "s.vriend@nioo.knaw.nl"
+            # Fill creator -> Agent
+            dataset.creator = Agent.add_or_update_agent(mbox=eric)
+            # dataset_contact_point -> Agent
+            dataset.dataset_contact_point = Agent.add_or_update_agent(mbox=eric)
+            # publisher -> Agent
+            dataset.publisher = Agent.add_or_update_agent(mbox=eric)
+
+            # metadata_provider -> Agent
+            dataset.metadata_provider = Agent.add_or_update_agent(mbox=stefan)
+            # keywords -> Keyword
+
+            # spatial_covarage -> Location
+            # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
+            dataset.dataset_spatial_covarage = Location.add_or_update_location(
+                geometry="POLYGON((5.675194 52.089633, 5.675194 52.15877, 5.776763 52.15877, 5.776763 52.089633, "
+                         "5.675194 52.089633))")
+
+            # licence -> LicenceDocument
+            dataset.license = LicenseDocument(code="CC-BY-4.0")
+
+            return dataset
+
+        dataset = to_dataset()
         db_session.add(dataset)
         db_session.commit()
         db_session.flush()

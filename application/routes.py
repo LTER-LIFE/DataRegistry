@@ -1,18 +1,15 @@
-import io
 import json
 import logging
-import time
 import traceback
-import zipfile
 from collections import defaultdict
+from datetime import datetime
 
 import requests
-from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file
+from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for
 from flask import current_app as app
 import jwt
 from sqlalchemy import exc
 
-from application import search_index
 from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
 from application.forms import DatasetForm
@@ -41,24 +38,20 @@ def home():
     :return: rendered flask template from templates/index.html
     """
     try:
-        #all_datasets = db_session.query(Dataset).all()
-        es_datasets = search_index.fetch_all()
+        all_datasets = db_session.query(Dataset).all()
 
         datasets_shapes = defaultdict(dict)
-        for es_dataset in es_datasets.body["hits"]["hits"]:
+        for dataset in all_datasets:
 
             dataset_dict = {
-                "centroid": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("centroid", None),
-                "geometry": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("geometry", None),
-                "properties": {"id": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
-                               "title": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
-                               "description": _json_safe_string(es_dataset.get("_source", {}).get("description", None)),
-                               "creator": str(Agent.from_dict(es_dataset.get("_source", {}).get("creator", None))),
-                               "temporal_coverage":
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start"), None} / "
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}"}}
+                "centroid": json.loads(dataset.dataset_spatial_covarage.to_shape(field="centroid", to="geojson")),
+                "geometry": json.loads(dataset.dataset_spatial_covarage.to_shape(field="geometry", to="geojson")),
+                "properties": {"id": _json_safe_string(dataset.title), "title": _json_safe_string(dataset.title),
+                               "description": _json_safe_string(dataset.description), "creator": str(dataset.creator),
+                               "temporal_coverage": f"{dataset.temporal_coverage_start} / "
+                                                    f"{dataset.temporal_coverage_end}"}}
 
-            datasets_shapes[es_dataset.get("_source").get("dataset_id")] = dataset_dict
+            datasets_shapes[dataset.dataset_id] = dataset_dict
         user_logged_in = is_logged_in()
         if user_logged_in:
             user_info = get_userinfo(session.get("access_token"))
@@ -160,116 +153,6 @@ def datasets(dataset_id=None):
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
 
 
-@app.route('/cart')
-def cart():
-    dataset_ids = session.get('cart', [])
-    cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
-    return render_template('cart.html', cart=cart_items)
-
-
-@app.route('/cart/add/<dataset_id>')
-def add_to_cart(dataset_id):
-    if 'cart' not in session:
-        session['cart'] = []
-    if dataset_id not in session['cart']:
-        session['cart'].append(dataset_id)
-        session.modified = True
-    return redirect(url_for('main_bp.datasets'))
-
-
-@app.route('/cart/remove/<dataset_id>')
-def remove_from_cart(dataset_id):
-    cart = session.get('cart', [])
-    if dataset_id in cart:
-        cart.remove(dataset_id)
-        session['cart'] = cart
-        session.modified = True
-    return redirect(url_for('cart'))
-
-
-@app.route('/cart/empty')
-def empty_cart():
-    session.pop('cart', None)
-    return redirect(url_for('cart'))
-
-
-@app.route('/export')
-def export_cart():
-    dataset_ids = session.get('cart', [])
-    if len(dataset_ids) > 0:
-        stream = io.BytesIO()
-
-        # Create Zip archive
-        with zipfile.ZipFile(stream, 'w') as zf:
-            for dataset_id in dataset_ids:
-                dataset = Dataset.query.get(dataset_id)
-                # Add dataset file to Zip archive
-                with zf.open(f'{dataset_id}.json', 'w') as f:
-                    txt = _geojson_dump(dataset.to_dict())
-                    f.write(txt.encode())
-
-        stream.seek(0)
-        return send_file(stream,
-                         mimetype='application/zip',
-                         as_attachment=True,
-                         download_name='datasets.zip')
-
-
-@main_bp.route('/rebuild')
-def rebuild_index():
-    """
-    Fetch all datasets from database, Delete old index, Build new index from the fetched datasets.
-
-    Renders a page the number of datasets in both the database and the index, the index shouldn't be too far behind
-    and the time the operations took.
-
-    :return: rendered flask template from templates/dashboard.html
-    """
-    # get all datasets from database
-    start = time.time()
-
-    db_datasets = db_session.query(Dataset).all()
-    db_duration = '{:f}'.format(time.time() - start)
-
-    database_datasets_stats =  {"total": len(db_datasets),
-                             "duration": f"Fetched all full datasets in {db_duration}"}
-
-    start = time.time()
-    indexed_datasets = search_index.rebuild_index(db_datasets)
-
-    idx_duration = '{:f}'.format(time.time() - start)
-    index_datasets_stats =  {"total": len(indexed_datasets),
-                             "duration": f"Indexing took {idx_duration}"}
-
-    return render_template('dashboard.html',
-                           database_datasets_stats=database_datasets_stats,
-                           index_datasets_stats=index_datasets_stats)
-
-
-@main_bp.route('/dashboard')
-def dashboard():
-    """
-    Renders a page the number of datasets in bot the database and the index, the index shouldn't be too far behind
-
-    :return: rendered flask template from templates/dashboard.html
-    """
-    start = time.time()
-
-    db_datasets_count = db_session.query(Dataset.dataset_id).count()
-    db_duration = '{:f}'.format(time.time() - start)
-
-    database_datasets_stats =  {"total": db_datasets_count,
-                             "duration": db_duration}
-
-    index_datasets = search_index.fetch_all()
-    index_datasets_stats =  {"total": len(index_datasets.body["hits"]["total"]),
-                             "duration": index_datasets.meta.duration}
-
-    return render_template('dashboard.html',
-                           database_datasets_stats=database_datasets_stats,
-                           index_datasets_stats=index_datasets_stats)
-
-
 @main_bp.route('/login')
 def login():
     """
@@ -293,13 +176,8 @@ def login():
 @main_bp.route('/authorized/')
 def authorized():
     """
-    Handle OAuth2 callback by exchanging authorization code for access token.
 
-    Retrieves the authorization code from the request, exchanges it for an access token,
-    stores the token in the session, and redirects the user to the home page.
-
-    :return: A redirect response to the home page, or an error message if the token exchange fails.
-    :rtype: flask.Response or str
+    :return:
     """
     code = request.args.get('code')
 
@@ -391,16 +269,3 @@ def _json_safe_string(string):
     Some fields can contain breaking code for json, this function can be used to clean this fields
     """
     return string.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
-
-
-def _geojson_dump(dataset):
-    """
-    Encode dataset into GeoJSON
-    """
-    dataset_ = dataset.copy()
-    dataset_spatial_coverage = dataset_.pop('dataset_spatial_coverage', {})
-    geometry = dataset_spatial_coverage.pop('geometry', {})
-    properties = {**dataset_, **dataset_spatial_coverage}
-    return json.dumps(dict(type="Feature",
-                           geometry=geometry,
-                           properties=properties))
