@@ -328,30 +328,30 @@
                         <div aria-labelledby="spatial-map-tab" class="tab-pane fade show active" id="spatial-map"
                              role="tabpanel">
 
-                            {{ form.spatial_coverage.label }}
+                            {{ form.spatial_covarage.label }}
                             <br>
-                            {{ "*" if form.spatial_coverage.validators | length > 0 else "" }}
-                            {{ form.spatial_coverage(size=116, class_=(" is-invalid" if form.spatial_coverage.errors
+                            {{ "*" if form.spatial_covarage.validators | length > 0 else "" }}
+                            {{ form.spatial_covarage(size=116, class_=(" is-invalid" if form.spatial_covarage.errors
                             else "")) }}
                             <br>
-                            <small class="form-text text-muted" id="spatial_coverageHelp">
-                                {{ form.spatial_coverage.description + " " + " ".join(form.spatial_coverage.errors) + ""
+                            <small class="form-text text-muted" id="spatial_covarageHelp">
+                                {{ form.spatial_covarage.description + " " + " ".join(form.spatial_covarage.errors) + ""
                                 }}
                             </small>
                             <div class="hidden" id="select-geo-loc"></div>
                         </div>
                         <div aria-labelledby="spatial-upload-tab" class="tab-pane fade" id="spatial-upload"
                              role="tabpanel">
-                            {{ form.spatial_coverage_shapefile.label }}
+                            {{ form.spatial_covarage_shapefile.label }}
                             <br>
-                            {{ "*" if form.spatial_coverage_shapefile.validators | length > 0 else "" }}
-                            {{ form.spatial_coverage_shapefile(size=116, class_=(" is-invalid" if
-                            form.spatial_coverage_shapefile.errors
+                            {{ "*" if form.spatial_covarage_shapefile.validators | length > 0 else "" }}
+                            {{ form.spatial_covarage_shapefile(size=116, class_=(" is-invalid" if
+                            form.spatial_covarage_shapefile.errors
                             else "")) }}
                             <br>
-                            <small class="form-text text-muted" id="spatial_coverage_shapefileHelp">
-                                {{ form.spatial_coverage_shapefile.description + " " + "
-                                ".join(form.spatial_coverage_shapefile.errors) + "" }}
+                            <small class="form-text text-muted" id="spatial_covarage_shapefileHelp">
+                                {{ form.spatial_covarage_shapefile.description + " " + "
+                                ".join(form.spatial_covarage_shapefile.errors) + "" }}
                             </small>
 
                         </div>
