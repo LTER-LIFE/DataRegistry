@@ -966,6 +966,9 @@ class Location(Base):
                         print(f"Error during geometry buffering/fix: {e}")
                         return None  # Indicate failure if fix also fails
 
+                # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
+                geometry_shape = shapely.orient_polygons(geometry_shape)
+
                 if shapely.get_type_id(geometry_shape) != 7:
                     geometry_shape = GeometryCollection(geometry_shape)
 
