@@ -10,6 +10,7 @@ import requests
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file
 from flask import current_app as app
 import jwt
+import shapely
 from sqlalchemy import exc
 
 from application.authentication import get_userinfo, valid_token, in_editor_group
@@ -335,7 +336,23 @@ def _geojson_dump(dataset):
     dataset_ = dataset.copy()
     dataset_spatial_coverage = dataset_.pop('dataset_spatial_coverage', {})
     geometry = dataset_spatial_coverage.pop('geometry', {})
+    geometry = _drop_geometry_collection(geometry)
     properties = {**dataset_, **dataset_spatial_coverage}
     return json.dumps(dict(type="Feature",
                            geometry=geometry,
                            properties=properties))
+
+
+def _drop_geometry_collection(geometry):
+    """
+    Drop the geometry collection for collections with a single element
+    """
+    if geometry:
+        geom = shapely.from_geojson(json.dumps(geometry))
+        # if we have a geometry collection (.is_simple is False) and the number
+        # of elements is equal to one, extract the geometry entry and map it to
+        # GeoJSON
+        if (not geom.is_simple) and (len(geom.geoms) == 1):
+            geom = geom.geoms[0]
+            geometry = json.loads(shapely.to_geojson(geom))
+    return geometry
