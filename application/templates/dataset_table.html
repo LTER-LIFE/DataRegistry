@@ -4,7 +4,7 @@
     {% for dataset in datasets %}
         <div class="card">
             <div class="card-header">
-                <b>{{ dataset.title }}</b> - <a href="{{ url_for('add_to_cart', dataset_id=dataset.dataset_id) }}">Add to Cart</a>
+                <b>{{ dataset.title }}</b> - <a href="{{ url_for('main_bp.add_to_cart', dataset_id=dataset.dataset_id) }}">Add to Cart</a>
             </div>
             <div class="card-body">
                 <p></p>

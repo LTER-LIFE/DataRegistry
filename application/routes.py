@@ -4,7 +4,6 @@ import logging
 import traceback
 import zipfile
 from collections import defaultdict
-from datetime import datetime
 
 import requests
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file
@@ -156,14 +155,14 @@ def datasets(dataset_id=None):
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
 
 
-@app.route('/cart')
+@main_bp.route('/cart')
 def cart():
     dataset_ids = session.get('cart', [])
     cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
     return render_template('cart.html', cart=cart_items)
 
 
-@app.route('/cart/add/<dataset_id>')
+@main_bp.route('/cart/add/<dataset_id>')
 def add_to_cart(dataset_id):
     if 'cart' not in session:
         session['cart'] = []
@@ -173,23 +172,23 @@ def add_to_cart(dataset_id):
     return redirect(url_for('main_bp.datasets'))
 
 
-@app.route('/cart/remove/<dataset_id>')
+@main_bp.route('/cart/remove/<dataset_id>')
 def remove_from_cart(dataset_id):
     cart = session.get('cart', [])
     if dataset_id in cart:
         cart.remove(dataset_id)
         session['cart'] = cart
         session.modified = True
-    return redirect(url_for('cart'))
+    return redirect(url_for('main_bp.cart'))
 
 
-@app.route('/cart/empty')
+@main_bp.route('/cart/empty')
 def empty_cart():
     session.pop('cart', None)
-    return redirect(url_for('cart'))
+    return redirect(url_for('main_bp.cart'))
 
 
-@app.route('/export')
+@main_bp.route('/export')
 def export_cart():
     dataset_ids = session.get('cart', [])
     if len(dataset_ids) > 0:
