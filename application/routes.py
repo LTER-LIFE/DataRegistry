@@ -1,17 +1,18 @@
+import io
 import json
 import logging
 import time
 import traceback
+import zipfile
 from collections import defaultdict
 
 import requests
-import shapely
-from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, jsonify
+from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file, jsonify
 from flask import current_app as app
 import jwt
+import shapely
 from sqlalchemy import exc
 
-import config
 from application import search_index
 from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
@@ -48,14 +49,15 @@ def home():
         for es_dataset in es_datasets.body["hits"]["hits"]:
 
             dataset_dict = {
-                "centroid": es_dataset.get("_source").get("dataset_spatial_covarage").get("centroid"),
-                "geometry": es_dataset.get("_source").get("dataset_spatial_covarage").get("geometry"),
-                "properties": {"id": _json_safe_string(es_dataset.get("_source").get("title")),
-                               "title": _json_safe_string(es_dataset.get("_source").get("title")),
-                               "description": _json_safe_string(es_dataset.get("_source").get("description")),
-                               "creator": str(Agent.from_dict(es_dataset.get("_source").get("creator"))),
-                               "temporal_coverage": f"{es_dataset.get("_source").get("temporal_coverage_start")} / "
-                                                    f"{es_dataset.get("_source").get("temporal_coverage_end")}"}}
+                "centroid": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("centroid", None),
+                "geometry": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("geometry", None),
+                "properties": {"id": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
+                               "title": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
+                               "description": _json_safe_string(es_dataset.get("_source", {}).get("description", None)),
+                               "creator": str(Agent.from_dict(es_dataset.get("_source", {}).get("creator", None))),
+                               "temporal_coverage":
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start"), None} / "
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}"}}
 
             datasets_shapes[es_dataset.get("_source").get("dataset_id")] = dataset_dict
         user_logged_in = is_logged_in()
@@ -158,6 +160,54 @@ def datasets(dataset_id=None):
         logging.error(traceback.format_exc())
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
 
+@main_bp.route('/cart')
+def cart():
+    dataset_ids = session.get('cart', [])
+    cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
+    return render_template('cart.html', cart=cart_items)
+
+@main_bp.route('/cart/add/<dataset_id>')
+def add_to_cart(dataset_id):
+    if 'cart' not in session:
+        session['cart'] = []
+    if dataset_id not in session['cart']:
+        session['cart'].append(dataset_id)
+        session.modified = True
+    return redirect(url_for('main_bp.datasets'))
+
+
+@main_bp.route('/cart/remove/<dataset_id>')
+def remove_from_cart(dataset_id):
+    cart = session.get('cart', [])
+    if dataset_id in cart:
+        cart.remove(dataset_id)
+        session['cart'] = cart
+        session.modified = True
+    return redirect(url_for('main_bp.cart'))
+
+
+@main_bp.route('/export')
+def export_cart():
+    dataset_ids = session.get('cart', [])
+    if len(dataset_ids) > 0:
+        stream = io.BytesIO()
+
+        # Create Zip archive
+        with zipfile.ZipFile(stream, 'w') as zf:
+            for dataset_id in dataset_ids:
+                dataset = Dataset.query.get(dataset_id)
+                # Add dataset file to Zip archive
+                with zf.open(f'{dataset_id}.json', 'w') as f:
+                    txt = _geojson_dump(dataset.to_dict())
+                    f.write(txt.encode())
+
+        stream.seek(0)
+        return send_file(stream,
+                         mimetype='application/zip',
+                         as_attachment=True,
+                         download_name='datasets.zip')
+
+
 @main_bp.route('/rebuild')
 def rebuild_index():
     """
@@ -188,7 +238,7 @@ def rebuild_index():
                            database_datasets_stats=database_datasets_stats,
                            index_datasets_stats=index_datasets_stats)
 
-@main_bp.route('/query')
+@main_bp.route('/query', methods=['POST'])
 def query_index():
     """
     Renders a form to show all datasets in a table form. When a dataset_id is given only one dataset is shown
@@ -198,10 +248,12 @@ def query_index():
     :return: rendered flask template from templates/dataset_table.html
     """
     try:
-        query = request.args.get('query', "")
-        if not query == "{}":
-            query_obj = json.loads(query)
-            es_datasets = search_index.query(query_obj)
+        query_obj = request.get_json()
+
+
+        if not query_obj == {}:
+            query = search_index.build_es_query(query_obj)
+            es_datasets = search_index.query(query)
         else:
             es_datasets = search_index.fetch_all()
 
@@ -259,7 +311,7 @@ def login():
     Redirect to surfconnext for login information
 
     :return: Redirect to an url that is formed from the surf authorization endpoint, Scopes, SURF_CLIENT_ID,
-        redirect_uri, code challenge, code challenge method
+    redirect_uri, code challenge, code challenge method
     """
     return redirect(requests.get(url=app.config['SURF_DOTWELLKNOWN_CONFIG']['authorization_endpoint'],
                                  params={"response_type": "code", "client_id": app.config['SURF_CLIENT_ID'],
@@ -374,3 +426,32 @@ def _json_safe_string(string):
     Some fields can contain breaking code for json, this function can be used to clean this fields
     """
     return string.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+
+
+def _geojson_dump(dataset):
+    """
+    Encode dataset into GeoJSON
+    """
+    dataset_ = dataset.copy()
+    dataset_spatial_coverage = dataset_.pop('dataset_spatial_coverage', {})
+    geometry = dataset_spatial_coverage.pop('geometry', {})
+    geometry = _drop_geometry_collection(geometry)
+    properties = {**dataset_, **dataset_spatial_coverage}
+    return json.dumps(dict(type="Feature",
+                           geometry=geometry,
+                           properties=properties))
+
+
+def _drop_geometry_collection(geometry):
+    """
+    Drop the geometry collection for collections with a single element
+    """
+    if geometry:
+        geom = shapely.from_geojson(json.dumps(geometry))
+        # if we have a geometry collection (.is_simple is False) and the number
+        # of elements is equal to one, extract the geometry entry and map it to
+        # GeoJSON
+        if (not geom.is_simple) and (len(geom.geoms) == 1):
+            geom = geom.geoms[0]
+            geometry = json.loads(shapely.to_geojson(geom))
+    return geometry

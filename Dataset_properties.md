@@ -1,29 +1,29 @@
 |         Property          |    db_range     |          rdf Property          |          Range           | Description                                |
 |:-------------------------:|:---------------:|:------------------------------:|:------------------------:|:-------------------------------------------|
 |        dataset_id         |     Ineger      |       dcterms:identifier       |     Literal:Integer      |                                            |
-|       release_date        |    DateTime     |         dcterms:issued         |       rdfs:Literal       | ISO 8601 Date and Time compliant string    |
-|         language          |     String      |        dcterms:language        | dcterms:LinguisticSystem | ISO 639-1 (two-letter) code                |
-|          creator          |      Agent      |        dcterms:creator         |        foaf:Agent        |                                            |
-|           title           |     String      |         dcterms:title          |       rdfs:Literal       | project subject location time version      |
-|        description        |      Text       |      dcterms:description       |       rdfs:Literal       | description of the contents of the dataset |
-|       resource_type       |     String      |          dcterms:type          |       rdfs:Literal       |                                            |
-|   dataset_contact_point   |      Agent      |       dcat:contactPoint        |        foaf:Agent        |                                            |
-|     dataset_publisher     |      Agent      |       dcterms:publisher        |        foaf:Agent        |                                            |
-| dataset_metadata_provider |      Agent      |   dcterms:metadata_provider    |        foaf:Agent        |                                            |
-|     dataset_keywords      |     Keyword     |          dcat:keyword          |       rdfs:Literal       |                                            |
-|  temporal_coverage_start  |    DateTime     |        dcterms:temporal        |   dcterms:PeriodOfTime   | ISO 8601 start/end                         |
-|   temporal_coverage_end   |    DateTime     |        dcterms:temporal        |   dcterms:PeriodOfTime   | ISO 8601 start/end                         |
-|    temporal_resolution    |    DateTime     |    dcat:temporalResolution     |       xsd:duration       |                                            |
-| dataset_spatial_covarage  |    Location     |        dcterms:spatial         |     dcterms:location     |                                            |
-|    spatial_resolution     |     String      | dcat:spatialResolutionInMeters |       rdfs:Literal       |                                            |
-|      dataset_license      | LicenseDocument |        dcterms:license         | dcterms:licenseDocument  |                                            |
-|       access_rights       |     String      |      dcterms:accessRights      | dcterms:RightsStatement  |                                            |
-|          catalog          |     Catalog     |          dcat:catalog          |       dcat:Catalog       |                                            |
-|      dataset_themes       |  DatasetTheme   |           dcat:theme           |       rdfs:Literal       |                                            |
-|         modified          |    DateTime     |        dcterms:modified        |       rdfs:Literal       |                                            |
-|    taxonomic_coverage     |     String      |   eml_cov:taxonomic_coverage   |       rdfs:Literal       |                                            |
-|       landing_page        |     String      |        dcat:landingPage        |       rdfs:Literal       |                                            |
-|         public_id         |     String      |         dct:identifier         |       rdfs:Literal       |                                            |
+ |       release_date        |    DateTime     |         dcterms:issued         |       rdfs:Literal       | ISO 8601 Date and Time compliant string    |
+ |         language          |     String      |        dcterms:language        | dcterms:LinguisticSystem | ISO 639-1 (two-letter) code                |
+ |          creator          |      Agent      |        dcterms:creator         |        foaf:Agent        |                                            |
+ |           title           |     String      |         dcterms:title          |       rdfs:Literal       | project subject location time version      |
+ |        description        |      Text       |      dcterms:description       |       rdfs:Literal       | description of the contents of the dataset |
+ |       resource_type       |     String      |          dcterms:type          |       rdfs:Literal       |                                            |
+ |   dataset_contact_point   |      Agent      |       dcat:contactPoint        |        foaf:Agent        |                                            |
+ |     dataset_publisher     |      Agent      |       dcterms:publisher        |        foaf:Agent        |                                            |
+ | dataset_metadata_provider |      Agent      |   dcterms:metadata_provider    |        foaf:Agent        |                                            |
+ |     dataset_keywords      |     Keyword     |          dcat:keyword          |       rdfs:Literal       |                                            |
+ |  temporal_coverage_start  |    DateTime     |        dcterms:temporal        |   dcterms:PeriodOfTime   | ISO 8601 start/end                         |
+ |   temporal_coverage_end   |    DateTime     |        dcterms:temporal        |   dcterms:PeriodOfTime   | ISO 8601 start/end                         |
+ |    temporal_resolution    |    DateTime     |    dcat:temporalResolution     |       xsd:duration       |                                            |
+ | dataset_spatial_coverage  |    Location     |        dcterms:spatial         |     dcterms:location     |                                            |
+ |    spatial_resolution     |     String      | dcat:spatialResolutionInMeters |       rdfs:Literal       |                                            |
+ |      dataset_license      | LicenseDocument |        dcterms:license         | dcterms:licenseDocument  |                                            |
+ |       access_rights       |     String      |      dcterms:accessRights      | dcterms:RightsStatement  |                                            |
+ |          catalog          |     Catalog     |          dcat:catalog          |       dcat:Catalog       |                                            |
+ |      dataset_themes       |  DatasetTheme   |           dcat:theme           |       rdfs:Literal       |                                            |
+ |         modified          |    DateTime     |        dcterms:modified        |       rdfs:Literal       |                                            |
+ |    taxonomic_coverage     |     String      |   eml_cov:taxonomic_coverage   |       rdfs:Literal       |                                            |
+ |       landing_page        |     String      |        dcat:landingPage        |       rdfs:Literal       |                                            |
+ |         public_id         |     String      |         dct:identifier         |       rdfs:Literal       |                                            |
 
 
 # Uitleg per property

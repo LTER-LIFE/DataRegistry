@@ -15,7 +15,6 @@ import os.path
 import shutil
 import tempfile
 import zipfile
-from tkinter.font import names
 
 import geopandas as gpd
 import shapely
@@ -183,6 +182,7 @@ class Agent(Base):
                 db_session.flush()
         return db_agent
 
+
 class Catalog(Base):
     """A catalogue that hosts the Datasets or Data Services being described.
 
@@ -337,8 +337,8 @@ class Dataset(Base):
 
     temporal_resolution = Column(String(255), nullable=False)
 
-    dataset_spatial_covarage_id = Column(Integer, ForeignKey('Location.location_id'))
-    dataset_spatial_covarage = relationship('Location', lazy=True)
+    dataset_spatial_coverage_id = Column(Integer, ForeignKey('Location.location_id'))
+    dataset_spatial_coverage = relationship('Location', lazy=True)
 
     spatial_resolution = Column(String(255), nullable=False)
 
@@ -398,8 +398,8 @@ class Dataset(Base):
             data["dataset_metadata_provider"] = self.dataset_metadata_provider.to_dict(seen)
         if self.dataset_keywords:
             data["dataset_keywords"] = [keyword.name for keyword in self.dataset_keywords]  # Or keyword.to_dict()
-        if self.dataset_spatial_covarage:
-            data["dataset_spatial_covarage"] = self.dataset_spatial_covarage.to_dict(seen)
+        if self.dataset_spatial_coverage:
+            data["dataset_spatial_coverage"] = self.dataset_spatial_coverage.to_dict(seen)
         if self.dataset_license:
             data["dataset_license"] = self.dataset_license.to_dict(seen)
         if self.dataset_catalog:
@@ -459,8 +459,8 @@ class Dataset(Base):
         if self.temporal_resolution:
             # TODO: temporal resolution should be a xsd:duration
             g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution)))
-        if self.dataset_spatial_covarage:
-            g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_covarage.location_id)]))
+        if self.dataset_spatial_coverage:
+            g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_coverage.location_id)]))
         if self.spatial_resolution:
             g.add((dataset, DCAT.spatialResolutionInMeters, Literal(self.spatial_resolution)))
         if self.dataset_license:
@@ -1019,6 +1019,9 @@ class Location(Base):
                         except Exception as e:
                             print(f"Error during geometry buffering/fix: {e}")
                             return None  # Indicate failure if fix also fails
+
+                # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
+                geometry_shape = shapely.orient_polygons(geometry_shape)
 
                 if shapely.get_type_id(geometry_shape) != 7:
                     geometry_shape = GeometryCollection(geometry_shape)

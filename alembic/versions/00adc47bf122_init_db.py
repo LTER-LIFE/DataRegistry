@@ -49,7 +49,7 @@ def upgrade() -> None:
     sa.Column('temporal_coverage_start', sa.DATETIME(), nullable=False),
     sa.Column('temporal_coverage_end', sa.DATETIME(), nullable=False),
     sa.Column('temporal_resolution', sa.VARCHAR(length=255), nullable=False),
-    sa.Column('dataset_spatial_covarage_id', sa.INTEGER(), nullable=True),
+    sa.Column('dataset_spatial_coverage_id', sa.INTEGER(), nullable=True),
     sa.Column('spatial_resolution', sa.VARCHAR(length=255), nullable=False),
     sa.Column('dataset_license_id', sa.INTEGER(), nullable=True),
     sa.Column('access_rights', sa.VARCHAR(length=255), nullable=False),
@@ -64,7 +64,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['dataset_license_id'], ['LicenseDocument.license_document_id'], ),
     sa.ForeignKeyConstraint(['dataset_metadata_provider_id'], ['Agent.agent_id'], ),
     sa.ForeignKeyConstraint(['dataset_publisher_id'], ['Agent.agent_id'], ),
-    sa.ForeignKeyConstraint(['dataset_spatial_covarage_id'], ['Location.location_id'], ),
+    sa.ForeignKeyConstraint(['dataset_spatial_coverage_id'], ['Location.location_id'], ),
     sa.PrimaryKeyConstraint('dataset_id')
     )
 
