@@ -644,6 +644,7 @@ class DataService(Base):
         """
 
         @return: Agent object in RDFlib graph format
+        :return:
         """
         g = Graph()
         # Add namespaces to the graph
@@ -768,6 +769,7 @@ class LicenseDocument(Base):
             'url_general': self.url_general,
             'url_document': self.url_document
         }
+
     @classmethod
     def from_dict(self, licence_document_dict):
         self.license_document_id = licence_document_dict.get("license_document_id", None)
@@ -775,6 +777,7 @@ class LicenseDocument(Base):
         self.code = licence_document_dict.get("code", None)
         self.url_general = licence_document_dict.get("url_general", None)
         self.url_document = licence_document_dict.get("url_document", None)
+
 
     def __str__(self):
         if self.label and self.code:
@@ -891,6 +894,7 @@ class Keyword(Base):
             'name': self.name,
             'slug': self.slug
         }
+
     @classmethod
     def from_dict(self, keyword_dict):
         """
@@ -1007,6 +1011,7 @@ class Location(Base):
 
                 # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
                 geometry_shape = shapely.orient_polygons(geometry_shape)
+
 
                 # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
                 geometry_shape = shapely.orient_polygons(geometry_shape)
