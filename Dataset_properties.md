@@ -14,7 +14,7 @@
  |  temporal_coverage_start  |    DateTime     |        dcterms:temporal        |   dcterms:PeriodOfTime   | ISO 8601 start/end                         |
  |   temporal_coverage_end   |    DateTime     |        dcterms:temporal        |   dcterms:PeriodOfTime   | ISO 8601 start/end                         |
  |    temporal_resolution    |    DateTime     |    dcat:temporalResolution     |       xsd:duration       |                                            |
- | dataset_spatial_covarage  |    Location     |        dcterms:spatial         |     dcterms:location     |                                            |
+ | dataset_spatial_coverage  |    Location     |        dcterms:spatial         |     dcterms:location     |                                            |
  |    spatial_resolution     |     String      | dcat:spatialResolutionInMeters |       rdfs:Literal       |                                            |
  |      dataset_license      | LicenseDocument |        dcterms:license         | dcterms:licenseDocument  |                                            |
  |       access_rights       |     String      |      dcterms:accessRights      | dcterms:RightsStatement  |                                            |

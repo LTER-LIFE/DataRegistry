@@ -77,9 +77,9 @@ def after_flush(session, flush_context):
     """
 
     for obj in session.new.union(session.dirty):
-        if obj.__class__.__name__ is "Dataset":
+        if obj.__class__.__name__ == "Dataset":
             index_document(obj)
 
     for obj in session.deleted:
-        if obj.__class__.__name__ is "Dataset":
+        if obj.__class__.__name__ == "Dataset":
             delete_document(obj)

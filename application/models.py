@@ -85,17 +85,6 @@ class Agent(Base):
             "mbox": self.mbox
         }
 
-    @classmethod
-    def from_dict(cls, data: dict):
-        if not data:
-            return None
-        return cls(
-            agent_id=data.get('agent_id'),
-            mbox=data.get('mbox'),
-            name=data.get('name'),
-            type=data.get('type')
-        )
-
     def to_graph(self):
         """
 
@@ -994,28 +983,30 @@ class Location(Base):
         if not db_location:
             db_location = Location()
             if geometry:
-                if geometry:
-                    try:
-                        geometry_shape = shapely.from_wkt(geometry)
-                    except Exception as e:
-                        print(f"Error parsing WKT in add_or_update_location: {e} - {geometry}")
-                        return None
+                try:
+                    geometry_shape = shapely.from_wkt(geometry)
+                except Exception as e:
+                    print(f"Error parsing WKT in add_or_update_location: {e} - {geometry}")
+                    return None
 
-                    # TODO: --- CRITICAL VALIDITY CHECK AND FIX ---
-                    if not geometry_shape.is_valid:
-                        print(
-                            f"Warning: Geometry is invalid ({geometry_shape.geom_type}). Attempting to fix. Reason: "
-                            f"{explain_validity(geometry_shape)}")
-                        try:
-                            # buffer(0) is a common trick to fix invalid geometries
-                            # In newer Shapely (2.0+), shapely.make_valid(geometry_shape) is more explicit
-                            geometry_shape = geometry_shape.buffer(0)
-                            if not geometry_shape.is_valid:
-                                print(
-                                    "Warning: Geometry still invalid after buffer(0). This might lead to indexing issues.")
-                        except Exception as e:
-                            print(f"Error during geometry buffering/fix: {e}")
-                            return None  # Indicate failure if fix also fails
+                # --- CRITICAL VALIDITY CHECK AND FIX ---
+                if not geometry_shape.is_valid:
+                    print(
+                        f"Warning: Geometry is invalid ({geometry_shape.geom_type}). Attempting to fix. Reason: "
+                        f"{explain_validity(geometry_shape)}")
+                    try:
+                        # buffer(0) is a common trick to fix invalid geometries
+                        # In newer Shapely (2.0+), shapely.make_valid(geometry_shape) is more explicit
+                        geometry_shape = geometry_shape.buffer(0)
+                        if not geometry_shape.is_valid:
+                            print(
+                                "Warning: Geometry still invalid after buffer(0). This might lead to indexing issues.")
+                    except Exception as e:
+                        print(f"Error during geometry buffering/fix: {e}")
+                        return None  # Indicate failure if fix also fails
+
+                # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
+                geometry_shape = shapely.orient_polygons(geometry_shape)
 
                 # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
                 geometry_shape = shapely.orient_polygons(geometry_shape)
