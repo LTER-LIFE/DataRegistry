@@ -65,6 +65,7 @@ class TestDataset(unittest.TestCase):
         eq_(0, len(instances))
 
         dataset = self.mock_objects.create_mock_dataset("two")
+
         db_session.add(dataset)
         db_session.commit()
         db_session.flush()

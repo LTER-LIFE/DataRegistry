@@ -1,10 +1,10 @@
 import io
 import json
 import logging
-import time
 import traceback
 import zipfile
 from collections import defaultdict
+import time
 
 import requests
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file, jsonify
@@ -183,6 +183,12 @@ def remove_from_cart(dataset_id):
         cart.remove(dataset_id)
         session['cart'] = cart
         session.modified = True
+    return redirect(url_for('main_bp.cart'))
+
+
+@main_bp.route('/cart/empty')
+def empty_cart():
+    session.pop('cart', None)
     return redirect(url_for('main_bp.cart'))
 
 
