@@ -13,19 +13,187 @@
     </div>
     <div class="collapse form-group row" id="collapse-upload">
         <div class="col-sm-10">
-            <button onclick="fetchData({})">Fetch all data</button>
-            <button onclick="cleanData()">clean</button>
-            <div id="slider-range"></div>
+            <form id="index_search_form">
+                <div id="slider-range"></div>
+                <input type="hidden" id="min_year_input" name="min_year">
+                <input type="hidden" id="max_year_input" name="max_year">
+                <p>
+                    <label for="amount">Time period:</label>
+                    <input type="text" id="amount" readonly="" style="border:0; color:#f6931f; font-weight:bold;">
+                </p>
+
+                Search on spatial
+                <input class="" id="spatial_coverage" name="spatial_coverage" size="116" type="text" value="">
+                <div class="hidden" id="select-geo-loc"></div>
+            </form>
         </div>
     </div>
 </div>
 
-<p>
-  <label for="amount">Time period:</label>
-  <input type="text" id="amount" readonly="" style="border:0; color:#f6931f; font-weight:bold;">
-</p>
+
 <div class="cardbox"></div>
-<script>
+<script type="application/javascript">
+
+function serializeObject($form) {
+    var o = {};
+    var a = $form.serializeArray();
+    $.each(a, function() {
+        if (o[this.name]) {
+            if (!o[this.name].push) {
+                o[this.name] = [o[this.name]];
+            }
+            o[this.name].push(this.value || '');
+        } else {
+            o[this.name] = this.value || '';
+        }
+    });
+    return o;
+};
+
+function debounce(func, wait) {
+  let timeout;
+  return function executed(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+function fetchData(query) {
+    $.ajax({
+            url: '/query', // The endpoint to send the data to
+            type: 'POST',  // Use POST for sending the data in the body
+            contentType: 'application/json', // Tell the server we are sending JSON
+            data: JSON.stringify(query), // Convert the JavaScript object to a JSON string
+            processData: false,
+
+            success: function(data) {
+                // Process the successful response
+                // Clear the existing cards first
+                $('#cardBox').empty();
+
+                if (data.hits && data.hits.length > 0) {
+                     data.hits.forEach(function(dataset) {
+                         addCardToCardBox(dataset._source);
+                     });
+                } else {
+                    $('#cardBox').append("<p>No results found.</p>");
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching data:", error);
+                $('#cardBox').append("<p>An error occurred while fetching data. Please try again later.</p>");
+            }
+        });
+}
+
+function addCardToCardBox(dataset) {
+// Create the card HTML structure
+var cardHtml = `
+    <div class="card">
+        <div class="card-header">
+            <b>${dataset.title}</b>
+        </div>
+        <div class="card-body">
+            <p></p>
+            <div class="row">
+                <div class="table-responsive col-md-4">
+                    <table class="table table-borderless mb-5">
+                        <tbody>
+                            <tr>
+                                <th scope="row" class="p-1">Submission date:</th>
+                                <td class="p-1">${dataset.release_date}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Language:</th>
+                                <td class="p-1">${dataset.language}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Metadata provider:</th>
+                                <td class="p-1">${dataset.dataset_metadata_provider}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Creator:</th>
+                                <td class="p-1">${dataset.creator}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Contact point:</th>
+                                <td class="p-1">${dataset.dataset_contact_point}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Resource type:</th>
+                                <td class="p-1">${dataset.resource_type}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1 col-md-4">License:</th>
+                                <td class="p-1 col-md-8">${dataset.dataset_license}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Access rights:</th>
+                                <td class="p-1">${dataset.access_rights}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Dataset publisher:</th>
+                                <td class="p-1">${dataset.dataset_publisher}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Dataset ID:</th>
+                                <td class="p-1">${dataset.public_id}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Landing page:</th>
+                                <td><a href="${dataset.landing_page}">${dataset.landing_page}</a></td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Temporal coverage:</th>
+                                <td class="p-1">${dataset.temporal_coverage_start} / ${dataset.temporal_coverage_end}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Temporal resolution:</th>
+                                <td class="p-1">${dataset.temporal_resolution}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Spatial resolution:</th>
+                                <td class="p-1">${dataset.spatial_resolution}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Taxonomic coverage:</th>
+                                <td class="p-1">${dataset.taxonomic_coverage}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-8">
+                    <div>
+                        <b>Description: </b>${dataset.description}<br>
+                        <b>Keywords: </b>
+                        ${dataset.dataset_keywords.map(kw => `<span class="badge rounded-pill bg-primary">${kw}</span>`).join(' ')}
+                        <br/>
+                    </div>
+                    <b>Spatial coverage:</b>
+                    <div id="geo-${dataset.dataset_id}" style="height: 450px;"></div>
+                </div>
+            </div>
+            <br/>
+        </div>
+    </div>
+`;
+
+// Append the card to the cardbox div
+$('.cardbox').append(cardHtml);
+
+// Load the dataset map
+console.log(dataset);
+loadDatasetMapWithGeoJSON(dataset.dataset_id, dataset.dataset_spatial_coverage.geometry);
+}
+
+function cleanData() {
+
+    $('.cardbox').html("");
+};
 $(function () {
     $("#slider-range").slider({
         range: true,
@@ -35,145 +203,35 @@ $(function () {
         slide: function (event, ui) {
             $("#amount").val(ui.values[0] + " - " + ui.values[1]);
 
-            const query = {
-                query: {
-                    bool: {
-                        must: [
-                            { range: { temporal_coverage_start: { gte: ui.values[0] + "-01-01" } } },
-                            { range: { temporal_coverage_end: { lte: ui.values[1] + "-12-31" } } }
-                        ]
-                    }
-                }
-            };
-
-            cleanData();
-            fetchData(query);
+            // Update the hidden form fields
+            $("#min_year_input").val(ui.values[0]).trigger('change');
+            $("#max_year_input").val(ui.values[1]).trigger('change');
         }
     });
+
+    // Also initialize the hidden fields with the slider's default values
+    const initialValues = $("#slider-range").slider("option", "values");
+    $("#min_year_input").val(initialValues[0]);
+    $("#max_year_input").val(initialValues[1]);
 });
-</script>
 
-</script>
-<script type="application/javascript">
-    function fetchData(query) {
-        const serialized_query = encodeURIComponent(JSON.stringify(query));
-        $.ajax({
-            url: '/query?query=' + serialized_query,
-            type: 'GET',
-            success: function(data) {
-                data.hits.forEach(function(dataset) {
-                    addCardToCardBox(dataset._source);
-                });
-            },
-            error: function(xhr, status, error) {
-                console.error("Error fetching data:", error);
-            }
-        });
-    }
+$(document).ready(function() {
+    const debouncedFetchData = debounce(fetchData, 100);
 
-    function addCardToCardBox(dataset) {
-    // Create the card HTML structure
-    var cardHtml = `
-        <div class="card">
-            <div class="card-header">
-                <b>${dataset.title}</b>
-            </div>
-            <div class="card-body">
-                <p></p>
-                <div class="row">
-                    <div class="table-responsive col-md-4">
-                        <table class="table table-borderless mb-5">
-                            <tbody>
-                                <tr>
-                                    <th scope="row" class="p-1">Submission date:</th>
-                                    <td class="p-1">${dataset.release_date}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Language:</th>
-                                    <td class="p-1">${dataset.language}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Metadata provider:</th>
-                                    <td class="p-1">${dataset.dataset_metadata_provider}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Creator:</th>
-                                    <td class="p-1">${dataset.creator}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Contact point:</th>
-                                    <td class="p-1">${dataset.dataset_contact_point}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Resource type:</th>
-                                    <td class="p-1">${dataset.resource_type}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1 col-md-4">License:</th>
-                                    <td class="p-1 col-md-8">${dataset.dataset_license}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Access rights:</th>
-                                    <td class="p-1">${dataset.access_rights}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Dataset publisher:</th>
-                                    <td class="p-1">${dataset.dataset_publisher}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Dataset ID:</th>
-                                    <td class="p-1">${dataset.public_id}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Landing page:</th>
-                                    <td><a href="${dataset.landing_page}">${dataset.landing_page}</a></td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Temporal coverage:</th>
-                                    <td class="p-1">${dataset.temporal_coverage_start} / ${dataset.temporal_coverage_end}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Temporal resolution:</th>
-                                    <td class="p-1">${dataset.temporal_resolution}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Spatial resolution:</th>
-                                    <td class="p-1">${dataset.spatial_resolution}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="p-1">Taxonomic coverage:</th>
-                                    <td class="p-1">${dataset.taxonomic_coverage}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="col-md-8">
-                        <div>
-                            <b>Description: </b>${dataset.description}<br>
-                            <b>Keywords: </b>
-                            ${dataset.dataset_keywords.map(kw => `<span class="badge rounded-pill bg-primary">${kw}</span>`).join(' ')}
-                            <br/>
-                        </div>
-                        <b>Spatial coverage:</b>
-                        <div id="geo-${dataset.dataset_id}" style="height: 450px;"></div>
-                    </div>
-                </div>
-                <br/>
-            </div>
-        </div>
-    `;
+    $('#index_search_form').on('change input', 'input, select, textarea', function() {
+    // This will fire for both change and input events.
+    // It's a good way to catch all user interactions.
 
-    // Append the card to the cardbox div
-    $('.cardbox').append(cardHtml);
+    formData =  serializeObject($('#index_search_form'))
 
-    // Load the dataset map
-    loadDatasetMapJson(dataset.dataset_id, dataset.dataset_spatial_covarage.geometry);
-    }
+    cleanData();
+    debouncedFetchData(formData);
+    //console.log(formData);
+    });
+});
 
-    function cleanData() {
 
-        $('.cardbox').html("");
-    };
+
 </script>
 
 {% endblock %}

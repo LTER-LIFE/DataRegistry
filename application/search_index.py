@@ -1,4 +1,6 @@
+from shapely.geometry import shape
 from elasticsearch import Elasticsearch
+from shapely.wkt import loads as wkt_loads
 
 from config import Config
 
@@ -17,7 +19,7 @@ MAPPING = {"properties": {"dataset_id": {"type": "integer"}, "release_date": {"t
     "dataset_keywords": {"type": "keyword"},  # Array of strings
     "temporal_coverage_start": {"type": "date"}, "temporal_coverage_end": {"type": "date"},
     "temporal_resolution": {"type": "keyword"},
-    "dataset_spatial_covarage": {"type": "object", "properties": {"geometry": {"type": "geo_shape"},  # Add geometry
+    "dataset_spatial_coverage": {"type": "object", "properties": {"geometry": {"type": "geo_shape"},  # Add geometry
         "bbox": {"type": "geo_shape"},  # Add bbox
         "centroid": {"type": "geo_point"}  # Add centroid
     }}, "spatial_resolution": {"type": "keyword"},
@@ -26,6 +28,24 @@ MAPPING = {"properties": {"dataset_id": {"type": "integer"}, "release_date": {"t
     "dataset_catalog": {"type": "object", "properties": {"catalog_id": {"type": "integer"}}},
     "modified": {"type": "date"}, "taxonomic_coverage": {"type": "text"}, "landing_page": {"type": "keyword"},
     "public_id": {"type": "keyword"}}}
+
+
+# 1. Define the blueprint for your filters and aggregations
+# This is the core of the functional approach.
+FILTER_BLUEPRINTS = {
+    "keyword": lambda field, value: {"term": {f"{field}.keyword": value}},
+    "text": lambda field, value: {"match": {field: value}},
+    "range": lambda field, gte_value, lte_value: {"range": {field: {"gte": gte_value, "lte": lte_value}}},
+    "geo_shape": lambda field, geojson_shape: {
+        "geo_shape": {field: {"shape": geojson_shape, "relation": "intersects"}}},
+    "multi_match": lambda fields, value: {"multi_match": {"query": value, "fields": fields}},
+}
+
+AGG_BLUEPRINTS = {
+    "terms": lambda field: {"terms": {"field": f"{field}.keyword"}},
+    "range": lambda field, ranges: {"range": {"field": field, "ranges": ranges}},
+}
+
 
 INDEX_NAME = Config.ELASTIC_INDEX_NAME
 es = None
@@ -79,14 +99,41 @@ def rebuild_index(datasets):
 
     return results
 
+
 def index_document(object):
     """
-    Index document, when a dataset object is Created or Updated it will be added to the index
+    Index document, transforming temporal_coverage_start and temporal_coverage_end
+    into a single date_range field for the index.
     """
     if not es:
         validate_index()
-    es_doc_id = object.to_dict().get(object.__mapper__.primary_key[0].name)
-    es.index(index=INDEX_NAME, id=es_doc_id, document=object.to_dict())
+
+    # Convert the database object to a dictionary
+    doc = object.to_dict()
+    es_doc_id = doc.get(object.__mapper__.primary_key[0].name)
+
+    # Extract the separate dates from the document
+    start_date = doc.get('temporal_coverage_start')
+    end_date = doc.get('temporal_coverage_end')
+
+    # Create the date_range field for Elasticsearch
+    temporal_coverage_range = {}
+    if start_date:
+        temporal_coverage_range['gte'] = start_date.strftime('%Y-%m-%d')
+    if end_date:
+        temporal_coverage_range['lte'] = end_date.strftime('%Y-%m-%d')
+
+    # Add the new field to the document if at least one date is present
+    if temporal_coverage_range:
+        doc['temporal_coverage'] = temporal_coverage_range
+    else:
+        # If there are no dates, you can explicitly remove the field
+        # to prevent indexing an empty object
+        doc.pop('temporal_coverage', None)
+
+    # Index the modified document
+    es.index(index=INDEX_NAME, id=es_doc_id, document=doc)
+
 
 def delete_document(object):
     """
@@ -105,3 +152,99 @@ def fetch_all():
 def query(query):
 
     return es.search(index=INDEX_NAME, body=query)
+
+
+def build_es_query(filters):
+    """
+    Constructs a complete Elasticsearch query body including
+    search queries and aggregations from a filters dictionary.
+
+    :param filters: A dictionary of user filters (e.g., {'keywords': 'water', 'min_year': 2000, 'max_year': 2025})
+    :return: A dictionary representing the Elasticsearch query body.
+    """
+
+    must_clauses = []
+
+    # Keyword Search (multi_match)
+    keywords = filters.get('keywords')
+    if keywords:
+        must_clauses.append({
+            "multi_match": {
+                "query": keywords,
+                "fields": ["title", "description", "dataset_keywords"]
+            }
+        })
+
+    # Date Range Filter
+    min_year = filters.get('min_year', '0')
+    max_year = filters.get('max_year', '3000')
+
+    date_range_body = {}
+    if min_year:
+        date_range_body["gte"] = f"{min_year}-01-01"
+    if max_year:
+        date_range_body["lte"] = f"{max_year}-12-31"
+
+    if date_range_body:
+        must_clauses.append({
+            "range": {
+                "release_date": date_range_body
+            }
+        })
+
+    # WKT Geo Search
+    wkt_string = filters.get('spatial_coverage')
+    if wkt_string and not wkt_string == "GEOMETRYCOLLECTION EMPTY":
+        try:
+            geojson_shape = convert_wkt_to_geojson(wkt_string)
+            must_clauses.append({
+                "geo_shape": {
+                    "dataset_spatial_coverage.geometry": {
+                        "shape": geojson_shape,
+                        "relation": "intersects"
+                    }
+                }
+            })
+        except Exception as e:
+            print(f"Error converting WKT for query: {e}")
+            # Do not add the geo filter if conversion fails
+
+    query_body = {
+        "query": {
+            "bool": {
+                "must": must_clauses
+            }
+        },
+        "size": 10,
+        "aggs": {
+            # Aggregations for your facets can be added here
+        }
+    }
+    print(query_body)
+
+    return query_body
+
+
+def convert_wkt_to_geojson(wkt_string):
+    """
+    Converts a WKT string to a GeoJSON-formatted dictionary
+    that is compatible with Elasticsearch's geo_shape query.
+
+    :param wkt_string: The WKT string (e.g., 'POLYGON((...))').
+    :return: A dictionary in GeoJSON format.
+    """
+    try:
+        # Step 1: Parse the WKT string into a Shapely geometry object
+        # Use wkt_loads from shapely.wkt to handle parsing
+        geom = wkt_loads(wkt_string)
+
+        # Step 2: Get the GeoJSON-like mapping from the Shapely object
+        # The .mapping property provides the required format
+        geojson_mapping = geom.__geo_interface__
+
+        return geojson_mapping
+
+    except Exception as e:
+        print(f"Error converting WKT to GeoJSON: {e}")
+        # Return an empty geometry to prevent the query from failing
+        return {"type": "GeometryCollection", "geometries": []}

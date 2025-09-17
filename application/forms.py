@@ -182,11 +182,11 @@ class DatasetForm(FlaskForm):
                                       description="The temporal resolution of the dataset is the minimm temporal "
                                                   "separation between records in the dataset.")
 
-    spatial_covarage = StringField("Spatial coverage", validators=[RequiredOr("spatial_covarage_shapefile")],
+    spatial_coverage = StringField("Spatial coverage", validators=[RequiredOr("spatial_coverage_shapefile")],
                                    description="The spatial extent that is covered by the dataset. Use the interactive "
                                                "map to draw the study area of your dataset.")
 
-    spatial_covarage_shapefile = FileField("Spatial coverage from file", validators=[RequiredOr("spatial_covarage")],
+    spatial_coverage_shapefile = FileField("Spatial coverage from file", validators=[RequiredOr("spatial_coverage")],
                                            description="The spatial extent that is covered by the dataset. "
                                                        "Upload a zip file containing the 4 files that make up a "
                                                        "shapefile (i.e., .shp, .shx, .dbf, .prj).")
@@ -251,7 +251,7 @@ class DatasetForm(FlaskForm):
         self.temporal_coverage_start.data = ''
         self.temporal_coverage_end.data = ''
         self.temporal_resolution.data = ''
-        self.spatial_covarage.data = ''
+        self.spatial_coverage.data = ''
         self.spatial_resolution.data = ''
         self.license.data = ''
         self.access_rights.data = ''
@@ -298,13 +298,13 @@ class DatasetForm(FlaskForm):
 
         dataset.dataset_keywords = Keyword.add_or_update_keywords(keyword_names=self.keywords.raw_data[0])
 
-        # spatial_covarage -> Location
-        # db_location = Location.add_or_update_location(geometry=self.spatial_covarage.data)
-        if self.spatial_covarage_shapefile.data:
-            dataset.dataset_spatial_covarage = Location.from_shapefile(
-                request.files[self.spatial_covarage_shapefile.name])
+        # spatial_coverage -> Location
+        # db_location = Location.add_or_update_location(geometry=self.spatial_coverage.data)
+        if self.spatial_coverage_shapefile.data:
+            dataset.dataset_spatial_coverage = Location.from_shapefile(
+                request.files[self.spatial_coverage_shapefile.name])
         else:
-            dataset.dataset_spatial_covarage = Location.add_or_update_location(geometry=self.spatial_covarage.raw_data[0])
+            dataset.dataset_spatial_coverage = Location.add_or_update_location(geometry=self.spatial_coverage.raw_data[0])
 
         # licence -> LicenceDocument
         if self.license.raw_data[0] != '':
@@ -345,8 +345,8 @@ class DatasetForm(FlaskForm):
         if dataset.dataset_publisher:
             self.publisher.data = dataset.dataset_publisher.name
 
-        if dataset.dataset_spatial_covarage:
-            self.spatial_covarage.data = dataset.dataset_spatial_covarage.to_shape()
+        if dataset.dataset_spatial_coverage:
+            self.spatial_coverage.data = dataset.dataset_spatial_coverage.to_shape()
 
         if dataset.dataset_license:
             self.license.data = dataset.dataset_license.code
