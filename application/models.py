@@ -85,6 +85,17 @@ class Agent(Base):
             "mbox": self.mbox
         }
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        if not data:
+            return None
+        return cls(
+            agent_id=data.get('agent_id'),
+            mbox=data.get('mbox'),
+            name=data.get('name'),
+            type=data.get('type')
+        )
+
     def to_graph(self):
         """
 

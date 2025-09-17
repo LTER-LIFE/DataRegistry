@@ -4,7 +4,8 @@ import logging
 import zipfile
 import requests
 import traceback
-from collections import defaultdictimport time
+from collections import defaultdict
+import time
 
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file, jsonify
 
@@ -310,62 +311,6 @@ def dashboard():
     return render_template('dashboard.html',
                            database_datasets_stats=database_datasets_stats,
                            index_datasets_stats=index_datasets_stats)
-
-
-@main_bp.route('/cart')
-def cart():
-    dataset_ids = session.get('cart', [])
-    cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
-    return render_template('cart.html', cart=cart_items)
-
-
-@main_bp.route('/cart/add/<dataset_id>')
-def add_to_cart(dataset_id):
-    if 'cart' not in session:
-        session['cart'] = []
-    if dataset_id not in session['cart']:
-        session['cart'].append(dataset_id)
-        session.modified = True
-    return redirect(url_for('main_bp.datasets'))
-
-
-@main_bp.route('/cart/remove/<dataset_id>')
-def remove_from_cart(dataset_id):
-    cart = session.get('cart', [])
-    if dataset_id in cart:
-        cart.remove(dataset_id)
-        session['cart'] = cart
-        session.modified = True
-    return redirect(url_for('main_bp.cart'))
-
-
-@main_bp.route('/cart/empty')
-def empty_cart():
-    session.pop('cart', None)
-    return redirect(url_for('main_bp.cart'))
-
-
-@main_bp.route('/export')
-def export_cart():
-    dataset_ids = session.get('cart', [])
-    if len(dataset_ids) > 0:
-        stream = io.BytesIO()
-
-        # Create Zip archive
-        with zipfile.ZipFile(stream, 'w') as zf:
-            for dataset_id in dataset_ids:
-                dataset = Dataset.query.get(dataset_id)
-                # Add dataset file to Zip archive
-                with zf.open(f'{dataset_id}.json', 'w') as f:
-                    txt = _geojson_dump(dataset.to_dict())
-                    f.write(txt.encode())
-
-        stream.seek(0)
-        return send_file(stream,
-                         mimetype='application/zip',
-                         as_attachment=True,
-                         download_name='datasets.zip')
-
 
 @main_bp.route('/login')
 def login():
