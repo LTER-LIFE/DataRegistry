@@ -2,9 +2,6 @@
 
 {% block content %}
 
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
-<script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
-
 <div class="main-content ps-3">
     <div align="center">
         <a data-bs-toggle="collapse" href="#collapse-upload" role="button"
@@ -31,7 +28,7 @@
 </div>
 
 
-<div class="cardbox"></div>
+<div class="cardbox" data-add-to-cart-base-url="{{ url_for('main_bp.add_to_cart', dataset_id='') }}"></div>
 <script type="application/javascript">
 
 function serializeObject($form) {
@@ -63,6 +60,9 @@ function debounce(func, wait) {
 }
 
 function fetchData(query) {
+    // Sla het volledige query-object op in localStorage
+    localStorage.setItem('last_search_filters', JSON.stringify(query));
+
     $.ajax({
             url: '/query', // The endpoint to send the data to
             type: 'POST',  // Use POST for sending the data in the body
@@ -91,11 +91,13 @@ function fetchData(query) {
 }
 
 function addCardToCardBox(dataset) {
-// Create the card HTML structure
-var cardHtml = `
+    const baseUrl = $('.cardbox').data('add-to-cart-base-url');
+    const addToCartUrl = `${baseUrl}${dataset.dataset_id}`;
+    // Create the card HTML structure
+    var cardHtml = `
     <div class="card">
         <div class="card-header">
-            <b>${dataset.title}</b>
+            <b>${dataset.title}</b> -  - <a href="${addToCartUrl}">Add to Cart</a>
         </div>
         <div class="card-body">
             <p></p>
@@ -216,6 +218,22 @@ $(function () {
 });
 
 $(document).ready(function() {
+    const savedFilters = localStorage.getItem('last_search_filters');
+
+    if (savedFilters) {
+        const filters = JSON.parse(savedFilters);
+
+        // Vul de formuliervelden met de opgeslagen waarden
+        $('#min_year_input').val(filters.min_year);
+        $('#max_year_input').val(filters.max_year);
+        $('#keywords').val(filters.keywords);
+        // ... andere velden toevoegen
+
+        // Voer de zoekopdracht uit met de opgeslagen filters
+        fetchData(filters);
+        };
+
+
     const debouncedFetchData = debounce(fetchData, 100);
 
     $('#index_search_form').on('change input', 'input, select, textarea', function() {

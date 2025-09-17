@@ -85,6 +85,17 @@ class Agent(Base):
             "mbox": self.mbox
         }
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        if not data:
+            return None
+        return cls(
+            agent_id=data.get('agent_id'),
+            mbox=data.get('mbox'),
+            name=data.get('name'),
+            type=data.get('type')
+        )
+
     def to_graph(self):
         """
 
@@ -768,6 +779,13 @@ class LicenseDocument(Base):
             'url_general': self.url_general,
             'url_document': self.url_document
         }
+    @classmethod
+    def from_dict(self, licence_document_dict):
+        self.license_document_id = licence_document_dict.get("license_document_id", None)
+        self.label = licence_document_dict.get("label", None)
+        self.code = licence_document_dict.get("code", None)
+        self.url_general = licence_document_dict.get("url_general", None)
+        self.url_document = licence_document_dict.get("url_document", None)
 
     def __str__(self):
         if self.label and self.code:
@@ -884,6 +902,13 @@ class Keyword(Base):
             'name': self.name,
             'slug': self.slug
         }
+    @classmethod
+    def from_dict(self, keyword_dict):
+        """
+        """
+        self.keyword_id = keyword_dict.get("keyword_id", None)
+        self.name = keyword_dict.get("name", None)
+        self.slug = keyword_dict.get("slug", None)
 
     def __str__(self):
         return self.name
@@ -969,27 +994,28 @@ class Location(Base):
         if not db_location:
             db_location = Location()
             if geometry:
-                try:
-                    geometry_shape = shapely.from_wkt(geometry)
-                except Exception as e:
-                    print(f"Error parsing WKT in add_or_update_location: {e} - {geometry}")
-                    return None
-
-                # --- CRITICAL VALIDITY CHECK AND FIX ---
-                if not geometry_shape.is_valid:
-                    print(
-                        f"Warning: Geometry is invalid ({geometry_shape.geom_type}). Attempting to fix. Reason: "
-                        f"{explain_validity(geometry_shape)}")
+                if geometry:
                     try:
-                        # buffer(0) is a common trick to fix invalid geometries
-                        # In newer Shapely (2.0+), shapely.make_valid(geometry_shape) is more explicit
-                        geometry_shape = geometry_shape.buffer(0)
-                        if not geometry_shape.is_valid:
-                            print(
-                                "Warning: Geometry still invalid after buffer(0). This might lead to indexing issues.")
+                        geometry_shape = shapely.from_wkt(geometry)
                     except Exception as e:
-                        print(f"Error during geometry buffering/fix: {e}")
-                        return None  # Indicate failure if fix also fails
+                        print(f"Error parsing WKT in add_or_update_location: {e} - {geometry}")
+                        return None
+
+                    # TODO: --- CRITICAL VALIDITY CHECK AND FIX ---
+                    if not geometry_shape.is_valid:
+                        print(
+                            f"Warning: Geometry is invalid ({geometry_shape.geom_type}). Attempting to fix. Reason: "
+                            f"{explain_validity(geometry_shape)}")
+                        try:
+                            # buffer(0) is a common trick to fix invalid geometries
+                            # In newer Shapely (2.0+), shapely.make_valid(geometry_shape) is more explicit
+                            geometry_shape = geometry_shape.buffer(0)
+                            if not geometry_shape.is_valid:
+                                print(
+                                    "Warning: Geometry still invalid after buffer(0). This might lead to indexing issues.")
+                        except Exception as e:
+                            print(f"Error during geometry buffering/fix: {e}")
+                            return None  # Indicate failure if fix also fails
 
                 # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
                 geometry_shape = shapely.orient_polygons(geometry_shape)
@@ -1100,6 +1126,11 @@ class Location(Base):
         #    data["datasets_at_location_ids"] = [d.dataset_id for d in self.datasets_at_location]
 
         return data
+
+    def from_dict(self, location_dict):
+        self.bbox = shapely.from_geojson(location_dict.get("bbox", None))
+        self.centroid = shapely.from_geojson(location_dict.get("centroid", None))
+        self.geometry = shapely.from_geojson(location_dict.get("geometry", None))
 
 
 dataThemeCatalog = Table('dataThemeCatalog', Base.metadata,
