@@ -26,13 +26,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/nioo_bootstrap.css') }}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/popover.css')}}">
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.1.14.1.css')}}">
     <link rel="stylesheet" href="/resources/demos/style.css">
 
+    <script src="{{ url_for('static', filename='js/deps/jquery-3.7.1.js')}}"></script>
+    <script src="{{ url_for('static', filename='js/deps/jquery-ui.1.14.1.js')}}"></script>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
-    <script src="{{ url_for('static', filename='js/deps/jquery-3.6.0.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/moment.min.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/js/bootstrap.bundle.min.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/popper.min.js')}}"></script>
@@ -41,11 +40,7 @@
     <script src="{{ url_for('static', filename='js/deps/ol.min.js')}}"></script>
 
     <script src="{{ url_for('static', filename='js/dataentry.js')}}"></script>
-
-    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
-
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    <script src="{{ url_for('static', filename='js/leaflet.1.9.4.js')}}"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
     {% block css_block %} {% endblock %}

@@ -20,9 +20,9 @@ def parse_times(iso_time_string):
     """
     Because datetime.fromisotime does not work with the following three ISO standard times
     This helper function tries to do that.
-    - Reduced precision dates are not currently supported (YYYY-MM, YYYY).
-    - Extended date representations are not currently supported (±YYYYYY-MM-DD).
-    - Ordinal dates are not currently supported (YYYY-OOO).
+     - Reduced precision dates are not currently supported (YYYY-MM, YYYY).
+     - Extended date representations are not currently supported (±YYYYYY-MM-DD).
+     - Ordinal dates are not currently supported (YYYY-OOO).
 
     :param iso_time_string: a string that contains an isostring compatible format
 

@@ -23,7 +23,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     if Config.SQLALCHEMY_DATABASE_URI.find('sqlite:') > -1:
         with op.batch_alter_table('Dataset', schema=None) as batch_dataset_op:
-            batch_dataset_op.alter_column('dataset_spatial_coverage_id', new_column_name='dataset_spatial_coverage_id')
+            batch_dataset_op.alter_column('dataset_spatial_covarage_id', new_column_name='dataset_spatial_coverage_id')
     else:
         op.alter_column('Dataset', 'dataset_spatial_covarage_id', new_column_name='dataset_spatial_coverage_id')
 
