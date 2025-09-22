@@ -156,6 +156,9 @@
 
                                         <a href="{{url_for('main_bp.add_dataset')}}">Register dataset</a>
                                     </li>
+                                    <li class="menu-item no-children">
+                                        <a href="{{url_for('main_bp.cart')}}">Shopping Cart  {% if cart_item_count > 0 %}({{cart_item_count}}){% endif %}</a>
+                                    </li>
 				    <!--
                                     <li class="menu-item no-children">
 
