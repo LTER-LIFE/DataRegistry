@@ -55,7 +55,7 @@ class Config(object):
 
     ## Elastic settings
     ELASTIC_HOST = environ.get("ELASTIC_HOST", "https://localhost:9200/")
-    ELASTIC_CA_CERT = environ.get("ELASTIC_CA_CERT", "/home/eric/Apps/elasticsearch-9.0.2/config/certs/http_ca.crt")
+    ELASTIC_CA_CERT = environ.get("ELASTIC_CA_CERT", None)
     ELASTIC_USER = environ.get("ELASTIC_USER", "elastic")
     ELASTIC_PASSWORD = environ.get("ELASTIC_PASSWORD", "wqv-7S75rA3tMKra7qvT")
     ELASTIC_USE_SSL = environ.get("ELASTIC_USE_SSL", True)
