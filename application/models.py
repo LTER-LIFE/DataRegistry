@@ -11,6 +11,7 @@ the DCAT-AP specification.
 
 """
 import json
+import logging
 import os.path
 import shutil
 import tempfile
@@ -972,21 +973,25 @@ class Location(Base):
                 try:
                     geometry_shape = shapely.from_wkt(geometry)
                 except Exception as e:
-                    print(f"Error parsing WKT in add_or_update_location: {e} - {geometry}")
+                    logging.error(f"Error: parsing WKT in add_or_update_location: {e} - {geometry}")
                     return None
 
                 if not geometry_shape.is_valid:
-                    print(
+                    logging.warn(
                         f"Warning: Geometry is invalid ({geometry_shape.geom_type}). Attempting to fix. Reason: "
                         f"{explain_validity(geometry_shape)}")
                     try:
                         geometry_shape = shapely.make_valid(geometry_shape)
-                        if not geometry_shape.is_valid:
-                            print(
-                                "Warning: Geometry still invalid after buffer(0). This might lead to indexing issues.")
+
                     except Exception as e:
-                        print(f"Error during geometry buffering/fix: {e}")
-                        return None  # Indicate failure if fix also fails
+                        logging.error(f"Error: during geometry buffering/fix: {e}")
+                        return None
+
+                if not geometry_shape.is_valid:
+                    logging.error(
+                        "Error: Geometry still invalid after make_valid. This might lead to indexing issues.")
+                    return None
+
 
                 # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
                 geometry_shape = shapely.orient_polygons(geometry_shape)
