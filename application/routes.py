@@ -48,14 +48,13 @@ def home():
 
         datasets_shapes = defaultdict(dict)
         for es_dataset in es_datasets.body["hits"]["hits"]:
-
             dataset_dict = {
                 "centroid": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("centroid", None),
                 "geometry": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("geometry", None),
                 "properties": {"id": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
                                "title": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
                                "description": _json_safe_string(es_dataset.get("_source", {}).get("description", None)),
-                               "creator": str(Agent.from_dict(es_dataset.get("_source", {}).get("creator", None))),
+                               "creator": Agent(**es_dataset.get("_source", {}).get("creator", None)).web(),
                                "temporal_coverage":
                                    f"{es_dataset.get("_source", {}).get("temporal_coverage_start"), None} / "
                                    f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}"}}
@@ -271,7 +270,8 @@ def query_index():
             for key, value in hit.get("_source").items():
                 if isinstance(value, dict):
                     if value.get("agent_id", None):
-                        source[key] = Agent.from_dict(value).web()
+                        source[key] = Agent(agent_id=value.get("agent_id"), name=value.get("name"),
+                                            type=value.get("type"), mbox=value.get("mbox")).web()
                     elif value.get("keyword_id", None):
                         source[key] = value
                     elif value.get("license_document_id", None):
