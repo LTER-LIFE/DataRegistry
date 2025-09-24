@@ -1,3 +1,5 @@
+import csv
+import hashlib
 import io
 import json
 import logging
@@ -197,16 +199,26 @@ def export_cart():
     dataset_ids = session.get('cart', [])
     if len(dataset_ids) > 0:
         stream = io.BytesIO()
-
-        # Create Zip archive
+        # Create Zip archive with one GeoJSON file per dataset, and a CSV file
+        # as Table of Content (TOC)
         with zipfile.ZipFile(stream, 'w') as zf:
+            toc_entries = []
             for dataset_id in dataset_ids:
                 dataset = Dataset.query.get(dataset_id)
-                # Add dataset file to Zip archive
-                with zf.open(f'{dataset_id}.json', 'w') as f:
-                    txt = _geojson_dump(dataset.to_dict())
-                    f.write(txt.encode())
-
+                dataset_geojson = _geojson_dump(dataset.to_dict())
+                dataset_encoded = dataset_geojson.encode()
+                dataset_hash = hashlib.md5(dataset_encoded).hexdigest()
+                # Add JSON file to Zip archive
+                with zf.open(f'{dataset_hash}.json', 'w') as f:
+                    f.write(dataset_encoded)
+                toc_entries.append({'hash': dataset_hash, 'title': dataset.title})
+            # Add CSV file to Zip archive
+            with zf.open("TOC.csv", "w") as csvf:
+                # ZipFile expects binary, while the CSV writer gives strings
+                with io.TextIOWrapper(csvf) as f:
+                    writer = csv.DictWriter(f, fieldnames=toc_entries[0].keys())
+                    writer.writeheader()
+                    writer.writerows(toc_entries)
         stream.seek(0)
         return send_file(stream,
                          mimetype='application/zip',
@@ -310,6 +322,20 @@ def dashboard():
     return render_template('dashboard.html',
                            database_datasets_stats=database_datasets_stats,
                            index_datasets_stats=index_datasets_stats)
+
+@main_bp.context_processor
+def cart_item_count():
+    """
+    Make the size of the cart globally available.
+
+    This is to update the header that displays the number of items in the cart.
+
+    :return: Number of elements in the cart
+    :rtype: dict
+    """
+    cart = session.get("cart", [])
+    return dict(cart_item_count=len(cart))
+
 
 @main_bp.route('/login')
 def login():
@@ -436,7 +462,7 @@ def _json_safe_string(string):
 
 def _geojson_dump(dataset):
     """
-    Encode dataset into GeoJSON
+    Encode dataset into GeoJSON, sorting keys
     """
     dataset_ = dataset.copy()
     dataset_spatial_coverage = dataset_.pop('dataset_spatial_coverage', {})
@@ -445,7 +471,8 @@ def _geojson_dump(dataset):
     properties = {**dataset_, **dataset_spatial_coverage}
     return json.dumps(dict(type="Feature",
                            geometry=geometry,
-                           properties=properties))
+                           properties=properties),
+                      sort_keys=True)
 
 
 def _drop_geometry_collection(geometry):
