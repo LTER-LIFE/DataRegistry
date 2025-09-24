@@ -1,4 +1,4 @@
-from shapely.geometry import shape
+import sys
 from elasticsearch import Elasticsearch
 from shapely.wkt import loads as wkt_loads
 
@@ -55,24 +55,49 @@ def validate_index():
     # Connect to Elasticsearch
     # Replace with your Elasticsearch host and port
     if not es:
-        es = Elasticsearch([Config.ELASTIC_HOST],
-            basic_auth=(Config.ELASTIC_USER, Config.ELASTIC_PASSWORD),
-            verify_certs=Config.ELASTIC_USE_SSL,
-            ca_certs=Config.ELASTIC_CA_CERT)
-        # Test connection
-        if es.ping():
+
+        es = None
+        try:
+            # Create a dictionary for optional connection parameters
+            conn_params = {
+                'basic_auth': (Config.ELASTIC_USER, Config.ELASTIC_PASSWORD)
+            }
+
+            # Only include SSL-related parameters if they are set in the config
+            if Config.ELASTIC_VERIFY_CERTS:
+                conn_params['verify_certs'] = True
+                conn_params['ca_certs'] = Config.ELASTIC_CA_CERT
+            else:
+                # If not verifying certs, don't pass ca_certs
+                conn_params['verify_certs'] = False
+
+            # Connect to Elasticsearch using the dynamic parameters
+            es = Elasticsearch([Config.ELASTIC_HOST], **conn_params)
+
+            # Check if the connection is alive with ping()
+            if not es.ping():
+                print("Could not connect to Elasticsearch. Is the service running?")
+                # Use sys.exit() to stop the application with an error status code.
+                sys.exit(1)
+
             print("Connected to Elasticsearch!")
-        else:
-            print(f"Could not connect to Elasticsearch")
-            exit()
 
-        if not es.indices.exists(index=INDEX_NAME):
-            es.indices.create(index=INDEX_NAME, mappings=MAPPING)
-            print(f"Index '{INDEX_NAME}' created with mapping.")
-        else:
-            print(f"Index '{INDEX_NAME}' already exists.")
+            if not es.indices.exists(index=INDEX_NAME):
+                es.indices.create(index=INDEX_NAME, mappings=MAPPING)
+                print(f"Index '{INDEX_NAME}' created with mapping.")
+            else:
+                print(f"Index '{INDEX_NAME}' already exists.")
 
-        return es
+            return es
+
+        # Catch the specific ConnectionError
+        except ConnectionError as e:
+            print("Error: Failed to connect to Elasticsearch.")
+            print(f"Details: {e}")
+            print("Please check if the Elasticsearch service is running and accessible.")
+            # Use sys.exit() to stop the application gracefully on a non-recoverable error.
+            sys.exit(1)
+
 
 def rebuild_index(datasets):
     """
@@ -172,6 +197,17 @@ def build_es_query(filters):
             "multi_match": {
                 "query": keywords,
                 "fields": ["title", "description", "dataset_keywords"]
+            }
+        })
+
+    # Free Text Search
+    free_text = filters.get('free')
+    if free_text:
+        must_clauses.append({
+            "multi_match": {
+                "query": free_text,
+                "type": "phrase_prefix",
+                "fields": ["title", "description", "file_content"]
             }
         })
 

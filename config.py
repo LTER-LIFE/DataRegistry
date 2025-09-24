@@ -58,5 +58,5 @@ class Config(object):
     ELASTIC_CA_CERT = environ.get("ELASTIC_CA_CERT", None)
     ELASTIC_USER = environ.get("ELASTIC_USER", "elastic")
     ELASTIC_PASSWORD = environ.get("ELASTIC_PASSWORD", "wqv-7S75rA3tMKra7qvT")
-    ELASTIC_USE_SSL = environ.get("ELASTIC_USE_SSL", True)
+    ELASTIC_VERIFY_CERTS = environ.get("ELASTIC_VERIFY_CERTS", False)
     ELASTIC_INDEX_NAME = environ.get("ELASTIC_INDEX_NAME", "dataset")
