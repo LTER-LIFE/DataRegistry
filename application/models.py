@@ -85,17 +85,6 @@ class Agent(Base):
             "mbox": self.mbox
         }
 
-    @classmethod
-    def from_dict(cls, data: dict):
-        if not data:
-            return None
-        return cls(
-            agent_id=data.get('agent_id'),
-            mbox=data.get('mbox'),
-            name=data.get('name'),
-            type=data.get('type')
-        )
-
     def to_graph(self):
         """
 
@@ -781,15 +770,6 @@ class LicenseDocument(Base):
             'url_document': self.url_document
         }
 
-    @classmethod
-    def from_dict(self, licence_document_dict):
-        self.license_document_id = licence_document_dict.get("license_document_id", None)
-        self.label = licence_document_dict.get("label", None)
-        self.code = licence_document_dict.get("code", None)
-        self.url_general = licence_document_dict.get("url_general", None)
-        self.url_document = licence_document_dict.get("url_document", None)
-
-
     def __str__(self):
         if self.label and self.code:
             return f"{self.name} <{self.mbox}>"
@@ -906,13 +886,6 @@ class Keyword(Base):
             'slug': self.slug
         }
 
-    @classmethod
-    def from_dict(self, keyword_dict):
-        """
-        """
-        self.keyword_id = keyword_dict.get("keyword_id", None)
-        self.name = keyword_dict.get("name", None)
-        self.slug = keyword_dict.get("slug", None)
 
     def __str__(self):
         return self.name
@@ -978,8 +951,6 @@ class Location(Base):
         If `persist` is True, the new or updated Location object is added to
         the database session and committed immediately.
 
-        :param cls: The class itself (standard for class methods).
-        :type cls: type
         :param geometry: The geometry of the location in Well-Known Text (WKT) format.
                          If None, a Location object without geometry is created (though
                          this might violate schema constraints depending on the table definition).
@@ -1019,10 +990,6 @@ class Location(Base):
                     except Exception as e:
                         print(f"Error during geometry buffering/fix: {e}")
                         return None  # Indicate failure if fix also fails
-
-                # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
-                geometry_shape = shapely.orient_polygons(geometry_shape)
-
 
                 # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
                 geometry_shape = shapely.orient_polygons(geometry_shape)
@@ -1133,11 +1100,6 @@ class Location(Base):
         #    data["datasets_at_location_ids"] = [d.dataset_id for d in self.datasets_at_location]
 
         return data
-
-    def from_dict(self, location_dict):
-        self.bbox = shapely.from_geojson(location_dict.get("bbox", None))
-        self.centroid = shapely.from_geojson(location_dict.get("centroid", None))
-        self.geometry = shapely.from_geojson(location_dict.get("geometry", None))
 
 
 dataThemeCatalog = Table('dataThemeCatalog', Base.metadata,
