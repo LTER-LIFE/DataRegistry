@@ -43,7 +43,6 @@ def home():
     :return: rendered flask template from templates/index.html
     """
     try:
-        #all_datasets = db_session.query(Dataset).all()
         es_datasets = search_index.fetch_all()
 
         datasets_shapes = defaultdict(dict)
