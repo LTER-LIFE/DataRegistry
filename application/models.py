@@ -978,8 +978,6 @@ class Location(Base):
         If `persist` is True, the new or updated Location object is added to
         the database session and committed immediately.
 
-        :param cls: The class itself (standard for class methods).
-        :type cls: type
         :param geometry: The geometry of the location in Well-Known Text (WKT) format.
                          If None, a Location object without geometry is created (though
                          this might violate schema constraints depending on the table definition).
