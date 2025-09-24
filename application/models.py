@@ -975,15 +975,12 @@ class Location(Base):
                     print(f"Error parsing WKT in add_or_update_location: {e} - {geometry}")
                     return None
 
-                # --- CRITICAL VALIDITY CHECK AND FIX ---
                 if not geometry_shape.is_valid:
                     print(
                         f"Warning: Geometry is invalid ({geometry_shape.geom_type}). Attempting to fix. Reason: "
                         f"{explain_validity(geometry_shape)}")
                     try:
-                        # buffer(0) is a common trick to fix invalid geometries
-                        # In newer Shapely (2.0+), shapely.make_valid(geometry_shape) is more explicit
-                        geometry_shape = geometry_shape.buffer(0)
+                        geometry_shape = shapely.make_valid(geometry_shape)
                         if not geometry_shape.is_valid:
                             print(
                                 "Warning: Geometry still invalid after buffer(0). This might lead to indexing issues.")
