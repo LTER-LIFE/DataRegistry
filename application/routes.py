@@ -222,6 +222,20 @@ def export_cart():
                          download_name='datasets.zip')
 
 
+@main_bp.context_processor
+def cart_item_count():
+    """
+    Make the size of the cart globally available.
+
+    This is to update the header that displays the number of items in the cart.
+
+    :return: Number of elements in the cart
+    :rtype: dict
+    """
+    cart = session.get("cart", [])
+    return dict(cart_item_count=len(cart))
+
+
 @main_bp.route('/login')
 def login():
     """
