@@ -138,8 +138,8 @@ def index_document(object):
     es_doc_id = doc.get(object.__mapper__.primary_key[0].name)
 
     # Extract the separate dates from the document
-    start_date = doc.get('temporal_coverage_start')
-    end_date = doc.get('temporal_coverage_end')
+    start_date = object.temporal_coverage_start
+    end_date = object.temporal_coverage_end
 
     # Create the date_range field for Elasticsearch
     temporal_coverage_range = {}

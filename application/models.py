@@ -18,10 +18,9 @@ import tempfile
 import zipfile
 
 import geopandas as gpd
-import shapely
 from geoalchemy2 import Geometry
 from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
-from shapely import GeometryCollection
+import shapely
 from shapely.geometry import box, shape
 from shapely.validation import explain_validity
 from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, or_, and_
@@ -997,7 +996,7 @@ class Location(Base):
                 geometry_shape = shapely.orient_polygons(geometry_shape)
 
                 if shapely.get_type_id(geometry_shape) != 7:
-                    geometry_shape = GeometryCollection(geometry_shape)
+                    geometry_shape = shapely.GeometryCollection(geometry_shape)
 
                 db_location.geometry = shapely.to_wkt(geometry_shape)
                 db_location.centroid = shapely.to_wkt(geometry_shape.centroid)
@@ -1040,7 +1039,7 @@ class Location(Base):
                     # Get the geometry from the record
                     geometry = shape(record['geometry'])
                     geoms.append(geometry)
-                    spatial_coverage_wkb = GeometryCollection(geoms)
+                    spatial_coverage_wkb = shapely.GeometryCollection(geoms)
                     spatial_coverage_wkt = shapely.to_wkt(spatial_coverage_wkb)
 
                     # To location
@@ -1062,7 +1061,7 @@ class Location(Base):
         if field in self.__dict__.keys():
             wkb_value = str(self.__dict__.get(field, "POLYGON EMPTY"))
             if wkb_value == 'None':
-                spatial_coverage_wkb = GeometryCollection()
+                spatial_coverage_wkb = shapely.GeometryCollection()
             else:
                 spatial_coverage_wkb = shapely.wkb.loads(wkb_value)
             if to == "wkt":
