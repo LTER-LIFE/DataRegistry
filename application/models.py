@@ -942,8 +942,8 @@ class Location(Base):
         If a geometry string is provided for a new Location, the method attempts
         to parse it from Well-Known Text (WKT) format using `shapely.from_wkt`.
         It includes a critical validity check and attempts to fix invalid
-        geometries using the `buffer(0)` technique (or `shapely.make_valid`
-        in newer shapely versions). If the geometry is successfully processed
+        geometries using the `shapely.make_valid` function.
+        If the geometry is successfully processed
         (either valid initially or fixed), its WKT representation, the WKT
         of its centroid, and the WKT of its bounding box are stored in the
         new Location object.
