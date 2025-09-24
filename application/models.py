@@ -1021,10 +1021,6 @@ class Location(Base):
                 # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
                 geometry_shape = shapely.orient_polygons(geometry_shape)
 
-
-                # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
-                geometry_shape = shapely.orient_polygons(geometry_shape)
-
                 if shapely.get_type_id(geometry_shape) != 7:
                     geometry_shape = GeometryCollection(geometry_shape)
 
