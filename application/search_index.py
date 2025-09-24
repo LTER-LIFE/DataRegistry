@@ -1,4 +1,3 @@
-from shapely.geometry import shape
 from elasticsearch import Elasticsearch
 from shapely.wkt import loads as wkt_loads
 
