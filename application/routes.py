@@ -3,17 +3,20 @@ import hashlib
 import io
 import json
 import logging
-import traceback
 import zipfile
-from collections import defaultdict
-
 import requests
-from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file
+import traceback
+from collections import defaultdict
+import time
+
+from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file, jsonify
+
 from flask import current_app as app
 import jwt
 import shapely
 from sqlalchemy import exc
 
+from application import search_index
 from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
 from application.forms import DatasetForm
@@ -42,20 +45,23 @@ def home():
     :return: rendered flask template from templates/index.html
     """
     try:
-        all_datasets = db_session.query(Dataset).all()
+        es_datasets = search_index.fetch_all()
 
         datasets_shapes = defaultdict(dict)
-        for dataset in all_datasets:
-
+        for es_dataset in es_datasets.body["hits"]["hits"]:
             dataset_dict = {
-                "centroid": dataset.dataset_spatial_coverage.to_shape(field="centroid", to="geojson"),
-                "geometry": dataset.dataset_spatial_coverage.to_shape(field="geometry", to="geojson"),
-                "properties": {"id": _json_safe_string(dataset.title), "title": _json_safe_string(dataset.title),
-                               "description": _json_safe_string(dataset.description), "creator": str(dataset.creator),
-                               "temporal_coverage": f"{dataset.temporal_coverage_start} / "
-                                                    f"{dataset.temporal_coverage_end}"}}
+                "centroid": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("centroid", None),
+                "geometry": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("geometry", None),
+                "properties": {"id": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
+                               "title": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
+                               "description": _json_safe_string(es_dataset.get("_source", {}).get("description", None)),
+                               "creator": Agent(**es_dataset.get("_source", {}).get("creator", None)).web(),
+                               "temporal_coverage":
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start"), None} / "
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}"}}
 
-            datasets_shapes[dataset.dataset_id] = dataset_dict
+            datasets_shapes[es_dataset.get("_source").get("dataset_id")] = dataset_dict
+
         user_logged_in = is_logged_in()
         if user_logged_in:
             user_info = get_userinfo(session.get("access_token"))
@@ -156,13 +162,11 @@ def datasets(dataset_id=None):
         logging.error(traceback.format_exc())
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
 
-
 @main_bp.route('/cart')
 def cart():
     dataset_ids = session.get('cart', [])
     cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
     return render_template('cart.html', cart=cart_items)
-
 
 @main_bp.route('/cart/add/<dataset_id>')
 def add_to_cart(dataset_id):
@@ -222,6 +226,103 @@ def export_cart():
                          download_name='datasets.zip')
 
 
+@main_bp.route('/rebuild')
+def rebuild_index():
+    """
+    Fetch all datasets from database, Delete old index, Build new index from the fetched datasets.
+
+    Renders a page the number of datasets in both the database and the index, the index shouldn't be too far behind
+    and the time the operations took.
+
+    :return: rendered flask template from templates/dashboard.html
+    """
+    # get all datasets from database
+    start = time.time()
+
+    db_datasets = db_session.query(Dataset).all()
+    db_duration = '{:f}'.format(time.time() - start)
+
+    database_datasets_stats =  {"total": len(db_datasets),
+                             "duration": f"Fetched all full datasets in {db_duration}"}
+
+    start = time.time()
+    indexed_datasets = search_index.rebuild_index(db_datasets)
+
+    idx_duration = '{:f}'.format(time.time() - start)
+    index_datasets_stats =  {"total": len(indexed_datasets),
+                             "duration": f"Indexing took {idx_duration}"}
+
+    return render_template('dashboard.html',
+                           database_datasets_stats=database_datasets_stats,
+                           index_datasets_stats=index_datasets_stats)
+
+@main_bp.route('/query', methods=['POST'])
+def query_index():
+    """
+    Renders a form to show all datasets in a table form. When a dataset_id is given only one dataset is shown
+
+    :param dataset_id: The param dataset id can be used to Edit or Delete datasets
+
+    :return: rendered flask template from templates/dataset_table.html
+    """
+    try:
+        query_obj = request.get_json()
+
+
+        if not query_obj == {}:
+            query = search_index.build_es_query(query_obj)
+            es_datasets = search_index.query(query)
+        else:
+            es_datasets = search_index.fetch_all()
+
+
+        for hit in es_datasets.raw["hits"]["hits"]:
+            source = {}
+            for key, value in hit.get("_source").items():
+                if isinstance(value, dict):
+                    if value.get("agent_id", None):
+                        source[key] = Agent(agent_id=value.get("agent_id"), name=value.get("name"),
+                                            type=value.get("type"), mbox=value.get("mbox")).web()
+                    elif value.get("keyword_id", None):
+                        source[key] = value
+                    elif value.get("license_document_id", None):
+                        source[key] = value["code"]
+                    else:
+                        source[key] = value
+                else:
+                    source[key] = value
+            hit["_source"] = source
+
+
+        return jsonify(es_datasets.raw["hits"])
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        abort(500, description="Failed to query .", original_exception=e)
+
+
+@main_bp.route('/dashboard')
+def dashboard():
+    """
+    Renders a page the number of datasets in bot the database and the index, the index shouldn't be too far behind
+
+    :return: rendered flask template from templates/dashboard.html
+    """
+    start = time.time()
+
+    db_datasets_count = db_session.query(Dataset.dataset_id).count()
+    db_duration = '{:f}'.format(time.time() - start)
+
+    database_datasets_stats =  {"total": db_datasets_count,
+                             "duration": db_duration}
+
+    index_datasets = search_index.fetch_all()
+    index_datasets_stats =  {"total": len(index_datasets.body["hits"]["total"]),
+                             "duration": index_datasets.meta.duration}
+
+    return render_template('dashboard.html',
+                           database_datasets_stats=database_datasets_stats,
+                           index_datasets_stats=index_datasets_stats)
+
 @main_bp.context_processor
 def cart_item_count():
     """
@@ -259,8 +360,13 @@ def login():
 @main_bp.route('/authorized/')
 def authorized():
     """
+    Handle OAuth2 callback by exchanging authorization code for access token.
 
-    :return:
+    Retrieves the authorization code from the request, exchanges it for an access token,
+    stores the token in the session, and redirects the user to the home page.
+
+    :return: A redirect response to the home page, or an error message if the token exchange fails.
+    :rtype: flask.Response or str
     """
     code = request.args.get('code')
 

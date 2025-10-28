@@ -11,16 +11,16 @@ the DCAT-AP specification.
 
 """
 import json
+import logging
 import os.path
 import shutil
 import tempfile
 import zipfile
 
 import geopandas as gpd
-import shapely
 from geoalchemy2 import Geometry
 from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
-from shapely import GeometryCollection
+import shapely
 from shapely.geometry import box, shape
 from shapely.validation import explain_validity
 from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, or_, and_
@@ -886,6 +886,7 @@ class Keyword(Base):
             'slug': self.slug
         }
 
+
     def __str__(self):
         return self.name
 
@@ -932,13 +933,37 @@ class Location(Base):
     @classmethod
     def add_or_update_location(cls, geometry=None, persist=True):
         """
-        Add or update a Location object to the database, using a geometry
+        Adds a new Location object to the database or retrieves an existing one.
 
-        An Agent can be a Person or an Organization
+        This class method checks if a Location with the given geometry already
+        exists in the database. If it does, the existing object is returned.
+        If not, a new Location object is created.
 
-        :param geometry:
-        :param persist:
-        :return:
+        If a geometry string is provided for a new Location, the method attempts
+        to parse it from Well-Known Text (WKT) format using `shapely.from_wkt`.
+        It includes a critical validity check and attempts to fix invalid
+        geometries using the `shapely.make_valid` function.
+        If the geometry is successfully processed
+        (either valid initially or fixed), its WKT representation, the WKT
+        of its centroid, and the WKT of its bounding box are stored in the
+        new Location object.
+
+        If `persist` is True, the new or updated Location object is added to
+        the database session and committed immediately.
+
+        :param geometry: The geometry of the location in Well-Known Text (WKT) format.
+                         If None, a Location object without geometry is created (though
+                         this might violate schema constraints depending on the table definition).
+        :type geometry: str, optional
+        :param persist: If True, the new or updated Location object is added to
+                        the database session and committed immediately.
+        :type persist: bool, optional
+        :returns: The existing or newly created :class:`Location` object from the database.
+                  Returns None if the provided `geometry` string is invalid WKT,
+                  or if the geometry is invalid and cannot be fixed by the
+                  automatic repair mechanism, or if any other error occurs
+                  during geometry processing.
+        :rtype: :class:`Location` or None
         """
         db_location = db_session.query(Location).filter_by(geometry=geometry).first()
         if not db_location:
@@ -947,30 +972,31 @@ class Location(Base):
                 try:
                     geometry_shape = shapely.from_wkt(geometry)
                 except Exception as e:
-                    print(f"Error parsing WKT in add_or_update_location: {e} - {geometry}")
+                    logging.error(f"Error: parsing WKT in add_or_update_location: {e} - {geometry}")
                     return None
 
-                # --- CRITICAL VALIDITY CHECK AND FIX ---
                 if not geometry_shape.is_valid:
-                    print(
+                    logging.warn(
                         f"Warning: Geometry is invalid ({geometry_shape.geom_type}). Attempting to fix. Reason: "
                         f"{explain_validity(geometry_shape)}")
                     try:
-                        # buffer(0) is a common trick to fix invalid geometries
-                        # In newer Shapely (2.0+), shapely.make_valid(geometry_shape) is more explicit
-                        geometry_shape = geometry_shape.buffer(0)
-                        if not geometry_shape.is_valid:
-                            print(
-                                "Warning: Geometry still invalid after buffer(0). This might lead to indexing issues.")
+                        geometry_shape = shapely.make_valid(geometry_shape)
+
                     except Exception as e:
-                        print(f"Error during geometry buffering/fix: {e}")
-                        return None  # Indicate failure if fix also fails
+                        logging.error(f"Error: during geometry buffering/fix: {e}")
+                        return None
+
+                if not geometry_shape.is_valid:
+                    logging.error(
+                        "Error: Geometry still invalid after make_valid. This might lead to indexing issues.")
+                    return None
+
 
                 # Make sure (Multi)Polygon geometries are compliant with GeoJSON winding order
                 geometry_shape = shapely.orient_polygons(geometry_shape)
 
                 if shapely.get_type_id(geometry_shape) != 7:
-                    geometry_shape = GeometryCollection(geometry_shape)
+                    geometry_shape = shapely.GeometryCollection(geometry_shape)
 
                 db_location.geometry = shapely.to_wkt(geometry_shape)
                 db_location.centroid = shapely.to_wkt(geometry_shape.centroid)
@@ -1013,7 +1039,7 @@ class Location(Base):
                     # Get the geometry from the record
                     geometry = shape(record['geometry'])
                     geoms.append(geometry)
-                    spatial_coverage_wkb = GeometryCollection(geoms)
+                    spatial_coverage_wkb = shapely.GeometryCollection(geoms)
                     spatial_coverage_wkt = shapely.to_wkt(spatial_coverage_wkb)
 
                     # To location
@@ -1035,7 +1061,7 @@ class Location(Base):
         if field in self.__dict__.keys():
             wkb_value = str(self.__dict__.get(field, "POLYGON EMPTY"))
             if wkb_value == 'None':
-                spatial_coverage_wkb = GeometryCollection()
+                spatial_coverage_wkb = shapely.GeometryCollection()
             else:
                 spatial_coverage_wkb = shapely.wkb.loads(wkb_value)
             if to == "wkt":

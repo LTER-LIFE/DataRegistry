@@ -1,62 +1,80 @@
-$(document).ready(function () {
+/** Global variables to hold the map instance and its layers. */
+let mapInstance = null;
+let editableLayers = null;
+let osmGeocoder = null;
+
+$(document).ready(function() {
+    /**
+     * Handles the click event on the 'spatial_coverage' button.
+     * Initializes the map on the first click and shows/hides it on subsequent clicks.
+     */
     $('#spatial_coverage').click(function() {
-        selectGeoLoc = $('#select-geo-loc');
+        const selectGeoLoc = $('#select-geo-loc');
         selectGeoLoc.toggleClass('hidden');
-        if (selectGeoLoc.hasClass('hidden')) {
-            console.log('map is hidden')
-        } else {
-            loadMap("osm");
-        };
+
+        if (!selectGeoLoc.hasClass('hidden')) {
+            if (mapInstance === null) {
+                const mapAndLayers = initializeMap();
+                mapInstance = mapAndLayers.map;
+                editableLayers = mapAndLayers.editableLayers;
+
+                // Attach event listeners for the Leaflet.draw controls.
+                mapEvents();
+            }
+
+            // Always call invalidateSize() when the container is made visible
+            mapInstance.invalidateSize();
+            
+            // Reload the dynamic map data and features
+            loadMapContent(mapInstance, editableLayers);
+        }
     });
 });
 
-var markers = new Array();
+// --- Core Functions ---
 
-function createWktFromGeoJSON(geoJSONString, e) {
-  var wkt_options = {};
-  var geojson_format = new ol.format.GeoJSON();
-  var layerFeatures = geojson_format.readFeatures(geoJSONString);
-  var wkt_format = new ol.format.WKT(wkt_options);
-  return wkt_format.writeFeatures(layerFeatures);
-}
+/**
+ * Initializes the Leaflet map and its static controls.
+ * This function should only be called once.
+ * @returns {object} An object containing the map and editable layers.
+ */
+function initializeMap() {
+    // Correctly remove an old map instance if it somehow exists
+    const container = L.DomUtil.get('select-geo-loc');
+    if (container && container._leaflet_id) {
+        L.map(container).remove();
+    }
 
-function createGeoJSONFromWkt(wktString) {
-        var wkt_options = {};
-        var geojson_format = new ol.format.GeoJSON();
+    // Set up tile layers
+    const osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        minZoom: 2,
+        maxZoom: 19,
+        attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    });
+    const esri = new L.TileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        minZoom: 2,
+        maxZoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed...'
+    });
 
-        var wkt_format = new ol.format.WKT(wkt_options);
-        var stringFeatures = wkt_format.readFeatures(wktString, {});
-        return geojson_format.writeFeatures(stringFeatures);
-}
-
-function loadMap(osm) {
-    // remove map if it already exists
-    var container = L.DomUtil.get('select-geo-loc');
-      if(container != null){
-        container._leaflet_id = null;
-      }
-
-
-    var osmUrl='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-    var osmAttribution='© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-    var esriUrl='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-	var esriAttribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
-
-    var osm = new L.TileLayer(osmUrl, {minZoom:2, maxZoom:19, attribution:osmAttribution});
-    var esri = new L.TileLayer(esriUrl, {minZoom:2, maxZoom:19, attribution:esriAttribution});
-
-    var map = new L.Map('select-geo-loc', { doubleClickZoom:false,
-        zoomControl:true,
-        maxBounds:([[90,-270],[-90,270]]),
+    // Create the map instance
+    const map = new L.Map('select-geo-loc', {
+        doubleClickZoom: false,
+        zoomControl: true,
+        maxBounds: [
+            [90, -270],
+            [-90, 270]
+        ],
         selectArea: true
-        });
-    osm.addTo(map)
+    });
 
-    // container for address search results
-    const addressSearchResults = new L.LayerGroup().addTo(map);
+    // Set a default view for the map
+    map.setView([52.0, 5.0], 5);
 
-    // OSM Geocoder
-    const osmGeocoder = new L.Control.geocoder({
+    osm.addTo(map);
+
+    // Create the geocoder once and store it
+    osmGeocoder = new L.Control.geocoder({
         collapsed: false,
         position: 'topright',
         text: 'Search',
@@ -64,119 +82,145 @@ function loadMap(osm) {
         defaultMarkGeocode: false
     }).addTo(map);
 
-    // handle geocoding result event
-    osmGeocoder.on('markgeocode', e => {
-       // coordinates for result
-       const coords = [e.geocode.center.lat, e.geocode.center.lng];
-       // center map on result
-       map.setView(coords, 16);
-    });
-
-    var map_set = "osm";
-    map.fitBounds([[53,5],[50,6]]);
-
-    // Add Layercontrol
-        var baseMaps = {
-        "OpenStreetMap": osm,
-        "Esri Sattelite": esri
-    };
-    var layerControl = L.control.layers(baseMaps).addTo(map);
-
-    var editableLayers = new L.FeatureGroup();
-    map.addLayer(editableLayers);
-
-    var drawControl = new L.Control.Draw({
-      position: 'topright',
-      draw: {
-        polyline: true,
-        polygon: {
-          allowIntersection: false, // Restricts shapes to simple polygons
-          drawError: {
-            color: '#e1e100', // Color the shape will turn when intersects
-            message: '<strong>Oh snap!<strong> you can\'t draw that!' // Message that will show when intersect
-          }
+    // Add map selector
+    const baseMaps = { "OpenStreetMap": osm, "Esri Satellite": esri };
+    L.control.layers(baseMaps).addTo(map);
+    
+    // Add draw controls and layers
+    const editableLayers = new L.FeatureGroup().addTo(map);
+    const drawControl = new L.Control.Draw({
+        position: 'topright',
+        draw: {
+            polyline: true,
+            polygon: { allowIntersection: false, drawError: { color: '#e1e100', message: '<strong>Oh snap!</strong> you can\'t draw that!' } },
+            rectangle: true,
+            marker: false,
+            circle: false,
+            circlemarker: false,
         },
-        circle: false, // not supported in geojson yet
-        circlemarker: false, // not supported in geojson yet
-        rectangle: true,
-        marker: false
-      },
-      edit: {
-        featureGroup: editableLayers, //REQUIRED!!
-        remove: true
-      }
+        edit: { featureGroup: editableLayers, remove: true }
     });
-
     map.addControl(drawControl);
 
-    wkt_string = document.getElementById("spatial_coverage").value;
-    if (wkt_string !== "") {
-         // Replace old coordinates by wkt string
-        let single_regex = /^[+-]?\d+.\d+, [+-]?\d+.\d+/g;
-        // (51.15437, 11.85132), (49.89729, 15.10448)
-        let block_regex = /^\([+-]?\d+.\d+, [+-]?\d+.\d+\), \([+-]?\d+.\d+, [+-]?\d+.\d+\)/g;
+    return { map: map, editableLayers: editableLayers };
+}
 
+/**
+ * Loads dynamic content like WKT data onto the map.
+ * This is the function that gets called repeatedly.
+ * @param {L.Map} map - The Leaflet map instance.
+ * @param {L.FeatureGroup} editableLayers - The layer to add features to.
+ */
+function loadMapContent(map, editableLayers) {
+    editableLayers.clearLayers();
+
+    const wkt_string = document.getElementById("spatial_coverage").value;
+    if (wkt_string) {
+        let single_regex = /^[+-]?\d+\.\d+, [+-]?\d+\.\d+/g;
+        let block_regex = /^\([+-]?\d+\.\d+, [+-]?\d+\.\d+\), \([+-]?\d+\.\d+, [+-]?\d+\.\d+\)/g;
+
+        let geoJsonString = null;
         if (single_regex.test(wkt_string)) {
             const coords = wkt_string.split(", ");
-            wkt_string = "POINT("+ coords[1] + " " + coords[0] + ")"
+            const convertedWkt = `POINT(${coords[1]} ${coords[0]})`;
+            geoJsonString = createGeoJSONFromWkt(convertedWkt);
         } else if (block_regex.test(wkt_string)) {
-            wkt_string = wkt_string.replace(/[()]/gi, "");
-            const coords = wkt_string.split(", ");
-            wkt_string = `POLYGON((${coords[1]} ${coords[2]}, ${coords[1]} ${coords[0]}, ${coords[3]} ${coords[0]}, ${coords[3]} ${coords[2]}, ${coords[1]} ${coords[2]}))`
+            const tempWkt = wkt_string.replace(/[()]/gi, "");
+            const coords = tempWkt.split(", ");
+            const convertedWkt = `POLYGON((${coords[1]} ${coords[2]}, ${coords[1]} ${coords[0]}, ${coords[3]} ${coords[0]}, ${coords[3]} ${coords[2]}, ${coords[1]} ${coords[2]}))`;
+            geoJsonString = createGeoJSONFromWkt(convertedWkt);
         } else if (wkt_string === "None") {
-            wkt_string = "GEOMETRYCOLLECTION EMPTY"
+            geoJsonString = createGeoJSONFromWkt("GEOMETRYCOLLECTION EMPTY");
+        } else {
+            geoJsonString = createGeoJSONFromWkt(wkt_string);
         }
 
-        geoJson = JSON.parse(createGeoJSONFromWkt(wkt_string));
-        if (geoJson.type !== undefined) {
+        const geoJson = JSON.parse(geoJsonString);
+        if (geoJson.type) {
             $('#geographic_origin').val(wkt_string);
-            geoJsonLayer = L.geoJSON(geoJson);
+            const geoJsonLayer = L.geoJSON(geoJson);
             geoJsonLayer.addTo(editableLayers);
-            if (geoJsonLayer.getBounds().isValid()) {
-                var bounds = geoJsonLayer.getBounds()
-                map.fitBounds(bounds, {padding: [10]});
-
-            };
+            const bounds = geoJsonLayer.getBounds();
+            
+            if (boundsValid(bounds)) {
+                map.fitBounds(bounds, { padding: [10] });
+            }
         }
     }
+}
 
-    map.on(L.Draw.Event.CREATED, function(e) {
-        var type = e.layerType,
-        layer = e.layer;
+/**
+ * Sets up all the map's one-time event listeners.
+ */
+function mapEvents() {
+    // This event handler needs to be attached to the map instance after it is created
+    // A better way is to move this into the initializeMap function.
+    // We will place it here for clarity, but you should move these to initializeMap().
+    if(mapInstance) {
+        mapInstance.on(L.Draw.Event.CREATED, function(e) {
+            editableLayers.addLayer(e.layer);
+            const layerGeoJSON = editableLayers.toGeoJSON();
+            const wktOut = createWktFromGeoJSON(layerGeoJSON);
+            document.getElementById("spatial_coverage").value = wktOut;
+            $("#spatial_coverage").trigger('change');
+        });
 
-        if (type === 'marker') {
-            layer.bindPopup('LatLng: ' + layer.getLatLng().lat + ',' + layer.getLatLng().lng).openPopup();
-        }
+        mapInstance.on(L.Draw.Event.EDITED, function(e) {
+            const layerGeoJSON = editableLayers.toGeoJSON();
+            const wktOut = createWktFromGeoJSON(layerGeoJSON);
+            document.getElementById("spatial_coverage").value = wktOut;
+            $("#spatial_coverage").trigger('change');
+        });
 
-        editableLayers.addLayer(layer);
+        mapInstance.on(L.Draw.Event.DELETED, function(e) {
+            const layerGeoJSON = editableLayers.toGeoJSON();
+            const wktOut = createWktFromGeoJSON(layerGeoJSON);
+            document.getElementById("spatial_coverage").value = wktOut;
+            $("#spatial_coverage").trigger('change');
+        });
+        
+        osmGeocoder.on('markgeocode', e => {
+            const coords = [e.geocode.center.lat, e.geocode.center.lng];
+            mapInstance.setView(coords, 16);
+        });
+    }
+}
 
-        layerGeoJSON = editableLayers.toGeoJSON();
-        var out = createWktFromGeoJSON(layerGeoJSON);
+// --- Utility Functions (Cleaned) ---
 
-        document.getElementById("spatial_coverage").value = out;
+/**
+ * Converts a GeoJSON string to WKT format using OpenLayers.
+ */
+function createWktFromGeoJSON(geoJSONString) {
+    const geojson_format = new ol.format.GeoJSON();
+    const layerFeatures = geojson_format.readFeatures(geoJSONString);
+    const wkt_format = new ol.format.WKT();
+    return wkt_format.writeFeatures(layerFeatures);
+}
 
-    });
+/**
+ * Converts a WKT string to GeoJSON format using OpenLayers.
+ */
+function createGeoJSONFromWkt(wktString) {
+    const geojson_format = new ol.format.GeoJSON();
+    const wkt_format = new ol.format.WKT();
+    const stringFeatures = wkt_format.readFeatures(wktString);
+    return geojson_format.writeFeatures(stringFeatures);
+}
 
-    //On Draw Edit Event
-    map.on(L.Draw.Event.EDITED, function(e) {
-        var type = e.layerType,
-        layer = e.layer;
+/**
+ * Checks if a Leaflet bounds object is valid and free of NaN values.
+ */
+function boundsValid(bounds) {
+    if (!bounds || typeof bounds.getSouthWest !== 'function' || typeof bounds.getNorthEast !== 'function') {
+        return false;
+    }
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
 
-        layerGeoJSON = editableLayers.toGeoJSON();
-        var out = createWktFromGeoJSON(layerGeoJSON);
+    if (isNaN(sw.lat) || isNaN(sw.lng) || isNaN(ne.lat) || isNaN(ne.lng)) {
+        return false;
+    }
 
-        document.getElementById("spatial_coverage").value = out;
-        //$('#select-geo-loc').addClass("hidden");
-    });
-
-    //On Draw Delete Event
-    map.on(L.Draw.Event.DELETED, function(e) {
-        var type = e.layerType, layer = e.layer;
-
-        layerGeoJSON = editableLayers.toGeoJSON();
-        var out = createWktFromGeoJSON(layerGeoJSON);
-
-        document.getElementById("spatial_coverage").value = out;
-
-    });
+    return bounds.isValid();
 }

@@ -1,109 +1,263 @@
 {% extends "nioo_bootstrap.html" %}
 
 {% block content %}
-    {% for dataset in datasets %}
-        <div class="card">
-            <div class="card-header">
-                <b>{{ dataset.title }}</b> - <a href="{{ url_for('main_bp.add_to_cart', dataset_id=dataset.dataset_id) }}">Add to Cart</a>
-            </div>
-            <div class="card-body">
-                <p></p>
-                <div class="row">
-                    <div class="table-responsive col-md-4">
-                        <table class="table table-borderless mb-5">
-                            <tbody>
+
+<div class="main-content ps-3" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+    <div align="center">
+        <a data-bs-toggle="collapse" href="#collapse-upload" role="button"
+           aria-expanded="false" aria-controls="collapse-upload">filters</a>
+
+    </div>
+    <div class="collapse row" id="collapse-upload">
+        <div class="col-sm-10">
+           <form id="index_search_form">
+               <div class="form-group">
+                   <label for="free">Free text search.</label>
+                   <input type="text" class="form-control" id="free" name="free">
+               </div>
+
+               <div class="form-group">
+                   <label for="amount">Time period:</label>
+                   <div id="slider-range"></div>
+                   <input type="text" class="form-control" id="amount" readonly="">
+                   <input type="hidden" id="min_year_input" name="min_year">
+                   <input type="hidden" id="max_year_input" name="max_year">
+               </div>
+
+               <div class="form-group">
+                   <label for="spatial_coverage">Search on spatial</label>
+                   <input class="form-control" id="spatial_coverage" name="spatial_coverage" type="text" value=""/>
+                   <div class="hidden" id="select-geo-loc"></div>
+               </div>
+           </form>
+        </div>
+    </div>
+</div>
+
+
+<div class="cardbox" data-add-to-cart-base-url="{{ url_for('main_bp.add_to_cart', dataset_id='') }}"></div>
+<script type="application/javascript">
+
+function serializeObject($form) {
+    var o = {};
+    var a = $form.serializeArray();
+    $.each(a, function() {
+        if (o[this.name]) {
+            if (!o[this.name].push) {
+                o[this.name] = [o[this.name]];
+            }
+            o[this.name].push(this.value || '');
+        } else {
+            o[this.name] = this.value || '';
+        }
+    });
+    return o;
+};
+
+function debounce(func, wait) {
+  let timeout;
+  return function executed(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+function fetchData(query) {
+    // Sla het volledige query-object op in localStorage
+    localStorage.setItem('last_search_filters', JSON.stringify(query));
+
+    $.ajax({
+            url: '/query', // The endpoint to send the data to
+            type: 'POST',  // Use POST for sending the data in the body
+            contentType: 'application/json', // Tell the server we are sending JSON
+            data: JSON.stringify(query), // Convert the JavaScript object to a JSON string
+            processData: false,
+
+            success: function(data) {
+                // Process the successful response
+                // Clear the existing cards first
+                $('#cardBox').empty();
+
+                if (data.hits && data.hits.length > 0) {
+                     data.hits.forEach(function(dataset) {
+                         addCardToCardBox(dataset._source);
+                     });
+                } else {
+                    $('#cardBox').append("<p>No results found.</p>");
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching data:", error);
+                $('#cardBox').append("<p>An error occurred while fetching data. Please try again later.</p>");
+            }
+        });
+}
+
+function addCardToCardBox(dataset) {
+    const baseUrl = $('.cardbox').data('add-to-cart-base-url');
+    const addToCartUrl = `${baseUrl}${dataset.dataset_id}`;
+    // Create the card HTML structure
+    var cardHtml = `
+    <div class="card">
+        <div class="card-header">
+            <b>${dataset.title}</b> -  - <a href="${addToCartUrl}">Add to Cart</a>
+        </div>
+        <div class="card-body">
+            <p></p>
+            <div class="row">
+                <div class="table-responsive col-md-4">
+                    <table class="table table-borderless mb-5">
+                        <tbody>
                             <tr>
                                 <th scope="row" class="p-1">Submission date:</th>
-                                <td class="p-1">{{ dataset.release_date }}</td>
+                                <td class="p-1">${dataset.release_date}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Language:</th>
-                                <td class="p-1">{{ dataset.language }}</td>
+                                <td class="p-1">${dataset.language}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Metadata provider:</th>
-                                <td class="p-1">{{ (dataset.dataset_metadata_provider.web() if
-                                    dataset.dataset_metadata_provider) | safe }}</td>
+                                <td class="p-1">${dataset.dataset_metadata_provider}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Creator:</th>
-                                <td class="p-1">{{ dataset.creator.web() | safe }}</td>
+                                <td class="p-1">${dataset.creator}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Contact point:</th>
-                                <td class="p-1">{{ (dataset.dataset_contact_point.web() if
-                                    dataset.dataset_contact_point) | safe }}</td>
+                                <td class="p-1">${dataset.dataset_contact_point}</td>
                             </tr>
-
                             <tr>
                                 <th scope="row" class="p-1">Resource type:</th>
-                                <td class="p-1">{{ dataset.resource_type }}</td>
+                                <td class="p-1">${dataset.resource_type}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1 col-md-4">License:</th>
-                                <td class="p-1 col-md-8">{{ dataset.dataset_license |safe }}</td>
+                                <td class="p-1 col-md-8">${dataset.dataset_license}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Access rights:</th>
-                                <td class="p-1">{{ dataset.access_rights }}</td>
+                                <td class="p-1">${dataset.access_rights}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Dataset publisher:</th>
-                                <td class="p-1">{{ (dataset.dataset_publisher.web() if
-                                    dataset.dataset_publisher) | safe }}</td>
+                                <td class="p-1">${dataset.dataset_publisher}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Dataset ID:</th>
-                                <td class="p-1">{{ dataset.public_id }}</td>
+                                <td class="p-1">${dataset.public_id}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Landing page:</th>
-                                <td>
-                                    <a href="{{ dataset.landing_page }}">
-                                        {{ dataset.landing_page }}
-                                    </a>
-                                </td>
+                                <td><a href="${dataset.landing_page}">${dataset.landing_page}</a></td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Temporal coverage:</th>
-                                <td class="p-1">{{ dataset.temporal_coverage_start}} / {{ dataset.temporal_coverage_end }}</td>
+                                <td class="p-1">${dataset.temporal_coverage_start} / ${dataset.temporal_coverage_end}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Temporal resolution:</th>
-                                <td class="p-1">{{ dataset.temporal_resolution }}</td>
+                                <td class="p-1">${dataset.temporal_resolution}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Spatial resolution:</th>
-                                <td class="p-1">{{ dataset.spatial_resolution}}</td>
+                                <td class="p-1">${dataset.spatial_resolution}</td>
                             </tr>
                             <tr>
                                 <th scope="row" class="p-1">Taxonomic coverage:</th>
-                                <td class="p-1">{{ dataset.taxonomic_coverage }}</td>
+                                <td class="p-1">${dataset.taxonomic_coverage}</td>
                             </tr>
-
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="col-md-8">
-                        <div>
-                            <b>Description: </b>
-                            {{ dataset.description }}
-                            <br>
-                            <b>Keywords: </b>
-                            {% for kw in dataset.dataset_keywords %}
-                                <span class="badge rounded-pill bg-primary">{{ kw.name }}</span>
-                            {% endfor %}
-                            <br/>
-                        </div>
-                        <b>Spatial coverage:</b>
-                        <div id="geo-{{ dataset.dataset_id }}" style="height: 450px;"></div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
-                <br/>
+                <div class="col-md-8">
+                    <div>
+                        <b>Description: </b>${dataset.description}<br>
+                        <b>Keywords: </b>
+                        ${dataset.dataset_keywords.map(kw => `<span class="badge rounded-pill bg-primary">${kw}</span>`).join(' ')}
+                        <br/>
+                    </div>
+                    <b>Spatial coverage:</b>
+                    <div id="geo-${dataset.dataset_id}" style="height: 450px;"></div>
+                </div>
             </div>
+            <br/>
         </div>
-        <script type="application/javascript">
-            loadDatasetMap({{dataset.dataset_id}}, "{{dataset.dataset_spatial_coverage.to_shape()}}");
-        </script>
-    {% endfor %}
+    </div>
+`;
+
+// Append the card to the cardbox div
+$('.cardbox').append(cardHtml);
+
+// Load the dataset map
+console.log(dataset);
+loadDatasetMapWithGeoJSON(dataset.dataset_id, dataset.dataset_spatial_coverage.geometry);
+}
+
+function cleanData() {
+
+    $('.cardbox').html("");
+};
+$(function () {
+    $("#slider-range").slider({
+        range: true,
+        min: 1900,
+        max: 2025,
+        values: [1990, 2025],
+        slide: function (event, ui) {
+            $("#amount").val(ui.values[0] + " - " + ui.values[1]);
+
+            // Update the hidden form fields
+            $("#min_year_input").val(ui.values[0]).trigger('change');
+            $("#max_year_input").val(ui.values[1]).trigger('change');
+        }
+    });
+
+    // Also initialize the hidden fields with the slider's default values
+    const initialValues = $("#slider-range").slider("option", "values");
+    $("#min_year_input").val(initialValues[0]);
+    $("#max_year_input").val(initialValues[1]);
+});
+
+$(document).ready(function() {
+    const savedFilters = localStorage.getItem('last_search_filters');
+
+    if (savedFilters) {
+        const filters = JSON.parse(savedFilters);
+
+        // Vul de formuliervelden met de opgeslagen waarden
+        $('#min_year_input').val(filters.min_year);
+        $('#max_year_input').val(filters.max_year);
+        $('#keywords').val(filters.keywords);
+        $('#free').val(filters.free);
+
+
+        // Voer de zoekopdracht uit met de opgeslagen filters
+        fetchData(filters);
+        };
+
+
+    const debouncedFetchData = debounce(fetchData, 100);
+
+    $('#index_search_form').on('change input', 'input, select, textarea', function() {
+    // This will fire for both change and input events.
+    // It's a good way to catch all user interactions.
+
+    formData =  serializeObject($('#index_search_form'))
+
+    cleanData();
+    debouncedFetchData(formData);
+    console.log(formData);
+    });
+});
+
+
+
+</script>
+
 {% endblock %}

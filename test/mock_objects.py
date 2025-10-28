@@ -5,7 +5,7 @@ import shapely
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.polygon import Polygon
 
-from application.models import LicenseDocument, Location, Agent, Dataset, Keyword, Catalog
+from application.models import LicenseDocument, Location, Agent, Dataset, Keyword, Catalog, DataTheme
 from faker import Faker # Used for generating realistic-looking data
 
 # Initialize Faker for generating mock data
@@ -19,10 +19,10 @@ class MockObjects:
             self.db_session = db_session
 
     # Function to create a single mock dataset
-    def create_mock_dataset(self, dataset_id_prefix):
+    def create_mock_dataset(self, dataset_id_prefix="1"):
         """
         Creates a single mock Dataset object with dynamic data.
-        :param dataset_id_prefix: A unique identifier for this dataset.
+        :param dataset_id_prefix: A prefix for the dataset to make a dataset more recognisable
         :return: Dataset
         """
         dataset = Dataset()
@@ -95,24 +95,52 @@ class MockObjects:
 
         return dataset
 
-    def generate_datasets(self, number=10):
-        # --- Generate %number% Datasets ---
+    def generate_datasets(self, number=10, dataset_id_prefix=""):
+        """
+        Generate a specified number of mock datasets.
+
+        This method creates a list of mock datasets by repeatedly calling
+        :meth:`self.create_mock_dataset`. It prints progress messages
+        during the generation process.
+
+        :param number: The number of mock datasets to generate. Defaults to 10.
+        :type number: int, optional
+        :param dataset_id_prefix: a prefix to add
+        :returns: A list containing the generated mock dataset objects.
+        :rtype: list
+        """
+
         mock_datasets = []
         print("Generating 10 mock datasets...")
         for i in range(1, number+1):
-            dataset = self.create_mock_dataset(i)
+            dataset = self.create_mock_dataset(f"ds-{dataset_id_prefix}-{i}")
             mock_datasets.append(dataset)
             print(f"Generated Dataset {i}: {dataset.title}")
+        return mock_datasets
 
-        print("\n--- Details of the first generated dataset (as a dictionary) ---")
-        if mock_datasets:
-            first_dataset_dict = mock_datasets[0].to_dict()
-            import json
-            print(json.dumps(first_dataset_dict, indent=2))
-
-        print(f"\nSuccessfully generated {len(mock_datasets)} mock Dataset objects.")
 
 class DBSessionMock:
+    """
+    A mock database session class for testing purposes.
+
+    This class simulates basic database operations like querying, filtering,
+    adding objects, and committing changes without interacting with a real
+    database. It stores objects in in-memory dictionaries.
+
+    :ivar _agents: Stores mock Agent objects, keyed by mbox.
+    :vartype _agents: dict
+    :ivar _locations: Stores mock Location objects, keyed by geometry WKT.
+    :vartype _locations: dict
+    :ivar _keywords: Stores mock Keyword objects, keyed by name.
+    :vartype _keywords: dict
+    :ivar _datatypes: Stores mock DataTheme objects, keyed by name.
+    :vartype _datatypes: dict
+    :ivar _licenses: Stores mock LicenseDocument objects, keyed by code.
+    :vartype _licenses: dict
+    :ivar _catalogs: Stores mock Catalog objects, keyed by name.
+    :vartype _catalogs: dict
+    """
+
     _agents = {} # To store mock agents by mbox
     _locations = {} # To store mock locations by geometry WKT
     _keywords = {} # To store mock keywords by name
@@ -120,8 +148,22 @@ class DBSessionMock:
     _licenses = {} # To store mock licenses by code
     _catalogs = {} # To store mock catalogs by name
 
+    def __init__(self):
+        self._current_query_cls = None
+
     def query(self, cls):
-        # Simplistic query mock
+        """
+        Simulates a database query for a specific class.
+
+        Returns all stored objects of the given class type. Allows chaining
+        with :meth:`filter_by`.
+
+        :param cls: The class of objects to query (e.g., Agent, Location).
+        :type cls: type
+        :returns: A list-like view of stored objects of the specified class,
+                  or the mock session object itself to allow chaining.
+        :rtype: list or :class:`DBSessionMock`
+        """
         if cls == Agent:
             return self._agents.values()
         elif cls == Location:
@@ -137,7 +179,18 @@ class DBSessionMock:
         return self # Allow chaining for filter_by
 
     def filter_by(self, **kwargs):
-        # Simplistic filter_by mock
+        """
+        Simulates filtering the results of the previous query.
+
+        Supports filtering by specific attributes based on the class
+        queried in the preceding :meth:`query` call.
+
+        :param kwargs: Keyword arguments representing the filter criteria
+                       (e.g., mbox='...', geometry='...', name='...', code='...').
+        :type kwargs: dict
+        :returns: The mock session object itself to allow chaining.
+        :rtype: :class:`DBSessionMock`
+        """
         if 'mbox' in kwargs:
             self._current_result = [self._agents.get(kwargs['mbox'])]
         elif 'geometry' in kwargs:
@@ -156,9 +209,25 @@ class DBSessionMock:
         return self
 
     def first(self):
+        """
+        Simulates retrieving the first result from the filtered query.
+
+        :returns: The first object in the current result set, or None if the
+                  result set is empty.
+        :rtype: object or None
+        """
         return self._current_result[0] if self._current_result else None
 
     def add(self, obj):
+        """
+        Simulates adding an object to the database session.
+
+        Objects are stored in the appropriate internal dictionary based on their type.
+        Assigns dummy IDs and keys (like mbox for Agent) if they are missing.
+
+        :param obj: The object to add (e.g., an instance of Agent, Location, etc.).
+        :type obj: object
+        """
         if isinstance(obj, Agent):
             if obj.mbox:
                 self._agents[obj.mbox] = obj
@@ -189,8 +258,19 @@ class DBSessionMock:
                 obj.catalog_id = len(self._catalogs)
 
     def commit(self):
+        """
+        Simulates committing changes to the database.
+
+        In this mock, this method does nothing.
+        """
         pass # No actual commit in mock
+
     def flush(self):
+        """
+        Simulates flushing changes to the database.
+
+        In this mock, this method does nothing.
+        """
         pass # No actual flush in mock
 
 

@@ -52,3 +52,11 @@ class Config(object):
     SURF_EDITOR_GROUP = f"{SURF_SRAM_GROUP_PREFIX}{SURF_SRAM_GROUP_POSTFIX}"
 
     CODE_VERIFIER, CODE_CHALLENGE = get_code_challenge()
+
+    ## Elastic settings
+    ELASTIC_HOST = environ.get("ELASTIC_HOST", "https://localhost:9200/")
+    ELASTIC_CA_CERT = environ.get("ELASTIC_CA_CERT", None)
+    ELASTIC_USER = environ.get("ELASTIC_USER", "elastic")
+    ELASTIC_PASSWORD = environ.get("ELASTIC_PASSWORD", "wqv-7S75rA3tMKra7qvT")
+    ELASTIC_VERIFY_CERTS = environ.get("ELASTIC_VERIFY_CERTS", False)
+    ELASTIC_INDEX_NAME = environ.get("ELASTIC_INDEX_NAME", "dataset")

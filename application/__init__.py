@@ -4,6 +4,7 @@ from flask import Flask, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from application.database import validate_db, db_session
+from application.search_index import validate_index
 from config import Config
 from flask_login import LoginManager
 from flask_session import Session
@@ -48,5 +49,6 @@ def create_app():
         app.jwt = JWTManager(app)
 
         validate_db(app)
+        app.es = validate_index()
 
     return app
