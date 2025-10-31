@@ -21,5 +21,13 @@ dependencies:
   - rdflib
   - pyjwt
   - msal
+  - gunicorn
+  - psycopg2
+  - mkdocs
+  - mkdocs-material
+  - mkdocstrings
+  - mkdocstrings-python
+  - pymdown-extensions
+
 
 prefix: /home/eric/Apps/miniconda3/envs/metadata-app-ecosearch

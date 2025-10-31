@@ -22,6 +22,9 @@ nav:
       - Models: api/models.md
       - Forms: api/forms.md
       - Routes: api/routes.md
+      - Authentication: api/authentication.md
+      - SearchIndex: api/search_index.md
+
 
 plugins:
   - search
