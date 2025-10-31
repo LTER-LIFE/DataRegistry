@@ -1,0 +1,77 @@
+============================================================
+NIOO-KNAW Veluwe data portal PROJECT NOTICE
+============================================================
+
+Veluwe data portal
+Copyright [2025] [Netherlands Institute of Ecology]
+
+This product includes software developed by [Netherlands Institute of Ecology].
+
+This product includes software licensed under the Apache License 2.0.
+A copy of this license can be found in the accompanying LICENSE file.
+
+============================================================
+THIRD-PARTY COMPONENT NOTICES
+============================================================
+
+This product incorporates material from the following third-party libraries and components:
+
+1. SQLAlchemy
+The full license is available with the distribution.
+Copyright (c) 2005-2023, the SQLAlchemy authors and contributors
+Subject to the terms and conditions of the MIT License.
+
+2. GeoAlchemy2
+Copyright (c) 2011-2025, GeoAlchemy Contributors
+Subject to the terms and conditions of the MIT License.
+
+3. GeoPandas
+Copyright (c) 2012-2023, GeoPandas Contributors
+Subject to the terms and conditions of the BSD 3-Clause License.
+
+4. Shapely
+Copyright (c) 2007-2022, Shapely Contributors
+Subject to the terms and conditions of the BSD 3-Clause License.
+
+5. Flask
+Copyright (c) 2015 by Armin Ronacher and contributors. See AUTHORS for more details.
+Subject to the terms and conditions of the BSD 3-Clause License.
+
+6. Flask-WTF
+Copyright (c) 2010 by Ian McKellar and contributors.
+Subject to the terms and conditions of the BSD 3-Clause License.
+
+7. WTForms
+Copyright (c) 2008 WTForms.
+Subject to the terms and conditions of the BSD 3-Clause License.
+
+8. python-dotenv
+Copyright (c) 2014, Saurabh Kumar (python-dotenv).
+Subject to the terms and conditions of the BSD 3-Clause License.
+
+9. PyJWT
+Copyright (c) 2015, Jose Padilla
+Subject to the terms and conditions of the MIT License.
+
+10. Flask-JWT-Extended
+Copyright (c) 2016 Lily Acadia Gilbert
+Subject to the terms and conditions of the MIT License.
+
+11. MSAL (Microsoft Authentication Library for Python)
+Copyright (c) 2019 Microsoft Corporation
+Subject to the terms and conditions of the MIT License.
+
+12. Psycopg2 (PostgreSQL adapter for Python)
+Psycopg2 is licensed under the GNU Lesser General Public License Version 3 (LGPLv3).
+A copy of this license can be found in the accompanying distribution documentation for Psycopg2.
+This project links dynamically to Psycopg2.
+
+------------------------------------------------------------
+Note on remaining packages:
+
+Alembic, SQLAlchemy-Utils, flask-login, flask-session, elasticsearch (client),
+requests, gunicorn, and rdflib are generally covered by their respective
+permissive licenses (often MIT/BSD/Apache 2.0)
+------------------------------------------------------------
+
+============================================================
