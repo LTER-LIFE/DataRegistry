@@ -143,44 +143,6 @@ Ensure your `.env` is set up correctly (based on `.env_template`).
 
 ---
 
-## 🧩 Development Notes
-
-### Modifying Forms and Models
-
-If you modify the forms:
-- Update the corresponding fields in:
-  - `website/forms.py` – `AddStudy` class
-  - `website/models/models.py` – `Catalog` class
-  - `website/views.py` – `addstudy()` function
-  - `website/templates/add_record.html` – HTML form
-
-### Updating Map Popups
-
-Edit `website/templates/new_map.html`, lines 272–300, to change popup content.
-
-### Adding Pages
-
-Create a new HTML file in `website/templates/`, starting with:
-
-```jinja2
-{% extends "base.html" %}
-```
-
-Update navigation in:
-- `website/templates/base.html`
-- `website/templates/new_map.html`
-
----
-
-## ⚠️ Known Issues
-
-- The description field breaks if the user inserts a newline.
-- Polygons without a marker may not display on the map.
-- Security checks are incomplete – **do not deploy to production without review**.
-- OAuth authentication code exists but is **not enabled**.
-
----
-
 ## 🤝 Contributing
 
 Pull requests are welcome!  
@@ -190,4 +152,6 @@ Please open an issue first to discuss major changes.
 
 ## 📄 License
 
-_(License details can be added here.)_
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+This project is licensed under the **Apache License 2.0** - see the **[LICENSE](LICENSE)** file for details.
