@@ -1,0 +1,40 @@
+site_name: EcoSearchEngine
+repo_url: https://github.com/yourname/ecosearchengine
+repo_name: yourname/ecosearchengine
+edit_uri: ""
+
+
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - content.code.annotate
+    - content.action.edit
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - API Reference:
+      - Database: api/database.md
+      - Models: api/models.md
+      - Forms: api/forms.md
+      - Routes: api/routes.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["../"]
+      default_handler: python
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed
