@@ -1,0 +1,3 @@
+# models module
+
+::: application.models

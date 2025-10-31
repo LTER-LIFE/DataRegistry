@@ -1,0 +1,3 @@
+# Database routes
+
+::: application.routes
