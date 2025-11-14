@@ -15,6 +15,7 @@ import os.path
 import shutil
 import tempfile
 import zipfile
+from datetime import datetime
 
 import geopandas as gpd
 import shapely
@@ -23,7 +24,7 @@ from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
 from shapely import GeometryCollection
 from shapely.geometry import box, shape
 from shapely.validation import explain_validity
-from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, or_, and_
+from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, or_, and_, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.testing.schema import Table
 
@@ -452,7 +453,7 @@ class CatalogStaging(Base):
     datasets_in_catalogue = relationship("DatasetStaging", foreign_keys='DatasetStaging.dataset_catalog_id',
                                          back_populates="dataset_catalog", lazy=False)
 
-    themes = relationship('DataThemeStaging', secondary='dataThemeCatalog')
+    themes = relationship('DataThemeStaging', secondary='dataThemeCatalogStaging')
 
     catalog_publisher_id = Column(Integer, ForeignKey('AgentStaging.agent_id'))
     publisher = relationship("AgentStaging", foreign_keys=[catalog_publisher_id])
