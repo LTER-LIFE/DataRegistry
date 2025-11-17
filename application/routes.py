@@ -17,6 +17,8 @@ from application.database import db_session
 from application.forms import DatasetForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
     LicenseDocument, MediaType, Location
+from application.models import AgentStaging, KeywordStaging, CatalogStaging, ChecksumStaging, DataServiceStaging, DatasetStaging, DataThemeStaging, DistributionStaging, \
+    LicenseDocumentStaging, MediaTypeStaging, LocationStaging
 
 # Blueprint Configuration
 # Here the static folder and the templates folder are annotated
@@ -132,6 +134,67 @@ def add_dataset(dataset_id=None):
         logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
 
+@main_bp.route('/stageddatasets/edit/<dataset_id>', methods=['GET', 'POST'])
+@main_bp.route('/stageddatasets/delete/<dataset_id>', methods=['GET'])
+@main_bp.route('/stage_dataset', methods=['GET', 'POST'])
+def stage_dataset(dataset_id=None):
+    """
+    Renders a form to stage (create) or edit or Create a new dataset
+
+    :param dataset_id: The param dataset id can be used to Edit or Delete datasets
+
+    :return: rendered flask template from templates/add_dataset.html
+    """
+    #
+    try:
+        name = None
+        dataset_form = DatasetStagingForm()
+        dataset = None
+
+        # Delete the dataset or edit
+        if request.url_rule.rule.find("delete") > -1 or request.url_rule.rule.find("edit") > -1:
+            dataset = DatasetStaging.query.get(dataset_id)
+
+            if not dataset:
+                flash(f"{dataset_id} does not exist.", "error")
+            if not is_logged_in():
+                flash(f"Please login to modify a dataset.", "error")
+                return redirect(url_for("main_bp.login"))
+            if not in_editor_group(session.get('access_token')):
+                flash(f"Please ask for editor access to an admin.", "error")
+                return redirect(url_for("main_bp.home"))
+            if request.url_rule.rule.find("delete") > -1:
+                db_session.delete(dataset)
+                db_session.commit()
+                db_session.flush()
+                flash(f"Deleted dataset {dataset_id}", "success")
+            elif request.url_rule.rule.find("edit") > -1 or request.url_rule.rule.find("copy") > -1:
+                dataset_form.from_dataset(dataset)
+
+        # If the form validates
+        if dataset_form.validate_on_submit():
+            if request.url_rule.rule.find("edit") > -1:
+                dataset = dataset_form.to_dataset(dataset)
+                dataset = dataset_form.to_dataset(dataset)
+                # Commit study to the database
+                db_session.commit()
+                db_session.flush()
+            else:
+                dataset = dataset_form.to_dataset(dataset)
+                # Add to the database
+                db_session.add(dataset)
+                # Commit study to the database
+                db_session.commit()
+                db_session.flush()
+            # Feedback
+            flash(f"Staged dataset with title {dataset.title}.", "success")
+
+        page = render_template('dataset_form.html', form=dataset_form, name=name, title=TITLE)
+        return page
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        abort(500, description="Failed to mutate dataset.", original_exception=e)
+
 
 @main_bp.route('/datasets')
 @main_bp.route('/Dataset/<dataset_id>')
@@ -148,6 +211,27 @@ def datasets(dataset_id=None):
             datasets_table = [Dataset.query.get(dataset_id)]
         else:
             datasets_table = db_session.query(Dataset).all()
+        page = render_template('dataset_table.html', datasets=datasets_table, title=TITLE)
+        return page
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
+
+@main_bp.route('/stageddatasets')
+@main_bp.route('/StagedDataset/<dataset_id>')
+def stageddatasets(dataset_id=None):
+    """
+    Renders a form to show all datasets in a table form. When a dataset_id is given only one dataset is shown
+
+    :param dataset_id: The param dataset id can be used to Edit or Delete datasets
+
+    :return: rendered flask template from templates/dataset_table.html
+    """
+    try:
+        if dataset_id:
+            datasets_table = [DatasetStaging.query.get(dataset_id)]
+        else:
+            datasets_table = db_session.query(DatasetStaging).all()
         page = render_template('dataset_table.html', datasets=datasets_table, title=TITLE)
         return page
     except Exception as e:
