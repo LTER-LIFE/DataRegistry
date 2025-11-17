@@ -14,7 +14,7 @@ from wtforms.fields.simple import SubmitField, TextAreaField
 from wtforms.validators import DataRequired, AnyOf, ValidationError
 
 from application.models import Dataset, Agent, Location, LicenseDocument, Keyword
-from applications.models import DatasetStaging, AgentStaging, LocationStaging, LicenseDocumentStaging, KeywordStaging
+from application.models import DatasetStaging, AgentStaging, LocationStaging, LicenseDocumentStaging, KeywordStaging
 
 
 def parse_times(iso_time_string):
@@ -599,7 +599,7 @@ class DatasetStagingForm(FlaskForm):
         # spatial_coverage -> Location
         # db_location = Location.add_or_update_location(geometry=self.spatial_coverage.data)
         if self.spatial_coverage_shapefile.data:
-            dataset.dataset_spatial_coverage = Location.from_shapefile(
+            dataset.dataset_spatial_coverage = LocationStaging.from_shapefile(
                 request.files[self.spatial_coverage_shapefile.name])
         else:
             dataset.dataset_spatial_coverage = LocationStaging.add_or_update_location(geometry=self.spatial_coverage.raw_data[0])
