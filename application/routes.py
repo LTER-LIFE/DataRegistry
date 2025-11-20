@@ -19,7 +19,7 @@ from sqlalchemy import exc
 from application import search_index
 from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
-from application.forms import DatasetForm
+from application.forms import DatasetForm, DatasetStagingForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
     LicenseDocument, MediaType, Location
 from application.models import AgentStaging, KeywordStaging, CatalogStaging, ChecksumStaging, DataServiceStaging, DatasetStaging, DataThemeStaging, DistributionStaging, \
