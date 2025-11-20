@@ -42,11 +42,15 @@ def create_app():
         login_manager.login_view = 'main_bp.login'
         app.login_manager = login_manager
 
+        from application import models
+        
+        validate_db(app)
+
         from application import routes
 
         app.register_blueprint(blueprint=routes.main_bp, url_prefix=url_prefix)
         app.jwt = JWTManager(app)
 
-        validate_db(app)
+        
 
     return app

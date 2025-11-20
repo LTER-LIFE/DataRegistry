@@ -39,10 +39,12 @@ def validate_db(app):
         app (Flask): The Flask application instance.
     """
     if not database_exists(engine.url):
-        Base.metadata.create_all(bind=engine) # Create new DB
+        
         print(f"Database Created {engine.url}")  # Verifies if database is there or not.
     else:
         print(f"Database {engine.url} Already Exists")
+
+    Base.metadata.create_all(bind=engine) # Create new DB
 
     @app.teardown_appcontext
     def remove_session(exception=None):
