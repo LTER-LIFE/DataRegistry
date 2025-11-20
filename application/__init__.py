@@ -43,6 +43,9 @@ def create_app():
         login_manager.login_view = 'main_bp.login'
         app.login_manager = login_manager
 
+        from application import models
+        
+
         from application import routes
 
         app.register_blueprint(blueprint=routes.main_bp, url_prefix=url_prefix)
