@@ -13,12 +13,12 @@ from application.models import AgentStaging, KeywordStaging, CatalogStaging, Che
     LicenseDocumentStaging, MediaTypeStaging, LocationStaging
 
 
-def approve_staged_dataset(session: Session, dataset_id: int) -> Dataset:
+def approve_staged_dataset(session: db_session, dataset_id: int) -> Dataset:
     stageddataset = session.get(DatasetStaging, dataset_id)
     if not stageddataset:
         raise ValueError("Staged dataset not found.")
-    if not stageddataset.is_validated:
-        raise ValueError("Dataset must be validated before approval.")
+    #if not stageddataset.is_validated:
+    #    raise ValueError("Dataset must be validated before approval.")    TODO decide whether vsalidation beyond that already implemented is required
 
     dataset = Dataset.from_staged_dataset(stdataset=stageddataset)
         
@@ -27,7 +27,7 @@ def approve_staged_dataset(session: Session, dataset_id: int) -> Dataset:
     stageddataset.approved_at = datetime.utcnow()
     session.commit()
     session.flush()
-    
+
     return dataset
 
 
