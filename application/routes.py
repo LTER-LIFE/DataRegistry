@@ -139,7 +139,7 @@ def add_dataset(dataset_id=None):
 @main_bp.route('/stage_dataset', methods=['GET', 'POST'])
 def stage_dataset(dataset_id=None):
     """
-    Renders a form to stage (create) or edit or Create a new dataset
+    Renders a form to stage (create) or edit or delete a new dataset
 
     :param dataset_id: The param dataset id can be used to Edit or Delete datasets
 
