@@ -9,6 +9,7 @@ from config import Config
 from flask_login import LoginManager
 from flask_session import Session
 from flask_jwt_extended import JWTManager
+from flask_admin import Admin
 
 import logging
 
@@ -47,6 +48,7 @@ def create_app():
         
 
         from application import routes
+        from application.admin import admin
 
         app.register_blueprint(blueprint=routes.main_bp, url_prefix=url_prefix)
         app.jwt = JWTManager(app)
