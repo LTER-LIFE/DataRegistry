@@ -1,0 +1,10 @@
+__pycache__/
+.venv
+
+.dockerignore
+.env*
+!.env.example
+.gitattributes
+docker-compose.*
+LICENSE
+README.md

@@ -4,5 +4,5 @@
 *.pyc
 __pycache__
 flask_session/*
-/config/*
 .venv
+docker-compose.override.yml
