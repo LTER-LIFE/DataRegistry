@@ -19,7 +19,7 @@ import zipfile
 
 import geopandas as gpd
 from geoalchemy2 import Geometry
-from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
+from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT, XSD, BNode
 import shapely
 from shapely.geometry import box, shape
 from shapely.validation import explain_validity
@@ -443,11 +443,23 @@ class Dataset(Base):
             for keyword in self.dataset_keywords:
                 g.add((dataset, DCAT.keyword, Literal(keyword.name)))
         if self.temporal_coverage_start and self.temporal_coverage_end:
-            g.add((dataset, DCTERMS.temporal, Literal(f"{self.temporal_coverage_start.isoformat()}/"
-                                                      f"{self.temporal_coverage_end.isoformat()}")))
+            ## DCTERMS.temporal
+            temporal_coverage = BNode()
+            start_date = Literal(f"{self.temporal_coverage_start.isoformat()}", datatype=XSD.date)
+            end_date =   Literal(f"{self.temporal_coverage_end.isoformat()}", datatype=XSD.date)
+
+            # Add temporal coverage to dataset 
+            g.add((dataset, DCTERMS.temporal, temporal_coverage))
+
+            # Type of node to Period of Time
+            g.add((temporal_coverage, RDF.type, DCTERMS.PeriodOfTime))
+
+            # Add start and end date to node
+            g.add((temporal_coverage, DCTERMS.startDate, start_date))
+            g.add((temporal_coverage, DCTERMS.endDate, end_date))
+
         if self.temporal_resolution:
-            # TODO: temporal resolution should be a xsd:duration
-            g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution)))
+            g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution, datatype=XSD.duration)))
         if self.dataset_spatial_coverage:
             g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_coverage.location_id)]))
         if self.spatial_resolution:
