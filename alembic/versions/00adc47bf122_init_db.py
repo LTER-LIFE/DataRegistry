@@ -34,10 +34,55 @@ def upgrade() -> None:
     )
     """
 
+    op.create_table('Agent',
+    sa.Column('agent_id', sa.INTEGER(), nullable=False),
+    sa.Column('name', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('type', sa.VARCHAR(length=20), nullable=True),
+    sa.Column('mbox', sa.VARCHAR(length=128), nullable=True),
+    sa.PrimaryKeyConstraint('agent_id')
+    )
+
+    op.create_table('LicenseDocument',
+    sa.Column('license_document_id', sa.INTEGER(), nullable=False),
+    sa.Column('label', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('code', sa.VARCHAR(length=255), nullable=False),
+    sa.Column('url_general', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('url_document', sa.VARCHAR(length=255), nullable=True),
+    sa.PrimaryKeyConstraint('license_document_id')
+    )
+
+    op.create_table('Catalog',
+    sa.Column('catalog_id', sa.INTEGER(), nullable=False),
+    sa.Column('applicable_legislation', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('contact_point', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('title', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('description', sa.TEXT(), nullable=True),
+    sa.Column('homepage', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('catalog_creator_id', sa.INTEGER(), nullable=True),
+    sa.Column('catalog_publisher_id', sa.INTEGER(), nullable=True),
+    sa.Column('catalog_license_id', sa.INTEGER(), nullable=True),
+    sa.ForeignKeyConstraint(['catalog_creator_id'], ['Agent.agent_id'], ),
+    sa.ForeignKeyConstraint(['catalog_license_id'], ['LicenseDocument.license_document_id'], ),
+    sa.ForeignKeyConstraint(['catalog_publisher_id'], ['Agent.agent_id'], ),
+    sa.PrimaryKeyConstraint('catalog_id')
+    )
+
+    op.create_table('Location',
+    sa.Column('location_id', sa.INTEGER(), nullable=False),
+    sa.Column('bbox',
+              Geometry(from_text='ST_GeomFromEWKT', name='geometry', _spatial_index_reflected=False),
+              nullable=True),
+    sa.Column('centroid', Geometry(geometry_type='POINT', from_text='ST_GeomFromEWKT', name='geometry',
+                                   _spatial_index_reflected=False), nullable=True),
+    sa.Column('geometry',
+              Geometry(geometry_type='GEOMETRYCOLLECTION', from_text='ST_GeomFromEWKT', name='geometry',
+                       nullable=False, _spatial_index_reflected=False), nullable=False),
+    sa.PrimaryKeyConstraint('location_id')
+    )
 
     op.create_table('Dataset',
     sa.Column('dataset_id', sa.INTEGER(), nullable=False),
-    sa.Column('release_date', sa.DATETIME(), nullable=False),
+    sa.Column('release_date', sa.TIMESTAMP(), nullable=False),
     sa.Column('language', sa.VARCHAR(length=255), nullable=False),
     sa.Column('creator_id', sa.INTEGER(), nullable=True),
     sa.Column('title', sa.VARCHAR(length=255), nullable=False),
@@ -46,15 +91,15 @@ def upgrade() -> None:
     sa.Column('dataset_contact_point_id', sa.INTEGER(), nullable=True),
     sa.Column('dataset_publisher_id', sa.INTEGER(), nullable=True),
     sa.Column('dataset_metadata_provider_id', sa.INTEGER(), nullable=True),
-    sa.Column('temporal_coverage_start', sa.DATETIME(), nullable=False),
-    sa.Column('temporal_coverage_end', sa.DATETIME(), nullable=False),
+    sa.Column('temporal_coverage_start', sa.TIMESTAMP(), nullable=False),
+    sa.Column('temporal_coverage_end', sa.TIMESTAMP(), nullable=False),
     sa.Column('temporal_resolution', sa.VARCHAR(length=255), nullable=False),
     sa.Column('dataset_spatial_covarage_id', sa.INTEGER(), nullable=True),
     sa.Column('spatial_resolution', sa.VARCHAR(length=255), nullable=False),
     sa.Column('dataset_license_id', sa.INTEGER(), nullable=True),
     sa.Column('access_rights', sa.VARCHAR(length=255), nullable=False),
     sa.Column('dataset_catalog_id', sa.INTEGER(), nullable=True),
-    sa.Column('modified', sa.DATETIME(), nullable=False),
+    sa.Column('modified', sa.TIMESTAMP(), nullable=False),
     sa.Column('taxonomic_coverage', sa.VARCHAR(length=255), nullable=True),
     sa.Column('landing_page', sa.VARCHAR(length=255), nullable=True),
     sa.Column('public_id', sa.VARCHAR(length=255), nullable=True),
@@ -77,45 +122,11 @@ def upgrade() -> None:
     sa.UniqueConstraint('code')
     )
 
-    op.create_table('Distribution',
-    sa.Column('distribution_id', sa.INTEGER(), nullable=False),
-    sa.Column('distribution_dataset_id', sa.INTEGER(), nullable=True),
-    sa.Column('title', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('description', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('external_download_url', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('external_access_url', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('distribution_mediatype_id', sa.INTEGER(), nullable=True),
-    sa.Column('distribution_license_id', sa.INTEGER(), nullable=True),
-    sa.Column('distribution_checksum_id', sa.INTEGER(), nullable=True),
-    sa.ForeignKeyConstraint(['distribution_checksum_id'], ['Checksum.checksum_id'], ),
-    sa.ForeignKeyConstraint(['distribution_dataset_id'], ['Dataset.dataset_id'], ),
-    sa.ForeignKeyConstraint(['distribution_license_id'], ['LicenseDocument.license_document_id'], ),
-    sa.ForeignKeyConstraint(['distribution_mediatype_id'], ['MediaType.mediatype_id'], ),
-    sa.PrimaryKeyConstraint('distribution_id')
-    )
-
-    op.create_table('Location',
-    sa.Column('location_id', sa.INTEGER(), nullable=False),
-    sa.Column('bbox', Geometry(from_text='ST_GeomFromEWKT', name='geometry', _spatial_index_reflected=False),
-              nullable=True),
-    sa.Column('centroid', Geometry(geometry_type='POINT', from_text='ST_GeomFromEWKT', name='geometry',
-                                   _spatial_index_reflected=False), nullable=True),
-    sa.Column('geometry', Geometry(geometry_type='GEOMETRYCOLLECTION', from_text='ST_GeomFromEWKT', name='geometry', nullable=False, _spatial_index_reflected=False), nullable=False),
-    sa.PrimaryKeyConstraint('location_id')
-    )
-    op.create_table('Agent',
-    sa.Column('agent_id', sa.INTEGER(), nullable=False),
-    sa.Column('name', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('type', sa.VARCHAR(length=20), nullable=True),
-    sa.Column('mbox', sa.VARCHAR(length=128), nullable=True),
-    sa.PrimaryKeyConstraint('agent_id')
-    )
-    op.create_table('datasetKeyword',
-    sa.Column('keyword_id', sa.INTEGER(), nullable=False),
-    sa.Column('dataset_id', sa.INTEGER(), nullable=False),
-    sa.ForeignKeyConstraint(['dataset_id'], ['Dataset.dataset_id'], ),
-    sa.ForeignKeyConstraint(['keyword_id'], ['Keyword.keyword_id'], ),
-    sa.PrimaryKeyConstraint('keyword_id', 'dataset_id')
+    op.create_table('Checksum',
+    sa.Column('checksum_id', sa.INTEGER(), nullable=False),
+    sa.Column('checksum_value', sa.VARCHAR(length=255), nullable=False),
+    sa.Column('algorithm', sa.VARCHAR(length=10), nullable=True),
+    sa.PrimaryKeyConstraint('checksum_id')
     )
 
     op.create_table('MediaType',
@@ -127,20 +138,23 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('mediatype_id'),
     sa.UniqueConstraint('code')
     )
-    op.create_table('dataThemeCatalog',
-    sa.Column('data_theme_id', sa.INTEGER(), nullable=False),
-    sa.Column('catalog_id', sa.INTEGER(), nullable=False),
-    sa.ForeignKeyConstraint(['catalog_id'], ['Catalog.catalog_id'], ),
-    sa.ForeignKeyConstraint(['data_theme_id'], ['DataTheme.data_theme_id'], ),
-    sa.PrimaryKeyConstraint('data_theme_id', 'catalog_id')
-    )
-    op.create_table('Checksum',
-    sa.Column('checksum_id', sa.INTEGER(), nullable=False),
-    sa.Column('checksum_value', sa.VARCHAR(length=255), nullable=False),
-    sa.Column('algorithm', sa.VARCHAR(length=10), nullable=True),
-    sa.PrimaryKeyConstraint('checksum_id')
-    )
 
+    op.create_table('Distribution',
+    sa.Column('distribution_id', sa.INTEGER(), nullable=False),
+    sa.Column('distribution_dataset_id', sa.INTEGER(), nullable=True),
+    sa.Column('title', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('description', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('download_url', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('access_url', sa.VARCHAR(length=255), nullable=True),
+    sa.Column('distribution_mediatype_id', sa.INTEGER(), nullable=True),
+    sa.Column('distribution_license_id', sa.INTEGER(), nullable=True),
+    sa.Column('distribution_checksum_id', sa.INTEGER(), nullable=True),
+    sa.ForeignKeyConstraint(['distribution_checksum_id'], ['Checksum.checksum_id'], ),
+    sa.ForeignKeyConstraint(['distribution_dataset_id'], ['Dataset.dataset_id'], ),
+    sa.ForeignKeyConstraint(['distribution_license_id'], ['LicenseDocument.license_document_id'], ),
+    sa.ForeignKeyConstraint(['distribution_mediatype_id'], ['MediaType.mediatype_id'], ),
+    sa.PrimaryKeyConstraint('distribution_id')
+    )
 
     op.create_table('Keyword',
     sa.Column('keyword_id', sa.INTEGER(), nullable=False),
@@ -148,20 +162,21 @@ def upgrade() -> None:
     sa.Column('slug', sa.VARCHAR(length=50), nullable=True),
     sa.PrimaryKeyConstraint('keyword_id')
     )
-    op.create_table('Catalog',
+
+    op.create_table('datasetKeyword',
+    sa.Column('keyword_id', sa.INTEGER(), nullable=False),
+    sa.Column('dataset_id', sa.INTEGER(), nullable=False),
+    sa.ForeignKeyConstraint(['dataset_id'], ['Dataset.dataset_id'], ),
+    sa.ForeignKeyConstraint(['keyword_id'], ['Keyword.keyword_id'], ),
+    sa.PrimaryKeyConstraint('keyword_id', 'dataset_id')
+    )
+
+    op.create_table('dataThemeCatalog',
+    sa.Column('data_theme_id', sa.INTEGER(), nullable=False),
     sa.Column('catalog_id', sa.INTEGER(), nullable=False),
-    sa.Column('applicable_legislation', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('contact_point', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('title', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('description', sa.TEXT(), nullable=True),
-    sa.Column('homepage', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('catalog_creator_id', sa.INTEGER(), nullable=True),
-    sa.Column('catalog_publisher_id', sa.INTEGER(), nullable=True),
-    sa.Column('catalog_license_id', sa.INTEGER(), nullable=True),
-    sa.ForeignKeyConstraint(['catalog_creator_id'], ['Agent.agent_id'], ),
-    sa.ForeignKeyConstraint(['catalog_license_id'], ['LicenseDocument.license_document_id'], ),
-    sa.ForeignKeyConstraint(['catalog_publisher_id'], ['Agent.agent_id'], ),
-    sa.PrimaryKeyConstraint('catalog_id')
+    sa.ForeignKeyConstraint(['catalog_id'], ['Catalog.catalog_id'], ),
+    sa.ForeignKeyConstraint(['data_theme_id'], ['DataTheme.data_theme_id'], ),
+    sa.PrimaryKeyConstraint('data_theme_id', 'catalog_id')
     )
 
     op.create_table('DataService',
@@ -176,15 +191,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('dataservice_id')
     )
 
-    op.create_table('LicenseDocument',
-    sa.Column('license_document_id', sa.INTEGER(), nullable=False),
-    sa.Column('label', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('code', sa.VARCHAR(length=255), nullable=False),
-    sa.Column('url_general', sa.VARCHAR(length=255), nullable=True),
-    sa.Column('url_document', sa.VARCHAR(length=255), nullable=True),
-    sa.PrimaryKeyConstraint('license_document_id')
-    )
-
     op.create_table('datasetDataTheme',
     sa.Column('data_theme_id', sa.INTEGER(), nullable=False),
     sa.Column('dataset_id', sa.INTEGER(), nullable=False),
@@ -192,6 +198,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['dataset_id'], ['Dataset.dataset_id'], ),
     sa.PrimaryKeyConstraint('data_theme_id', 'dataset_id')
     )
+
     op.create_table('dataserviceMediaType',
     sa.Column('mediatype_id', sa.INTEGER(), nullable=False),
     sa.Column('dataservice_id', sa.INTEGER(), nullable=False),
@@ -199,7 +206,5 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['mediatype_id'], ['MediaType.mediatype_id'], ),
     sa.PrimaryKeyConstraint('mediatype_id', 'dataservice_id')
     )
-
-
 
     # ### end Alembic commands ###
