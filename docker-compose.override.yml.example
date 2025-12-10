@@ -1,0 +1,4 @@
+services:
+  database:
+    volumes:
+      - /path/to/the/local/folder:/opt/data
