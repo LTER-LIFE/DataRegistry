@@ -19,7 +19,7 @@ import zipfile
 
 import geopandas as gpd
 from geoalchemy2 import Geometry
-from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT, XSD, BNode
+from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT, XSD, BNode, URIRef
 import shapely
 from shapely.geometry import box, shape
 from shapely.validation import explain_validity
@@ -32,7 +32,13 @@ from application.database import Base, db_session
 DCATAP_NS = Namespace("http://data.europa.eu/r5r/")
 SCHEMA_ORG_NS = Namespace("https://schema.org/")
 EML_COV_NS = Namespace("https://eml.ecoinformatics.org/coverage-2.2.0/")
+LOCN = Namespace("http://www.w3.org/ns/locn#")
+GEO = Namespace("http://www.opengis.net/ont/geosparql#")
+WGS84 = Namespace("http://www.w3.org/2003/01/geo/wgs84_pos#")
+WGS84_CRS_URI = URIRef("http://www.opengis.net/def/crs/OGC/1.3/CRS84")
+WGS84_CRS_URI = URIRef("http://www.opengis.net/def/crs/OGC/1.3/CRS84")
 SPDX = Namespace("http://spdx.org/rdf/terms#")
+SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
 
 VS_PREFIX = "https://lter-life-experience.org/veluwesearch"
 VSA = Namespace(f"{VS_PREFIX}/Agent/")
@@ -43,6 +49,7 @@ VSLD = Namespace(f"{VS_PREFIX}/LicenseDocument/")
 VSL = Namespace(f"{VS_PREFIX}/Location/")
 VSD = Namespace(f"{VS_PREFIX}/Distribution/")
 VSMT = Namespace(f"{VS_PREFIX}/MediaType/")
+VSKW = Namespace(f"{VS_PREFIX}/Keyword/")
 
 metadata = Base.metadata
 
@@ -85,27 +92,22 @@ class Agent(Base):
             "mbox": self.mbox
         }
 
-    def to_graph(self):
+    def to_graph(self, g: Graph):
         """
 
         @return: Agent object in RDFlib graph format
         """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSA)
-
         # Create a foaf:Agent instance
-        agent = VSA[str(self.agent_id)]
+        agent_uri = VSA[str(self.agent_id)]
 
         # Add properties to the agent
-        g.add((agent, RDF.type, FOAF.Agent))
-        g.add((agent, FOAF.name, Literal(self.name)))
+        g.add((agent_uri, RDF.type, FOAF.Agent))
+        g.add((agent_uri, FOAF.name, Literal(self.name)))
         if self.type:
-            g.add((agent, DCTERMS.type, Literal(self.type)))
+            g.add((agent_uri, DCTERMS.type, Literal(self.type)))
         if self.type:
-            g.add((agent, DCAT.mbox, Literal(self.mbox)))
-        return g
+            g.add((agent_uri, DCAT.mbox, Literal(self.mbox)))
+        return agent_uri
 
     def rdf_serialize(self, out_format="json-ld"):
         f"""
@@ -243,43 +245,41 @@ class Catalog(Base):
 
         return data
 
-    def to_graph(self):
+    def to_graph(self, g: Graph):
         """
 
-        @return: Agent object in RDFlib graph format
+        @return: Catalog object in RDFlib graph format
         """
-
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("dcatap", DCATAP_NS)
-        g.bind("vs_agent", VSA)
-        g.bind("vs_catalog", VSC)
-
-        catalog = VSC[str(self.catalog_id)]
+        catalog_uri = VSC[str(self.catalog_id)]
 
         # Add properties to the agent
-        g.add((catalog, RDF.type, DCAT.Catalog))
+        g.add((catalog_uri, RDF.type, DCAT.Catalog))
         if self.applicable_legislation:
-            g.add((catalog, DCATAP_NS.applicableLegislation, Literal(self.name)))
+            g.add((catalog_uri, DCATAP_NS.applicableLegislation, Literal(self.name)))
         if self.contact_point:
-            g.add((catalog, DCAT.contactPoint, Literal(self.contact_point)))
+            g.add((catalog_uri, DCAT.contactPoint, Literal(self.contact_point)))
         if self.title:
-            g.add((catalog, DCTERMS.title, Literal(self.title)))
+            g.add((catalog_uri, DCTERMS.title, Literal(self.title)))
         if self.description:
-            g.add((catalog, DCTERMS.description, Literal(self.description)))
+            g.add((catalog_uri, DCTERMS.description, Literal(self.description)))
         if self.homepage:
-            g.add((catalog, FOAF.homepage, Literal(self.description)))
+            g.add((catalog_uri, FOAF.homepage, Literal(self.description)))
         if self.creator:
-            g.add((catalog, DCTERMS.creator, self.creator.to_graph()))
+            creator_uri = self.creator.to_graph(g)
+            g.add((catalog_uri, DCTERMS.creator, creator_uri))
         if self.publisher:
-            g.add((catalog, DCTERMS.publisher, self.publisher.to_graph()))
+            publisher_uri =  self.publisher.to_graph(g)
+            g.add((catalog_uri, DCTERMS.publisher, publisher_uri))
         if self.license:
-            g.add((catalog, DCTERMS.license, self.license.to_graph()))
+            license_uri = self.license.to_graph(g)
+            g.add((catalog_uri, DCTERMS.license, license_uri))
         for dataset in self.datasets_in_catalogue:
-            g.add((catalog, DCAT.dataset, dataset.to_graph()))
+            dataset_uri = dataset.to_graph(g)
+            g.add((catalog_uri, DCAT.dataset, dataset_uri))
         for theme in self.themes:
-            g.add((catalog, DCAT.themeTaxonomy, theme.to_graph()))
-        return g
+            theme_uri =  theme.to_graph(g)
+            g.add((catalog_uri, DCAT.themeTaxonomy, theme_uri))
+        return catalog_uri
 
     def rdf_serialize(self, out_format="json-ld"):
         f"""
@@ -400,8 +400,9 @@ class Dataset(Base):
 
     def to_graph(self):
         """
+        Genereert de volledige RDF-graaf voor deze Dataset en zijn afhankelijke objecten.
 
-        @return: Agent object in RDFlib graph format
+        @return: RDFlib Graph object
         """
         g = Graph()
         # Add namespaces to the graph
@@ -409,79 +410,105 @@ class Dataset(Base):
         g.bind("dcat", DCAT)
         g.bind("eml_cov", EML_COV_NS)
         g.bind("dcterms", DCTERMS)
-        g.bind("vp_agent", VSA)
-        g.bind("vp_catalog", VSC)
-        g.bind("vp_license", VSLD)
-        g.bind("vp_dataset", VSDS)
-        g.bind("vp_data_theme", VSDT)
+        g.bind("vs_agent", VSA)
+        g.bind("vs_catalog", VSC)
+        g.bind("vs_license", VSLD)
+        g.bind("vs_dataset", VSDS)
+        g.bind("vs_data_theme", VSDT)
+        g.bind("vs_location", VSL)
+        g.bind("locn", LOCN)  # Nieuw
+        g.bind("geo", GEO)  # Nieuw
 
         # Create a dcat:Dataset instance
-        dataset = VSDS[str(self.dataset_id)]
+        dataset_uri = VSDS[str(self.dataset_id)]
 
-        # Add properties to the agent
-        g.add((dataset, RDF.type, DCAT.Dataset))
+        g.add((dataset_uri, RDF.type, DCAT.Dataset))
 
         if self.release_date:
-            g.add((dataset, DCTERMS.issued, Literal(self.release_date)))
+            g.add((dataset_uri, DCTERMS.issued, Literal(self.release_date.isoformat(), datatype=XSD.date)))
         if self.language:
-            g.add((dataset, DCTERMS.language, Literal(self.language)))
-        if self.creator:
-            g.add((dataset, DCTERMS.creator, VSA[str(self.creator.agent_id)]))
+            g.add((dataset_uri, DCTERMS.language, Literal(self.language)))
         if self.title:
-            g.add((dataset, DCTERMS.title, Literal(self.title)))
+            g.add((dataset_uri, DCTERMS.title, Literal(self.title)))
         if self.description:
-            g.add((dataset, DCTERMS.description, Literal(self.description)))
+            g.add((dataset_uri, DCTERMS.description, Literal(self.description)))
         if self.resource_type:
-            g.add((dataset, DCTERMS.type, Literal(self.resource_type)))
-        if self.dataset_contact_point:
-            g.add((dataset, DCAT.contactPoint, self.dataset_contact_point.to_graph()))
-        if self.dataset_publisher:
-            g.add((dataset, DCTERMS.publisher, self.dataset_publisher.to_graph()))
-        if self.dataset_metadata_provider:
-            g.add((dataset, SCHEMA_ORG_NS.provider, self.dataset_metadata_provider.to_graph()))
+            g.add((dataset_uri, DCTERMS.type, Literal(self.resource_type)))
         if self.dataset_keywords:
             for keyword in self.dataset_keywords:
-                g.add((dataset, DCAT.keyword, Literal(keyword.name)))
-        if self.temporal_coverage_start and self.temporal_coverage_end:
-            ## DCTERMS.temporal
+                keyword_uri = keyword.to_graph(g)
+                g.add((dataset_uri, DCAT.keyword, keyword_uri))
+        if self.modified:
+            g.add((dataset_uri, DCTERMS.modified, Literal(self.modified.isoformat(), datatype=XSD.dateTime)))
+        if self.taxonomic_coverage:
+            g.add((dataset_uri, EML_COV_NS.taxonomicCoverage, Literal(self.taxonomic_coverage)))
+        if self.landing_page:
+            g.add((dataset_uri, DCAT.landingPage, URIRef(self.landing_page)))
+        if self.public_id:
+            g.add((dataset_uri, DCTERMS.identifier, Literal(self.public_id)))
+
+        # Agent
+        for agent_attr in ['creator', 'dataset_contact_point', 'dataset_publisher', 'dataset_metadata_provider']:
+            agent_obj = getattr(self, agent_attr)
+            if agent_obj:
+                agent_uri = agent_obj.to_graph(g)
+                # Map naar de juiste RDF property
+                if agent_attr == 'creator':
+                    prop = DCTERMS.creator
+                elif agent_attr == 'dataset_contact_point':
+                    prop = DCAT.contactPoint
+                elif agent_attr == 'dataset_publisher':
+                    prop = DCTERMS.publisher
+                elif agent_attr == 'dataset_metadata_provider':
+                    prop = SCHEMA_ORG_NS.provider  # Gebruik schema:provider
+
+                g.add((dataset_uri, prop, agent_uri))
+
+        if self.temporal_coverage_start or self.temporal_coverage_end:
             temporal_coverage = BNode()
-            start_date = Literal(f"{self.temporal_coverage_start.isoformat()}", datatype=XSD.date)
-            end_date =   Literal(f"{self.temporal_coverage_end.isoformat()}", datatype=XSD.date)
-
-            # Add temporal coverage to dataset 
-            g.add((dataset, DCTERMS.temporal, temporal_coverage))
-
-            # Type of node to Period of Time
+            g.add((dataset_uri, DCTERMS.temporal, temporal_coverage))
             g.add((temporal_coverage, RDF.type, DCTERMS.PeriodOfTime))
 
-            # Add start and end date to node
-            g.add((temporal_coverage, DCTERMS.startDate, start_date))
-            g.add((temporal_coverage, DCTERMS.endDate, end_date))
+            if self.temporal_coverage_start:
+                start_date = Literal(self.temporal_coverage_start.isoformat(), datatype=XSD.date)
+                g.add((temporal_coverage, DCTERMS.startDate, start_date))
+
+            if self.temporal_coverage_end:
+                end_date = Literal(self.temporal_coverage_end.isoformat(), datatype=XSD.date)
+                g.add((temporal_coverage, DCTERMS.endDate, end_date))
 
         if self.temporal_resolution:
-            g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution, datatype=XSD.duration)))
+            # Gebruik XSD.duration voor ISO 8601 formaat, e.g., 'P1Y'
+            g.add((dataset_uri, DCAT.temporalResolution, Literal(self.temporal_resolution, datatype=XSD.duration)))
+
         if self.dataset_spatial_coverage:
-            g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_coverage.location_id)]))
+            location_uri = self.dataset_spatial_coverage.to_graph(g)
+            g.add((dataset_uri, DCTERMS.spatial, location_uri))
+
         if self.spatial_resolution:
-            g.add((dataset, DCAT.spatialResolutionInMeters, Literal(self.spatial_resolution)))
+            g.add((dataset_uri, DCAT.spatialResolutionInMeters, Literal(self.spatial_resolution, datatype=XSD.decimal)))
+
+
         if self.dataset_license:
-            g.add((dataset, DCTERMS.license, VSLD[str(self.dataset_license.dataset)]))
+            license_uri = self.dataset_license.to_graph(g)
+            g.add((dataset_uri, DCTERMS.license, license_uri))
+
         if self.access_rights:
-            # TODO: accessRights should be dcterms:RightsStatement
-            g.add((dataset, DCTERMS.accessRights, Literal(self.access_rights)))
+            access_node = BNode()
+            g.add((dataset_uri, DCTERMS.accessRights, access_node))
+            g.add((access_node, RDF.type, DCTERMS.RightsStatement))
+
+            g.add((access_node, DCTERMS.title, Literal(self.access_rights)))
+
         if self.dataset_catalog:
-            g.add((dataset, DCAT.catalog, self.dataset_catalog.to_graph()))
+            catalog_uri = self.dataset_catalog.to_graph(g)
+            g.add((dataset_uri, DCAT.inCatalog, catalog_uri))
+
         if self.dataset_themes:
             for theme in self.dataset_themes:
-                g.add((dataset, DCAT.theme, VSDT[str(theme.data_theme_id)]))
-        if self.modified:
-            g.add((dataset, DCTERMS.modified, Literal(self.modified)))
-        if self.taxonomic_coverage:
-            g.add((dataset, EML_COV_NS.taxonomicCoverage, Literal(self.taxonomic_coverage)))
-        if self.landing_page:
-            g.add((dataset, DCAT.landingPage, Literal(self.landing_page)))
-        if self.public_id:
-            g.add((dataset, DCTERMS.identifier, Literal(self.public_id)))
+                theme_uri = theme.to_graph(g)
+                g.add((dataset_uri, DCAT.theme, theme_uri))
+
         return g
 
     def rdf_serialize(self, out_format="json-ld"):
@@ -561,38 +588,39 @@ class Distribution(Base):
 
         return distribution_dict
 
-
-
-    def to_graph(self):
+    def to_graph(self, g: Graph) -> URIRef:
         """
+        Voegt de RDF-triples voor deze Distribution toe aan de gedeelde graaf (g).
 
-        @return: Agent object in RDFlib graph format
+        @param g: De gedeelde RDFlib Graph object.
+        @return: URIRef van de gecreëerde Distribution.
         """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSA)
+        distribution_uri = VSD[str(self.distribution_id)]
+        g.add((distribution_uri, RDF.type, DCAT.Distribution))
 
-        # Create a foaf:Agent instance
-        distribution = VSD[str(self.distribution_id)]
-
-        # Add properties to the agent
-        g.add((distribution, RDF.type, DCAT.Distribution))
-        g.add((distribution, DCTERMS.title, Literal(self.title)))
+        if self.title:
+            g.add((distribution_uri, DCTERMS.title, Literal(self.title)))
         if self.description:
-            g.add((distribution, DCTERMS.description, Literal(self.description)))
-        if self.download_url:
-            g.add((distribution, DCAT.downloadURL, Literal(self.download_url)))
-        if self.access_url:
-            g.add((distribution, DCAT.accessURL, Literal(self.access_url)))
-        if self.distribution_format:
-            g.add((distribution, DCTERMS.format, self.distribution_format.to_graph()))
-        if self.distribution_license:
-            g.add((distribution, DCTERMS.license, self.distribution_license.to_graph()))
-        if self.distribution_checksum:
-            g.add((distribution, SPDX.Checksup, self.distribution_checksum.to_graph()))
+            g.add((distribution_uri, DCTERMS.description, Literal(self.description)))
 
-        return g
+        if self.download_url:
+            g.add((distribution_uri, DCAT.downloadURL, URIRef(self.download_url)))
+        if self.access_url:
+            g.add((distribution_uri, DCAT.accessURL, URIRef(self.access_url)))
+
+        if self.distribution_format:
+            format_uri = self.distribution_format.to_graph(g)
+            g.add((distribution_uri, DCTERMS.format, format_uri))
+
+        if self.distribution_license:
+            license_uri = self.distribution_license.to_graph(g)
+            g.add((distribution_uri, DCTERMS.license, license_uri))
+
+        if self.distribution_checksum:
+            checksum_uri = self.distribution_checksum.to_graph(g)
+            g.add((distribution_uri, SPDX.checksum, checksum_uri))  # SPDX.checksum
+
+        return distribution_uri
 
     def __str__(self):
         return self.title
@@ -803,6 +831,30 @@ class LicenseDocument(Base):
         if self.label:
             return self.label
 
+    def to_graph(self, g: Graph) -> URIRef:
+        """
+        Voegt de RDF-triples voor dit LicenseDocument toe aan de gedeelde graaf (g).
+
+        @param g: De gedeelde RDFlib Graph object.
+        @return: URIRef van het gecreëerde LicenseDocument.
+        """
+
+        license_uri = VSLD[str(self.license_document_id)]
+        g.add((license_uri, RDF.type, DCTERMS.LicenseDocument))
+        if self.label:
+            g.add((license_uri, DCTERMS.title, Literal(self.label)))
+        if self.code:
+            # TODO: SPDX.licenseId better?
+            g.add((license_uri, DCTERMS.identifier, Literal(self.code)))
+
+        if self.url_general:
+            g.add((license_uri, FOAF.page, URIRef(self.url_general)))
+
+        if self.url_document:
+            g.add((license_uri, DCTERMS.hasFormat, URIRef(self.url_document)))
+
+        return license_uri
+
 
 class DataTheme(Base):
     """Themes used for dataset classification.
@@ -841,6 +893,31 @@ class DataTheme(Base):
 
     def __str__(self):
         return self.label
+
+    def to_graph(self, g: Graph) -> URIRef:
+        """
+        Voegt de RDF-triples voor dit DataTheme toe aan de gedeelde graaf (g)
+        als zowel dcat:Theme als skos:Concept.
+
+        @param g: De gedeelde RDFlib Graph object.
+        @return: URIRef van het gecreëerde DataTheme.
+        """
+        theme_uri = VSDT[str(self.data_theme_id)]
+
+        g.add((theme_uri, RDF.type, DCAT.Theme))
+        g.add((theme_uri, RDF.type, SKOS.Concept))
+
+        if self.label:
+            g.add((theme_uri, SKOS.prefLabel, Literal(self.label)))
+            g.add((theme_uri, DCTERMS.title, Literal(self.label)))
+
+        if self.code:
+            g.add((theme_uri, DCTERMS.identifier, Literal(self.code)))
+
+        if self.description:
+            g.add((theme_uri, DCTERMS.description, Literal(self.description)))
+
+        return theme_uri
 
 
 class Checksum(Base):
@@ -926,6 +1003,24 @@ class Keyword(Base):
                     db_session.flush()
             db_keywords.append(db_keyword)
         return db_keywords
+
+    def to_graph(self, g: Graph) -> URIRef:
+        """
+        Voegt de RDF-triples voor dit Keyword toe aan de gedeelde graaf (g) als een skos:Concept.
+        Dit maakt de keyword semantisch herbruikbaar via zijn URI (dcterms:subject).
+
+        @param g: De gedeelde RDFlib Graph object.
+        @return: URIRef van het gecreëerde Keyword Concept.
+        """
+
+        keyword_uri = VSKW[str(self.keyword_id)]
+        g.add((keyword_uri, RDF.type, SKOS.Concept))
+        g.add((keyword_uri, SKOS.prefLabel, Literal(self.name)))
+
+        if self.slug:
+            g.add((keyword_uri, SKOS.altLabel, Literal(self.slug)))
+
+        return keyword_uri
 
 
 class Location(Base):
@@ -1114,6 +1209,45 @@ class Location(Base):
 
         return data
 
+    def to_graph(self, g: Graph):
+        """
+        Genereert alle RDF-triples voor deze Location en voegt deze toe aan de grafiek.
+        Retourneert de URIRef van de Location, gebruikmakend van de VSL namespace.
+        """
+        # 1. Genereer de unieke URI voor de Locatie (Subject) met VSL
+        location_uri = VSL[str(self.location_id)]  # VSL[...]: genereert een URIRef met VSL als basis
+
+        # 2. Type de Locatie als dcterms:Location
+        g.add((location_uri, RDF.type, DCTERMS.Location))
+
+        # --- GeoNovum DCAT-AP (dcat:bbox en dcat:centroid) als WKT Literalen ---
+
+        # dcat:bbox
+        bbox_wkt = self.to_shape(field="bbox", to="wkt")
+        if bbox_wkt:
+            g.add((location_uri, DCAT.bbox, Literal(bbox_wkt)))
+
+            # dcat:centroid
+        centroid_wkt = self.to_shape(field="centroid", to="wkt")
+        if centroid_wkt and centroid_wkt != 'POINT EMPTY':
+            g.add((location_uri, DCAT.centroid, Literal(centroid_wkt)))
+
+            # --- Volledige Geometrie (locn:geometry met expliciete CRS) ---
+
+        full_geometry_wkt = self.to_shape(field="geometry", to="wkt")
+
+        if full_geometry_wkt:
+            geometry_resource = BNode()
+            g.add((location_uri, LOCN.geometry, geometry_resource))
+            g.add((geometry_resource, RDF.type, LOCN.Geometry))
+
+            wkt_literal_with_crs = Literal(full_geometry_wkt, datatype=GEO.wktLiteral)
+            g.add((geometry_resource, GEO.asWKT, wkt_literal_with_crs))
+
+            # 6. Voeg de CRS-annotatie toe aan de WKT Literal
+            g.add((wkt_literal_with_crs, GEO.crs, WGS84_CRS_URI))
+
+        return location_uri
 
 dataThemeCatalog = Table('dataThemeCatalog', Base.metadata,
                          Column('data_theme_id', Integer, ForeignKey('DataTheme.data_theme_id'), primary_key=True),
