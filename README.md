@@ -9,6 +9,20 @@ A portal to manage and visualize ecological metadata from the Veluwe region.
 
 ---
 
+## 🛠️ Prerequisites & Setup
+1. Increase Host System's Virtual Memory Map Count
+
+Why? Elasticsearch requires a high number of virtual memory areas (vm.max_map_count) to function stably. The default Linux value is too low, causing a bootstrap check failure upon startup. This is a Host OS requirement, not a container setting.
+
+The Fix (Permanent): To prevent startup errors, increase the kernel limit to the required 262144.
+Bash
+
+# Add the required setting to the system configuration file
+echo 'vm.max_map_count=262144' | sudo tee -a /etc/sysctl.conf
+
+# Apply the new setting immediately without rebooting
+sudo sysctl -p
+
 ## 🚀 Getting started
 
 - Copy `.env.example`, rename it to `.env` and complete the missing variables.
