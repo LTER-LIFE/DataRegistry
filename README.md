@@ -16,12 +16,13 @@ Why? Elasticsearch requires a high number of virtual memory areas (vm.max_map_co
 
 The Fix (Permanent): To prevent startup errors, increase the kernel limit to the required 262144.
 Bash
-
+```bash
 # Add the required setting to the system configuration file
 echo 'vm.max_map_count=262144' | sudo tee -a /etc/sysctl.conf
 
 # Apply the new setting immediately without rebooting
 sudo sysctl -p
+```
 
 ## 🚀 Getting started
 
