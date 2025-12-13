@@ -1,0 +1,45 @@
+[project]
+name = "lter-life-eco-search-engine"
+version = "0.1.0"
+description = "A portal to manage and visualize ecological metadata"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Private :: Do Not Upload",
+]
+
+dependencies = [
+    "alembic",
+    "elasticsearch",
+    "flask",
+    "flask-jwt-extended",
+    "flask-login",
+    "flask-session>=0.8.0",
+    "flask-wtf",
+    "geoalchemy2",
+    "geopandas",
+    "gunicorn",
+    "msal",
+    "psycopg2-binary",
+    "pyjwt",
+    "python-dotenv",
+    "rdflib",
+    "requests",
+    "shapely>=2.1.0",
+    "sqlalchemy",
+    "sqlalchemy-utils",
+    "wtforms",
+]
+
+[dependency-groups]
+dev = [
+    "faker",
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "pymdown-extensions",
+]

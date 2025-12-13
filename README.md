@@ -9,137 +9,43 @@ A portal to manage and visualize ecological metadata from the Veluwe region.
 
 ---
 
-## 📦 Installation
+## 🛠️ Prerequisites & Setup
+1. Increase Host System's Virtual Memory Map Count
 
-### 1. Clone the repository
+Why? Elasticsearch requires a high number of virtual memory areas (vm.max_map_count) to function stably. The default Linux value is too low, causing a bootstrap check failure upon startup. This is a Host OS requirement, not a container setting.
 
+The Fix (Permanent): To prevent startup errors, increase the kernel limit to the required 262144.
+Bash
 ```bash
-mkdir -p ~/Apps
-cd ~/Apps
-git clone git@github.com:LTER-LIFE/EcoSearchEngine.git
-cd EcoSearchEngine
-git checkout main
+# Add the required setting to the system configuration file
+echo 'vm.max_map_count=262144' | sudo tee -a /etc/sysctl.conf
+
+# Apply the new setting immediately without rebooting
+sudo sysctl -p
 ```
 
-### 2. Install dependencies
+## 🚀 Getting started
 
-#### APT packages
+- Copy `.env.example`, rename it to `.env` and complete the missing variables.
+- Start the Docker Compose environment: `docker compose up --detach`
+- Run database migrations:
+  - log into the app container: `docker compose exec app bash`
+  - and run the migrations: `alembic upgrade head`
+- Rebuild the Elasticsearch index:
+  - check the status page by visiting `/dashboard`.
+  - if necessary rebuild the index by visiting `/rebuild`.
+- Docker Compose Watch has been configured to watch for changes in the app source code. [Enable it](https://docs.docker.com/compose/how-tos/file-watch/#use-watch) to start watching for changes.
+- (optional) Restore a database backup
+  - copy `docker-compose.override.yml.example` and rename it to `docker-compose.override.yml`.
+  - an example of how to share a local folder with the database container is included. Please make sure to update the path to the local folder.
+  - validate your config with `docker compose config`
+  - run `docker compose up --detach --no-deps database`
+  - log into the database container to restore the backup.
 
-```bash
-sudo apt update
-sudo apt install git postgresql postgresql-client postgresql-postgis
-```
-
-#### Install Miniconda (via MicroMamba)
-
-```bash
-"${SHELL}" <(curl -L micro.mamba.pm/install.sh)
-```
-
-### 3. Set up Python environment
-
-```bash
-mamba create -n metadata-app-test python=3.12
-mamba activate metadata-app-test
-pip install -r requirements.txt
-```
-
----
-
-## 🗃️ Database Setup
-
-### Configure PostgreSQL
-
-1. Edit `pg_hba.conf` for authentication:
-
-```bash
-sudo nano /etc/postgresql/*/main/pg_hba.conf
-```
-
-Ensure this line is present under *IPv4 local connections*:
-
-```
-host all all 127.0.0.1/32 scram-sha-256
-```
-
-2. Change the `postgres` user password:
-
-```bash
-sudo -u postgres psql
-ALTER ROLE postgres WITH ENCRYPTED PASSWORD 'mypassword';
-\q
-```
-
-3. Create and initialize the database:
-
-```bash
-sudo -u postgres createdb datamanagement_test_app
-```
-
-(Optional: Restore from backup)
-
-```bash
-psql datamanagement_test_app < <(zcat /var/backups/postgres/datamanagement_app.0416.sql.gz)
-```
-
-4. Create a database user and grant permissions:
-
-```sql
-CREATE USER datamanagement_test_app WITH PASSWORD 'password';
-GRANT ALL PRIVILEGES ON DATABASE datamanagement_test_app TO datamanagement_test_app;
-```
-
-5. Enable PostGIS extension and transfer table ownership (when using a backup):
-
-```sql
-CREATE EXTENSION postgis;
-
-# When using a backup
-ALTER TABLE "DataSet" OWNER TO datamanagement_test_app;
--- Repeat for all relevant tables as needed
-```
-
----
-
-## 🔍 ElasticSearch
-
-To install Elasticsearch locally:
-
-```bash
-curl -fsSL https://elastic.co/start-local | sh
-```
-
----
-
-## 🛠️ Running the App
-
-1. Copy and enable the service:
-
-```bash
-sudo cp config/metadata-app-test.service /etc/systemd/system/
-sudo systemctl enable metadata-app-test.service
-sudo systemctl daemon-reload
-```
-
-2. Initialize the database schema:
-
-```bash
-psql datamanagement_test_app
-flask shell
->>> db.create_all()
-```
-
----
-
-## 🚀 Usage
-
-Start the app via:
-
-```bash
-python app.py
-```
-
-Ensure your `.env` is set up correctly (based on `.env_template`).
+By default:
+- the app is available at http://localhost:8000
+- the database is available at localhost, port 25432. Please see the `.env` file for the connection details.
+- Elasticsearch is available at https://localhost:9200.
 
 ---
 

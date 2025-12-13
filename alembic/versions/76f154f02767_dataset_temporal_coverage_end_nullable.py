@@ -28,7 +28,7 @@ def upgrade() -> None:
             batch_dataset_op.alter_column('temporal_coverage_end', existing_type=sa.DATETIME(),
                         nullable=True)
     else:
-        op.alter_column('Dataset', 'temporal_coverage_end', existing_type=sa.DATETIME(),
+        op.alter_column('Dataset', 'temporal_coverage_end', existing_type=sa.TIMESTAMP(),
                         nullable=True)
 
 
@@ -42,5 +42,5 @@ def downgrade() -> None:
             batch_dataset_op.alter_column('temporal_coverage_end', existing_type=sa.DATETIME(),
                         nullable=False)
     else:
-        op.alter_column('Dataset', 'temporal_coverage_end', existing_type=sa.DATETIME(),
+        op.alter_column('Dataset', 'temporal_coverage_end', existing_type=sa.TIMESTAMP(),
                     nullable=False)

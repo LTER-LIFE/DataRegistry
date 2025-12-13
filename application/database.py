@@ -3,7 +3,6 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.event import listen
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy_utils import database_exists
 
 from application.search_index import index_document, delete_document
 from config import Config
@@ -29,8 +28,6 @@ Base.query = db_session.query_property()
 
 def validate_db(app):
     """
-    Create database if not exist,
-
     Initialize the SQLAlchemy session and register teardown logic with the Flask app.
 
     This function sets up a scoped SQLAlchemy session and ensures that the session is properly
@@ -40,12 +37,6 @@ def validate_db(app):
     Parameters:
         app (Flask): The Flask application instance.
     """
-    if not database_exists(engine.url):
-        Base.metadata.create_all(bind=engine) # Create new DB
-        print(f"Database Created {engine.url}")  # Verifies if database is there or not.
-    else:
-        print(f"Database {engine.url} Already Exists")
-
     @app.teardown_appcontext
     def remove_session(exception=None):
         """
