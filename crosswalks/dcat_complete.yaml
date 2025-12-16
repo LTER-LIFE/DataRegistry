@@ -1,0 +1,178 @@
+prefixes:
+  foaf: "http://xmlns.com/foaf/0.1/"
+  dcat: "http://www.w3.org/ns/dcat#"
+  eml_cov: "https://eml.ecoinformatics.org/eml-2.2.0#"
+  dcterms: "http://purl.org/dc/terms/"
+  xsd: "http://www.w3.org/2001/XMLSchema#"
+  rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  schema: "http://schema.org/"
+  skos: "http://www.w3.org/2004/02/skos/core#"
+  locn: "http://www.w3.org/ns/locn#"
+  geo: "http://www.opengis.net/ont/geosparql#"
+
+  # Custom Veluwesearch namespaces
+  vs: "https://lter-life-experience.org/veluwesearch/"
+  vsa: "https://lter-life-experience.org/veluwesearch/Agent/"
+  vsc: "https://lter-life-experience.org/veluwesearch/Catalog/"
+  vsds: "https://lter-life-experience.org/veluwesearch/Dataset/"
+  vsdt: "https://lter-life-experience.org/veluwesearch/DataTheme/"
+  vsld: "https://lter-life-experience.org/veluwesearch/LicenseDocument/"
+  vsl: "https://lter-life-experience.org/veluwesearch/Location/"
+  vsd: "https://lter-life-experience.org/veluwesearch/Distribution/"
+  vsmt: "https://lter-life-experience.org/veluwesearch/MediaType/"
+  vskw: "https://lter-life-experience.org/veluwesearch/Keyword/"
+
+mappings:
+  dataset:
+    sources:
+      - ['$(data)~jsonpath']
+    s: vsds:$(dataset_id)
+    po:
+      - [rdf:type, dcat:Dataset]
+      - [dcterms:issued, $(release_date), xsd:date]
+      - [dcterms:language, $(language)]  # Added missing language property
+      - [dcterms:title, $(title)]
+      - [dcterms:description, $(description)]
+      - [dcterms:type, $(resource_type)]
+      - [dcterms:modified, $(modified), xsd:dateTime]
+      - [eml_cov:taxonomicCoverage, $(taxonomic_coverage)]
+      - [dcat:landingPage, $(landing_page)~iri]
+      - [dcterms:identifier, $(public_id)]
+
+      # Agents
+      - p: dcterms:creator
+        o:
+          mapping: agent
+          condition:
+            function: equal
+            parameters:
+              - [str, "$(agent_type)", "creator"]
+      - p: dcat:contactPoint
+        o:
+          mapping: agent
+          condition:
+            function: equal
+            parameters:
+              - [str, "$(agent_type)", "contact_point"]
+      - p: dcterms:publisher
+        o:
+          mapping: agent
+          condition:
+            function: equal
+            parameters:
+              - [str, "$(agent_type)", "publisher"]
+      - p: schema:provider
+        o:
+          mapping: agent
+          condition:
+            function: equal
+            parameters:
+              - [str, "$(agent_type)", "metadata_provider"]
+
+      # Temporal coverage
+      - p: dcterms:temporal
+        o:
+          mapping: temporal_coverage
+
+      - [dcat:temporalResolution, $(temporal_resolution), xsd:duration]
+
+      # Spatial coverage
+      - p: dcterms:spatial
+        o:
+          mapping: location
+
+      - [dcat:spatialResolutionInMeters, $(spatial_resolution), xsd:decimal]
+
+      # License
+      - p: dcterms:license
+        o:
+          mapping: license
+
+      # Access rights
+      - p: dcterms:accessRights
+        o:
+          mapping: access_rights
+
+      # Catalog
+      - p: dcat:inCatalog
+        o:
+          mapping: catalog
+
+      # Themes
+      - p: dcat:theme
+        o:
+          mapping: theme
+
+      # Keywords
+      - p: dcat:keyword
+        o:
+          mapping: keyword
+
+  agent:
+    sources:
+      - ['$(data.agents)~jsonpath']
+    s: vsa:$(id)
+    po:
+      - [rdf:type, foaf:Agent]
+      - [foaf:name, $(name)]
+      - [foaf:mbox, $(email)~iri]
+
+  temporal_coverage:
+    sources:
+      - ['$(data.temporal_coverage)~jsonpath']
+    s: $(dataset_uri)/temporal
+    po:
+      - [rdf:type, dcterms:PeriodOfTime]
+      - [dcterms:startDate, $(start), xsd:date]
+      - [dcterms:endDate, $(end), xsd:date]
+
+  location:
+    sources:
+      - ['$(data.locations)~jsonpath']
+    s: vsl:$(id)
+    po:
+      - [rdf:type, dcterms:Location]
+      - [locn:geometry, $(geometry)]
+      - [geo:asWKT, $(wkt)]
+
+  license:
+    sources:
+      - ['$(data.licenses)~jsonpath']
+    s: vsld:$(id)
+    po:
+      - [rdf:type, dcterms:LicenseDocument]
+      - [dcterms:title, $(title)]
+      - [dcterms:description, $(description)]
+
+  access_rights:
+    sources:
+      - ['$(data.access_rights)~jsonpath']
+    s: $(dataset_uri)/accessRights
+    po:
+      - [rdf:type, dcterms:RightsStatement]
+      - [dcterms:title, $(title)]
+
+  catalog:
+    sources:
+      - ['$(data.catalogs)~jsonpath']
+    s: vsc:$(id)
+    po:
+      - [rdf:type, dcat:Catalog]
+      - [dcterms:title, $(title)]
+      - [dcterms:description, $(description)]
+
+  theme:
+    sources:
+      - ['$(data.themes)~jsonpath']
+    s: vsdt:$(id)
+    po:
+      - [rdf:type, skos:Concept]
+      - [skos:prefLabel, $(label)]
+
+  keyword:
+    sources:
+      - ['$(data.keywords)~jsonpath']
+    s: vskw:$(id)
+    po:
+      - [rdf:type, skos:Concept]
+      - [skos:prefLabel, $(label)]
