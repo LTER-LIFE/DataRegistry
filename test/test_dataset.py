@@ -1,62 +1,47 @@
-import json
-from datetime import datetime, timedelta
-from geoalchemy2 import load_spatialite
-from sqlalchemy.event import listen
+import os
 from sqlalchemy.testing import eq_
 
 from application.database import db_session
-from application.models import metadata, Dataset, Agent, Location, LicenseDocument
-from sqlalchemy import create_engine
+from application.models import Dataset, Location
 import unittest
 
-from config import Config
-from mock_objects import MockObjects
+from test.db import engine
+from test.mock_objects import MockObjects
 
 
 class TestDataset(unittest.TestCase):
 
     def setUp(self):
         """
-        Setup function to build flask application in memory
+        Setup database sessions and connections
         """
-        print("Run setup")
-        engine = create_engine(echo=True, connect_args={"check_same_thread": False}, url='sqlite:///:memory:')
+        self.connection = engine.connect()
 
-        if Config.SQLALCHEMY_DATABASE_URI.find("sqlite") > -1:
-            listen(engine, "connect", load_spatialite)
-        else:
-            connect_args = {}
+        self.transaction = self.connection.begin()
 
-        db_session.configure(bind=engine)
-        # You probably need to create some tables and
-        # load some test data, do so here.
+        db_session.configure(bind=self.connection, join_transaction_mode="create_savepoint")
 
-        # To create tables, you typically do:
-        metadata.create_all(engine)
-
-        self.mock_objects = MockObjects()
-
-        print("Finished running setup")
+        self.mock_objects = MockObjects(db_session=db_session)
 
     def tearDown(self):
         """
-        Teardown database after use
+        Close database sessions and connections
         """
         db_session.remove()
+
+        # rollback - everything that happened with the session above
+        # (including calls to commit()) is rolled back.
+        self.transaction.rollback()
+
+        self.connection.close()
 
     def test_create_dataset(self):
         instances = db_session.query(Dataset).all()
         eq_(0, len(instances))
 
-        dataset = self.mock_objects.create_mock_dataset("one")
-
-        db_session.add(dataset)
-        db_session.commit()
-        db_session.flush()
+        self.mock_objects.create_mock_dataset("one")
 
         all_db_datasets = db_session.query(Dataset).all()
-
-        print(json.dumps(all_db_datasets[0].to_dict(), indent=1))
 
         assert len(all_db_datasets) == 1
 
@@ -64,18 +49,15 @@ class TestDataset(unittest.TestCase):
         instances = db_session.query(Dataset).all()
         eq_(0, len(instances))
 
-        dataset = self.mock_objects.create_mock_dataset("two")
-
-        db_session.add(dataset)
-        db_session.commit()
-        db_session.flush()
+        self.mock_objects.create_mock_dataset("two")
 
         all_db_datasets = db_session.query(Dataset).all()
 
         assert len(all_db_datasets) == 1
 
     def test_create_dataset_from_shapefile(self):
-        shapefile_path = "shapefile/veluwe.zip"
+        dirname = os.path.dirname(__file__)
+        shapefile_path = os.path.join(dirname, "shapefile/veluwe.zip")
 
         Location.from_shapefile(shapefile_path, persist=True)
 
