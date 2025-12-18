@@ -651,57 +651,6 @@ class Dataset(Base):
 
         return data
     
-    def from_staged_dataset(self, stdataset=None):
-        """
-        Create a Dataset object from a staged dataset
-
-        """
-        self.modified = datetime.now()
-        self.release_date = stdataset.release_date
-        self.language = stdataset.language
-        self.title = stdataset.title
-        self.description = stdataset.description
-        self.resource_type = stdataset.resource_type
-        self.temporal_coverage_start = stdataset.temporal_coverage_start
-        self.temporal_coverage_end = stdataset.temporal_coverage_end
-        self.temporal_resolution = stdataset.temporal_resolution
-        self.spatial_resolution = stdataset.spatial_resolution
-        self.taxonomic_coverage = stdataset.taxonomic_coverage
-        self.access_rights = stdataset.access_rights
-        self.landing_page = stdataset.landing_page
-        self.public_id = stdataset.public_id
-
-        # Fill creator -> Agent
-        self.creator = Agent.add_or_update_agent(name=stdataset.creator_name,
-                                                    organisation=stdataset.creator_organisation,
-                                                    mbox=stdataset.creator_mbox)
-        # dataset_contact_point -> Agent
-        self.dataset_contact_point = Agent.add_or_update_agent(name=stdataset.dataset_contact_point_name,
-                                                                  organisation=stdataset.dataset_contact_point_organisation,
-                                                                  mbox=stdataset.dataset_contact_point_mbox)
-
-        # dataset_contact_point -> Agent
-        self.dataset_metadata_provider = Agent.add_or_update_agent(name=stdataset.metadata_provider_name,
-                                                                      mbox=stdataset.metadata_provider_mbox,
-                                                                      organisation=stdataset.metadata_provider_organisation)
-
-        # publisher -> Agent
-        self.dataset_publisher = Agent.add_or_update_agent(organisation=stdataset.publisher)
-
-        self.dataset_keywords = Keyword.add_or_update_keywords(keyword_names=stdataset.keywords)
-
-        # spatial_coverage -> Location
-        # db_location = Location.add_or_update_location(geometry=stdataset.spatial_coverage.data)
-        #this can go, because the staging dataset has already converted to a geometry
-        #if stdataset.spatial_coverage_shapefile.data:
-        #    dataset.dataset_spatial_coverage = Location.from_shapefile(
-        #        request.files[stdataset.spatial_coverage_shapefile.name])
-        #else:
-        self.dataset_spatial_coverage = Location.add_or_update_location(geometry=stdataset.spatial_coverage)
-
-        # licence -> LicenceDocument
-        if stdataset.license != '':
-            self.dataset_license = LicenseDocument(code=stdataset.license)
 
     
 

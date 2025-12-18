@@ -11,6 +11,8 @@ from application.models import Agent, Keyword, Catalog, Checksum, DataService, D
     LicenseDocument, MediaType, Location
 from application.models import AgentStaging, KeywordStaging, CatalogStaging, ChecksumStaging, DataServiceStaging, DatasetStaging, DataThemeStaging, DistributionStaging, \
     LicenseDocumentStaging, MediaTypeStaging, LocationStaging
+from application.transfer import transfer_dataset
+from datetime import datetime
 
 
 def approve_staged_dataset(session: db_session, dataset_id: int) -> Dataset:
@@ -20,14 +22,13 @@ def approve_staged_dataset(session: db_session, dataset_id: int) -> Dataset:
     #if not stageddataset.is_validated:
     #    raise ValueError("Dataset must be validated before approval.")    TODO decide whether vsalidation beyond that already implemented is required
 
-    dataset = Dataset.from_staged_dataset(stdataset=stageddataset)
-        
-    session.add(dataset)
+    dataset = transfer_dataset(session, stageddataset)
+    
     stageddataset.is_approved = True
     stageddataset.approved_at = datetime.utcnow()
     session.commit()
-    session.flush()
+    print(f"Migrated staged dataset {stageddataset.dataset_id} to database as {dataset.dataset_id}")
 
-    return dataset
+
 
 
