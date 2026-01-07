@@ -2,11 +2,14 @@ name: eco-search-engine
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        PORT: ${PORT}
     container_name: ${COMPOSE_PROJECT_NAME}-app
     env_file: .env
     ports:
-      - "8000:8000"
+      - "${PORT}:${PORT}"  # Map the port from .env
     volumes:
       - certs:/app/certs
     depends_on:

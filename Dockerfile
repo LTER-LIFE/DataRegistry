@@ -4,6 +4,10 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 # Install the project into `/app`
 WORKDIR /app
 
+ARG PORT
+
+EXPOSE ${PORT}
+
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
 
@@ -31,5 +35,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Reset the entrypoint, don't invoke `uv`
 ENTRYPOINT []
 
-## Run application
-CMD ["gunicorn", "-c", "./config/gunicorn.py", "application:create_app()"]
+# Use shell form to allow environment variable substitution
+CMD ["sh", "-c", "exec gunicorn -c ./config/gunicorn.py -b 0.0.0.0:${PORT} 'application:create_app()'"]
