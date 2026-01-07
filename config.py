@@ -36,7 +36,6 @@ class Config(object):
     DB_HOST = environ.get("DB_HOST")
     DB_NAME = environ.get("DB_NAME")
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PWD}@{DB_HOST}/{DB_NAME}"
-    SPATIALITE_LIBRARY_PATH = environ.get('SPATIALITE_LIBRARY_PATH') or 'la'
 
     ## Surf settings
     SURF_CLIENT_ID = environ.get("SURF_CLIENT_ID", "None")

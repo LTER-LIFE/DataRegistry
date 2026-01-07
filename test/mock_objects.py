@@ -89,7 +89,7 @@ class MockObjects:
         dataset.landing_page = fake.url()
         dataset.public_id = f"DS-{dataset_id_prefix}-{fake.uuid4()[:8].upper()}"
 
-        self.db_session.add(dataset) # Add the dataset to the mock session
+        self.db_session.add(dataset)
         self.db_session.commit()
         self.db_session.flush()
 

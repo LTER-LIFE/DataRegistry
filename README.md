@@ -49,6 +49,11 @@ By default:
 
 ---
 
+## Running tests
+- make sure the Docker Compose environment is running
+- log into the app container: `docker compose exec app bash`
+- run the tests with: `python -m unittest`
+
 ## 🤝 Contributing
 
 Pull requests are welcome!  
