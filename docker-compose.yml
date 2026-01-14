@@ -2,10 +2,7 @@ name: eco-search-engine
 
 services:
   app:
-    build:
-      context: .
-      args:
-        PORT: ${PORT}
+    build: .
     container_name: ${COMPOSE_PROJECT_NAME}-app
     env_file: .env
     ports:
