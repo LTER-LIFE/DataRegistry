@@ -1,6 +1,6 @@
 from os import environ
 
-bind = environ.get("GUNICORN_BIND", "0.0.0.0:8000")
+bind = f"{environ.get("GUNICORN_HOST", "0.0.0.0")}:{environ.get("PORT", "8000")}"
 
 workers = int(environ.get("GUNICORN_WORKERS", 2))
 threads = int(environ.get("GUNICORN_THREADS", 1))
