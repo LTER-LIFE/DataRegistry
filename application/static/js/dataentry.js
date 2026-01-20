@@ -1,5 +1,4 @@
 function createSimpleMap(containerId) {
-    console.log(containerId)
     const container = L.DomUtil.get(containerId);
     if (container && container._leaflet_id) {
         L.map(container).remove();

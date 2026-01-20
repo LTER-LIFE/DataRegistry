@@ -17,9 +17,6 @@
     <link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_omgXSRZ-fOOCEP3kgfsAhK69nWepWMx6zaACIRBudAQ.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/deps/bootstrap-icons.min.1.11.3.css')}}">
 
-    <link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
-    <link rel="stylesheet" media="all" href="{{ url_for('static', filename='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/deps/Control.Geocoder.min.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/deps/leaflet.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/deps/leaflet.draw.css')}}">
@@ -27,77 +24,16 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/nioo_bootstrap.css') }}"/>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/popover.css')}}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.1.14.1.css')}}">
-    <link rel="stylesheet" href="/resources/demos/style.css">
 
     <script src="{{ url_for('static', filename='js/deps/jquery-3.7.1.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/jquery-ui.1.14.1.js')}}"></script>
 
-    <script src="{{ url_for('static', filename='js/deps/moment.min.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/js/bootstrap.bundle.min.js')}}"></script>
-    <script src="{{ url_for('static', filename='js/deps/popper.min.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/leaflet.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/Control.Geocoder.min.js')}}"></script>
-    <script src="{{ url_for('static', filename='js/deps/ol.min.js')}}"></script>
 
     <script src="{{ url_for('static', filename='js/dataentry.js')}}"></script>
-    <script src="{{ url_for('static', filename='js/leaflet.1.9.4.js')}}"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
     {% block css_block %} {% endblock %}
-    <script type="application/javascript">
-
-        // Bootstrap tooltip
-        $(document).ready(function () {
-            $("body").tooltip({selector: '[data-toggle=tooltip]'});
-        });
-
-        // A helper function to add a class to a certain element
-        function addClasses(class_names) {
-            class_names.forEach(class_name => element.classList.add(class_name));
-            return class_names;
-        }
-
-        // A helper function to remove a class to a certain element
-        function removeClasses(class_names) {
-            class_names.forEach(class_name => element.classList.add(class_name));
-            return class_names;
-        }
-
-        // A helper function that waits for an element that doesn't exist yet
-        function modifyFutureElement(selector, class_names, callBack, checkFrequencyInMs, timeoutInMs) {
-            var startTimeInMs = Date.now();
-            (function loopSearch() {
-                element = document.querySelector(selector)
-                if (element != null) {
-                    callBack(class_names);
-                } else {
-                    setTimeout(function () {
-                        if (timeoutInMs && Date.now() - startTimeInMs > timeoutInMs)
-                            return;
-                        loopSearch();
-                    }, checkFrequencyInMs);
-                }
-            })();
-        }
-
-        // A function to show maps on a specified dif with specified coordinates
-        function showMap(div_id, coords) {
-            var map = L.map(div_id, {zoomControl: false});
-
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                doubleClickZoom: true,
-                maxBounds: ([[90, -270], [-90, 270]]),
-                selectArea: true
-            }).addTo(map);
-
-            // center map on result
-            map.setView(coords, 16);
-        };
-
-    </script>
-    <!--<script src="{{ url_for('static', filename='js/js_iTWqpvIogE9Q3_OolWAtk6gW-yNrVhnmLaii-AYlJFU.js')
-    }}"></script>-->
-
 </head>
 <body class="path-group page--subsite">
 
@@ -201,15 +137,13 @@
     {% endfor %}
   {% endif %}
 {% endwith %}
-    <div class="container mt-8">
+    <div class="container">
         {% block content %}{% endblock %}
     </div>
+  </div>
+</div>
 </body>
-    <script src="{{ url_for('static', filename='js/deps/bootstrap-tagsinput.min.js')}}"></script>
-    <script src="{{ url_for('static', filename='js/deps/typeahead.bundle.js')}}"></script>
-    <script src="{{ url_for('static', filename='js/deps/Control.Geocoder.min.js')}}"></script>
     <script src="{{ url_for('static', filename='js/deps/leaflet.draw.js')}}"></script>
-    <script src="{{ url_for('static', filename='js/deps/ol.min.js')}}"></script>
     <script src="{{ url_for('static', filename='js/popover.js')}}"></script>
 
 </html>

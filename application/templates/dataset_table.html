@@ -195,7 +195,6 @@ function addCardToCardBox(dataset) {
 $('.cardbox').append(cardHtml);
 
 // Load the dataset map
-console.log(dataset);
 loadDatasetMapWithGeoJSON(dataset.dataset_id, dataset.dataset_spatial_coverage.geometry);
 }
 
@@ -252,7 +251,6 @@ $(document).ready(function() {
 
     cleanData();
     debouncedFetchData(formData);
-    console.log(formData);
     });
 });
 

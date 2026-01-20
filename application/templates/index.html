@@ -30,19 +30,11 @@
         </div>
     </div>
 </main>
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script src="{{ url_for('static', filename='js/deps/jquery-3.6.0.js')}}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.4/js/bootstrap-switch.js" data-turbolinks-track="true"></script>
-<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-
 
 <script src="{{ url_for('static', filename='js/leaflet.markercluster.js')}}"></script>
-<script src="{{ url_for('static', filename='js/leaflet.markercluster-src.js')}}"></script>
 
-<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/MarkerCluster.css')}}">
-<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/MarkerCluster.Default.css')}}">
-<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
+<link rel="stylesheet" href="{{ url_for('static', filename ='css/MarkerCluster.css')}}">
+<link rel="stylesheet" href="{{ url_for('static', filename ='css/MarkerCluster.Default.css')}}">
 
 
 <script type="application/javascript">
@@ -58,13 +50,11 @@ googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
     maxZoom: 20,
     subdomains:['mt0','mt1','mt2','mt3']
  });
-googleStreets.addTo(map);
 
-googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
    maxZoom: 20,
    subdomains:['mt0','mt1','mt2','mt3']
 });
-googleSat.addTo(map);
 
 // Layer control
 var baseLayers ={
