@@ -36,6 +36,9 @@
 
 
 <div class="cardbox" data-add-to-cart-base-url="{{ url_for('main_bp.add_to_cart', dataset_id='') }}"></div>
+{% endblock %}
+
+{% block app_js %}
 <script type="application/javascript">
 
 function serializeObject($form) {
