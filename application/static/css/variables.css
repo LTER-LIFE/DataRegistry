@@ -1,0 +1,73 @@
+/*
+ * variables
+ * --ldr are app variables
+ * --bs are bootstrap variables
+ */
+
+/* eb-garamond-600 - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'EB Garamond';
+  font-style: normal;
+  font-weight: 600;
+  src: url('../fonts/eb-garamond-v32-latin-600.woff2') format('woff2');
+}
+
+/* open-sans-regular - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/open-sans-v44-latin-regular.woff2') format('woff2');
+}
+
+/* open-sans-italic - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 400;
+  src: url('../fonts/open-sans-v44-latin-italic.woff2') format('woff2');
+}
+
+/* open-sans-600 - latin */
+@font-face {
+  font-display: swap;
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: url('../fonts/open-sans-v44-latin-600.woff2') format('woff2');
+}
+
+:root {
+	--ldr-text: #082235;
+	--ldr-text--as-rgb: 8,34,53;
+	--ldr-title: #004b85;
+	--ldr-title--as-rgb: 0,75,133;
+	--ldr-links-and-box-background: #0879c0;
+	--ldr-links-and-box-background--as-rgb: 8,121,192;
+	--ldr-button: #94c020;
+	--ldr-button--as-rgb: 148,192,32;
+	--ldr-accent: #bfd979;
+	--ldr-accent--as-rgb: 191,217,121;
+	--ldr-border: #E2dfdc;
+	--ldr-border--as-rgb: 226,223,220;
+	--ldr-page-background: #f7f2ef;
+	--ldr-page-background--as-rgb: 247,242,239;
+
+  --bs-body-bg: var(--ldr-page-background);
+  --bs-body-color: var(--ldr-text);
+  --bs-body-font-size: 1.15rem;
+  --bs-body-line-height: 1.8;
+
+  --bs-font-sans-serif: 'Open Sans', sans-serif;
+  --bs-heading-color: var(--ldr-title);
+
+  --bs-link-color: var(--ldr-links-and-box-background);
+  --bs-link-color-rgb: var(--ldr-links-and-box-background--as-rgb);
+  --bs-link-hover-color: var(--ldr-title);
+  --bs-link-hover-color-rgb: var(--ldr-title--as-rgb);
+
+  --bs-primary: var(--ldr-title);
+}
