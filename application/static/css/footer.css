@@ -2,7 +2,7 @@
  * Footer
  */
 .footer {
-	border-top: 1px solid #e2dfdc;
+	border-top: 1px solid var(--ldr-border);
   margin-top: 3rem;
   min-height: 2rem;
 }

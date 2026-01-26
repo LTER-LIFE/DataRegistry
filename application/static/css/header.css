@@ -3,9 +3,14 @@
  */
 .header .navbar {
   --bs-navbar-brand-padding-y: 0;
+  --bs-navbar-active-color: var(--ldr-title);
   --bs-navbar-padding-y: 1rem;
 
 	box-shadow: 0 .5rem .8rem 0 rgba(0,0,0,.06);
+}
+
+.header .navbar-nav {
+  --bs-nav-link-font-weight: 600;
 }
 
 .header .navbar-nav .nav-item {
