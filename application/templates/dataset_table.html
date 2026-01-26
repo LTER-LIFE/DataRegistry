@@ -2,8 +2,8 @@
 
 {% block content %}
 
-<div class="main-content ps-3" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
-    <div align="center">
+<div class="mb-5">
+    <div class="text-center">
         <a data-bs-toggle="collapse" href="#collapse-upload" role="button"
            aria-expanded="false" aria-controls="collapse-upload">filters</a>
 
@@ -105,15 +105,15 @@ function addCardToCardBox(dataset) {
     const addToCartUrl = `${baseUrl}${dataset.dataset_id}`;
     // Create the card HTML structure
     var cardHtml = `
-    <div class="card">
+    <div class="card mb-5">
         <div class="card-header">
             <b>${dataset.title}</b> -  - <a href="${addToCartUrl}">Add to Cart</a>
         </div>
         <div class="card-body">
             <p></p>
             <div class="row">
-                <div class="table-responsive col-md-4">
-                    <table class="table table-borderless mb-5">
+                <div class="table-responsive col-md-5">
+                    <table class="table table-borderless">
                         <tbody>
                             <tr>
                                 <th scope="row" class="p-1">Submission date:</th>
@@ -178,7 +178,7 @@ function addCardToCardBox(dataset) {
                         </tbody>
                     </table>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-7">
                     <div>
                         <b>Description: </b>${dataset.description}<br>
                         <b>Keywords: </b>
