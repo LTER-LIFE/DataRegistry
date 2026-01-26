@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="icon" href="{{url_for('static', filename='img/favicon.ico')}}" type="image/vnd.microsoft.icon">
-        <title>{{ title }}</title>
+        <title>{{ title }} | Veluwe Metadata Portal (beta)</title>
 
         <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}"/>
         <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap-icons.min.1.13.1.css')}}">
@@ -31,9 +31,21 @@
     <body>
         {% include "partials/header.html" %}
 
-        <div class="container">
-            {% block content %}{% endblock %}
-        </div>
+        <main class="content {% block content_container_classes %}{% endblock %}">
+            <div class="content--header">
+                <div class="container">
+                    <h1>{{ title }}</h1>
+                </div>
+            </div>
+
+            <div class="content--main">
+                <div class="container">
+                    <div class="content-inner {% block content_classes %}{% endblock %}">
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+        </main>
 
         <!-- Modal -->
         {% with messages = get_flashed_messages(with_categories=true) %}

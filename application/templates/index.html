@@ -5,36 +5,10 @@
 <link rel="stylesheet" href="{{ url_for('static', filename ='vendor/leaflet.markercluster/MarkerCluster.Default.css')}}">
 {% endblock %}
 
+{% block content_container_classes %}content-container--narrow{% endblock %}
+
 {% block content %}
-
-<main>
-    <div class="layout-content">
-        <div class="region region-content">
-            <div class="region-inner region-content-inner">
-                <div class="content--header">
-                    <div class="content--header-inner">
-                        <div class="textual">
-                            <div class="grid-container">
-                                <div class="limit-1-col"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="content--main">
-                    <div class="content--main--main">
-                        <div class="grid-container">
-
-                            <div class="limit-1-col content--main--bg-color">
-                                    <div id="map"> </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</main>
+<div id="map"></div>
 {% endblock %}
 
 {% block vendor_js %}
