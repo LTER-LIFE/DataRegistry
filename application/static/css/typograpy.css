@@ -33,6 +33,10 @@ p {
 	margin-bottom: 1.75rem;
 }
 
+a {
+	text-underline-offset: 40%;
+}
+
 a:focus,
 a:hover {
   text-decoration: none;

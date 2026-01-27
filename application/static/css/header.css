@@ -23,5 +23,4 @@
 .header .nav-link:focus,
 .header .nav-link:hover {
   text-decoration: underline;
-  text-underline-offset: 40%;
 }
