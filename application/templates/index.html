@@ -8,7 +8,7 @@
 {% block content_container_classes %}content-container--narrow{% endblock %}
 
 {% block content %}
-<div id="map"></div>
+<div id="map" class="map"></div>
 {% endblock %}
 
 {% block vendor_js %}
@@ -58,22 +58,31 @@ const geo_json = {{ list_o_geo |tojson | safe}};
 // add a new marker with a popup overtop
 let all_points = [];
 Object.entries(geo_json).forEach(dataset_items => {
-    dataset_id = dataset_items[0];
     dataset = dataset_items[1];
     all_points.push(L.geoJson(dataset.centroid, {
-
         pointToLayer: (feature, latlng) => {
             const div = document.createElement("div");
-            var id_code = dataset_id;
-            div.innerHTML = "<h4>"+dataset.properties.title+"</h4> <br>" +
-                "Description: "+dataset.properties.description+"<br>"+
-                "Temporal coverage: "+dataset.properties.temporal_coverage+"<br>"+
-                "Creator: "+dataset.properties.creator+"<br>"+
-                "<br>";
+            div.innerHTML = `
+                <h2> \
+                    <a class="text-decoration-none" href="${dataset.properties.url}"> \
+                        ${dataset.properties.title} \
+                    </a> \
+                </h2> \
+                <p>
+                    ${dataset.properties.description.substring(0, 125)}... \
+                    <a href="${dataset.properties.url}">read more</a> \
+                </p>
+                <dl> \
+                    <dt>Temporal coverage</dt> \
+                    <dd>${dataset.properties.temporal_coverage}</dd> \
+                    <dt>Creator</dt> \
+                    <dd>${dataset.properties.creator}</dd> \
+                </dl>`
 
             var area_poly = dataset.geometry;
             const button = document.createElement("button");
-            button.innerHTML= "Show Area";
+            button.className = "btn btn-sm btn-primary"
+            button.innerHTML= "Show area";
             button.onclick = function() {
                 if (Areagroup.getLayers().length >=1){
                     Areagroup.clearLayers()

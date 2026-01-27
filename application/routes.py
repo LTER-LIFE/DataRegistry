@@ -52,13 +52,16 @@ def home():
             dataset_dict = {
                 "centroid": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("centroid", None),
                 "geometry": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("geometry", None),
-                "properties": {"id": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
+                "properties": {"id": es_dataset.get("_source", {}).get("dataset_id", None),
                                "title": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
                                "description": _json_safe_string(es_dataset.get("_source", {}).get("description", None)),
                                "creator": Agent(**es_dataset.get("_source", {}).get("creator", None)).web(),
                                "temporal_coverage":
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start"), None} / "
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}"}}
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start", None)} / "
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}",
+                               "url": url_for('main_bp.datasets', dataset_id=es_dataset.get("_source", {}).get("dataset_id"))
+                               }
+            }
 
             datasets_shapes[es_dataset.get("_source").get("dataset_id")] = dataset_dict
 

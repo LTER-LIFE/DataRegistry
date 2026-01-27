@@ -58,7 +58,7 @@
 
   --bs-body-bg: var(--ldr-page-background);
   --bs-body-color: var(--ldr-text);
-  --bs-body-font-size: 1.15rem;
+  --bs-body-font-size: 1.125rem;
   --bs-body-line-height: 1.8;
 
   --bs-font-sans-serif: 'Open Sans', sans-serif;

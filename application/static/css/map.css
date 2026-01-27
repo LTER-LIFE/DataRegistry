@@ -1,0 +1,33 @@
+/*
+ * Leaflet map styles
+ */
+.map {
+  height: 640px;
+}
+
+.leaflet-container {
+	font-family: 'Open Sans', sans-serif;
+}
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+	color: var(--ldr-text);
+}
+
+.leaflet-popup-content {
+	line-height: 1.5;
+	font-size: 1rem;
+}
+
+.leaflet-popup-content p {
+	margin: 0 0 1rem;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+	top: 6px;
+	right: 6px;
+	width: 32px;
+	height: 32px;
+	font: 2rem 'Open Sans';
+	color: var(--ldr-text);
+	line-height: 2rem;
+}
