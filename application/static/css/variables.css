@@ -56,7 +56,6 @@
 	--ldr-page-background: #f7f2ef;
 	--ldr-page-background--as-rgb: 247,242,239;
 
-  --bs-body-bg: var(--ldr-page-background);
   --bs-body-color: var(--ldr-text);
   --bs-body-font-size: 1.125rem;
   --bs-body-line-height: 1.8;
@@ -70,4 +69,7 @@
   --bs-link-hover-color-rgb: var(--ldr-title--as-rgb);
 
   --bs-primary: var(--ldr-title);
+
+  --bs-border-color: var(--ldr-border);
+  --bs-border-radius: 0.5rem;
 }
