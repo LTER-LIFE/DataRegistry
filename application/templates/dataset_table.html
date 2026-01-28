@@ -71,7 +71,7 @@ function fetchData(query) {
     localStorage.setItem('last_search_filters', JSON.stringify(query));
 
     $.ajax({
-            url: '/query', // The endpoint to send the data to
+            url: './query', // The endpoint to send the data to
             type: 'POST',  // Use POST for sending the data in the body
             contentType: 'application/json', // Tell the server we are sending JSON
             data: JSON.stringify(query), // Convert the JavaScript object to a JSON string
