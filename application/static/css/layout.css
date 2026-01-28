@@ -1,6 +1,10 @@
 /*
  * Layout of the main content
  */
+body {
+	background-color: var(--ldr-page-background);
+}
+
 .content--header {
 	background: linear-gradient(47deg, rgba(0,75,133,.9) 60%, rgba(8,121,192,.7) 100%);
 	color: #fff;
