@@ -5,6 +5,10 @@
   height: 640px;
 }
 
+.map--small {
+  height: 350px;
+}
+
 .leaflet-container {
 	font-family: 'Open Sans', sans-serif;
 }

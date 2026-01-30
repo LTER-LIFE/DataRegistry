@@ -55,6 +55,7 @@
 	--ldr-border--as-rgb: 226,223,220;
 	--ldr-page-background: #f7f2ef;
 	--ldr-page-background--as-rgb: 247,242,239;
+  --ldr-paragraph-margin: 1.75rem;
 
   --bs-body-color: var(--ldr-text);
   --bs-body-font-size: 1.125rem;
