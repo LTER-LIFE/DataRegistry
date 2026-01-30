@@ -30,7 +30,26 @@ b, strong {
 }
 
 p {
-	margin-bottom: 1.75rem;
+	margin-bottom: var(--ldr-paragraph-margin);
+}
+
+.text--medium {
+	font-size: 1rem;
+	line-height: 1.8;
+}
+
+ul.text-formatted {
+	font-size: 1rem;
+	line-height: 1.8;
+	list-style: none;
+	padding-left: 0;
+}
+
+ul.text-formatted li {
+	padding-left: 2rem;
+	background-position: 0 0.7rem;
+	background-repeat: no-repeat;
+	background-image: url(../img/bullet-blue.svg);
 }
 
 a {

@@ -209,9 +209,8 @@ class DatasetForm(FlaskForm):
     language = SelectField("Language", choices=[('EN', 'English'), ('NL', 'Nederlands')], validators=[DataRequired()],
                            description="Language used in this form")
 
-    consent = RadioField("Terms and conditions", choices=[('Y', 'Yes')],
-                         validators=[AnyOf(["Y"], message="Please answer Yes to proceed")],
-                         description="I have read and agree to the terms and conditions.")
+    consent = RadioField("Terms and conditions", choices=[('Y', 'Yes, I have read and agree to the terms and conditions.')],
+                         validators=[AnyOf(["Y"], message="Please answer Yes to proceed")])
 
     # User
 
