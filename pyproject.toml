@@ -15,6 +15,7 @@ dependencies = [
     "alembic",
     "elasticsearch",
     "flask",
+    "flask-admin",
     "flask-jwt-extended",
     "flask-login",
     "flask-session>=0.8.0",
