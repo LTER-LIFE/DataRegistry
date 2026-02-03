@@ -5,4 +5,19 @@
 	border-top: 1px solid var(--ldr-border);
   margin-top: 3rem;
   min-height: 2rem;
+  padding: 1rem 0;
+}
+
+.footer-meta {
+	font-size: 0.75rem;
+	line-height: 1.8;
+}
+
+.footer-meta a {
+  color: currentColor;
+}
+
+.footer-meta a:focus,
+.footer-meta a:hover {
+  color: var(--ldr-links-and-box-background);
 }
