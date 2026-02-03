@@ -399,9 +399,9 @@ def instructions():
     """
     Renders a simple instructions page.
 
-    :return: rendered flask template from templates/veluwe-metadata-portal-instructions.html
+    :return: rendered flask template from templates/instructions.html
     """
-    return render_template('veluwe-metadata-portal-instructions.html')
+    return render_template('instructions.html')
 
 
 @main_bp.route('/contact')
