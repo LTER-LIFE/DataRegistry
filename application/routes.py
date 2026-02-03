@@ -391,7 +391,7 @@ def about():
     Renders a simple about page.
 
     :return: rendered flask template from templates/about.html    """
-    return render_template('about.html', title='About the Veluwe Metadata Portal')
+    return render_template('about.html', title='About the LTER-NL Data Registry')
 
 
 @main_bp.route('/instructions')
