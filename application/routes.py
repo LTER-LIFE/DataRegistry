@@ -19,9 +19,10 @@ from sqlalchemy import exc
 from application import search_index
 from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
-from application.forms import DatasetForm
+from application.forms import DatasetForm, LlmForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
     LicenseDocument, MediaType, Location
+from application.services import LlmMetadataService
 
 # Blueprint Configuration
 # Here the static folder and the templates folder are annotated
@@ -30,6 +31,8 @@ url_prefix = f"{proxy_prefix}/".replace("//", "/") if proxy_prefix else "/"
 
 # Blueprint Configuration
 main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_folder="static", url_prefix=url_prefix)
+
+TITLE = "Veluwe Metadata Portal (Beta)"
 
 
 @main_bp.route('/')
@@ -50,16 +53,13 @@ def home():
             dataset_dict = {
                 "centroid": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("centroid", None),
                 "geometry": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("geometry", None),
-                "properties": {"id": es_dataset.get("_source", {}).get("dataset_id", None),
+                "properties": {"id": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
                                "title": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
                                "description": _json_safe_string(es_dataset.get("_source", {}).get("description", None)),
                                "creator": Agent(**es_dataset.get("_source", {}).get("creator", None)).web(),
                                "temporal_coverage":
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start", None)} / "
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}",
-                               "url": url_for('main_bp.datasets', dataset_id=es_dataset.get("_source", {}).get("dataset_id"))
-                               }
-            }
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start"), None} / "
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}"}}
 
             datasets_shapes[es_dataset.get("_source").get("dataset_id")] = dataset_dict
 
@@ -67,7 +67,7 @@ def home():
         if user_logged_in:
             user_info = get_userinfo(session.get("access_token"))
 
-        page = render_template('index.html', list_o_geo=datasets_shapes, title='Map', user=user_logged_in)
+        page = render_template('index.html', list_o_geo=datasets_shapes, title=TITLE, user=user_logged_in)
         return page
     except exc.PendingRollbackError as pre:
         db_session.rollback()
@@ -95,6 +95,7 @@ def add_dataset(dataset_id=None):
     try:
         name = None
         dataset_form = DatasetForm()
+        llm_form = LlmForm()
         dataset = None
 
         # Delete the dataset or edit
@@ -117,6 +118,7 @@ def add_dataset(dataset_id=None):
             elif request.url_rule.rule.find("edit") > -1 or request.url_rule.rule.find("copy") > -1:
                 dataset_form.from_dataset(dataset)
 
+
         # If the form validates
         if dataset_form.validate_on_submit():
             if request.url_rule.rule.find("edit") > -1:
@@ -135,11 +137,52 @@ def add_dataset(dataset_id=None):
             # Feedback
             flash(f"Added dataset with title {dataset.title}.", "success")
 
-        page = render_template('dataset_form.html', form=dataset_form, name=name, title='Register your dataset')
+        page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title=TITLE)
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
+
+@main_bp.route('/dataset/from-ai', methods=['POST'])
+async def dataset_from_ai():
+    """
+    Bootstrap a dataset form using AI-extracted metadata from a URL.
+
+    This endpoint acts as a bridge between an LLM-driven extraction service
+    and the standard dataset creation workflow. It performs the following steps:
+    1. Validates the incoming URL/extraction request via LlmForm.
+    2. Invokes the LLM service to parse the target landing page into a Dataset entity.
+    3. Transfers the resulting Dataset attributes into a standard DatasetForm.
+    4. Renders the main dataset edit page, allowing the user to review and
+       supplement the AI-generated metadata before final persistence.
+
+    :return: Rendered HTML of the dataset form pre-filled with AI data.
+    :raises: 500 Internal Server Error if the LLM extraction or form mapping fails.
+    """
+    llm_form = LlmForm()
+    llm_metadata_service = LlmMetadataService()
+
+    name = "LLM Prefilled dataset"
+    try:
+        if llm_form.validate_on_submit():
+            dataset_json = await llm_metadata_service.get_metadata(llm_form.dataset_url.data)
+
+            print(dataset_json)
+            dataset = llm_form.to_dataset(dataset_json)
+
+            print(dataset.to_dict())
+
+            dataset_form = DatasetForm()
+            dataset_form.from_dataset(dataset)
+
+            print(dataset_form)
+
+            page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title=TITLE)
+            return page
+        return redirect(url_for('add_dataset'))
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        abort(500, description=f"Failed to fetch dataset for {llm_form.dataset_url.data}.", original_exception=e)
 
 
 @main_bp.route('/datasets')
@@ -157,7 +200,7 @@ def datasets(dataset_id=None):
             datasets_table = [Dataset.query.get(dataset_id)]
         else:
             datasets_table = db_session.query(Dataset).all()
-        page = render_template('dataset_table.html', datasets=datasets_table, title='Datasets')
+        page = render_template('dataset_table.html', datasets=datasets_table, title=TITLE)
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -167,7 +210,7 @@ def datasets(dataset_id=None):
 def cart():
     dataset_ids = session.get('cart', [])
     cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
-    return render_template('cart.html', cart=cart_items, title='Your Shopping Cart')
+    return render_template('cart.html', cart=cart_items)
 
 @main_bp.route('/cart/add/<dataset_id>')
 def add_to_cart(dataset_id):
@@ -322,8 +365,7 @@ def dashboard():
 
     return render_template('dashboard.html',
                            database_datasets_stats=database_datasets_stats,
-                           index_datasets_stats=index_datasets_stats,
-                           title='Dashboard')
+                           index_datasets_stats=index_datasets_stats)
 
 @main_bp.context_processor
 def cart_item_count():
@@ -391,7 +433,7 @@ def about():
     Renders a simple about page.
 
     :return: rendered flask template from templates/about.html    """
-    return render_template('about.html', title='About the Veluwe Metadata Portal')
+    return render_template('about.html', title=TITLE)
 
 
 @main_bp.route('/instructions')
@@ -401,17 +443,17 @@ def instructions():
 
     :return: rendered flask template from templates/veluwe-metadata-portal-instructions.html
     """
-    return render_template('veluwe-metadata-portal-instructions.html')
+    return render_template('veluwe-metadata-portal-instructions.html', title=TITLE)
 
 
 @main_bp.route('/contact')
 def contact():
     """
-    Redirects to about page.
+    Renders a simple contact page.
 
-    :return: A redirect response to the about page
+    :return: rendered flask template from templates/contact.html
     """
-    return redirect(url_for("main_bp.about"))
+    return render_template('about.html', title=TITLE)
 
 
 @main_bp.errorhandler(404)

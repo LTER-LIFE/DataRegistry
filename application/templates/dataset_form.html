@@ -7,6 +7,43 @@
 {% from 'macros/form.html' import render_field %}
 
 {% block content %}
+
+<div class="main-content ps-3">
+    <div class="d-flex justify-content-center mb-3">
+        <button class="btn btn-outline-primary d-flex align-items-center collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapse-tools"
+                aria-expanded="false">
+            <i class="fa-solid fa-wand-magic-sparkles me-2"></i>
+            <span>Data Tools & Filters</span>
+            get
+        </button>
+    </div>
+
+    <div class="collapse" id="collapse-tools">
+        <div class="card card-body shadow-sm bg-light mb-4">
+
+            <div class="mb-4">
+                <label class="form-label fw-bold text-primary">
+                    <i class="fa-solid fa-robot me-1"></i> AI Metadata Import
+                </label>
+                <form action="{{ url_for('main_bp.dataset_from_ai') }}" method="POST" id="llm-harvester-form">
+                    {{ llm_form.hidden_tag() }}
+                    <div class="input-group">
+                        {{ llm_form.dataset_url(class="form-control", placeholder="Paste dataset URL here...") }}
+                        <button class="btn btn-primary" type="submit" id="llm-submit-btn">
+                            <span id="llm-btn-text">Extract</span>
+                            <div id="llm-spinner" class="spinner-border spinner-border-sm d-none"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 {% if form.errors | length > 0 %}
 <div class="modal" id="staticBackdrop" tabindex="-1">
     <div class="modal-dialog">

@@ -13,6 +13,7 @@ classifiers = [
 
 dependencies = [
     "alembic",
+    "asgiref>=3.11.1",
     "elasticsearch",
     "flask",
     "flask-jwt-extended",
@@ -22,6 +23,7 @@ dependencies = [
     "geoalchemy2",
     "geopandas",
     "gunicorn",
+    "httpx",
     "msal",
     "psycopg2-binary",
     "pyjwt",
