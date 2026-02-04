@@ -1,0 +1,42 @@
+/*
+ * Layout of the main content
+ */
+body {
+	background-color: var(--ldr-page-background);
+}
+
+.content--header {
+	background: linear-gradient(47deg, rgba(0,75,133,.9) 60%, rgba(8,121,192,.7) 100%);
+	color: #fff;
+	padding: 80px 0 180px;
+}
+
+@media (min-width: 1200px) {
+	.content-container--narrow .content--header .container,
+	.content-container--narrow .content--main .container {
+		max-width: 1000px;
+	}
+}
+
+.content-inner {
+	background-color: #fff;
+	border-radius: 6px 6px 0 0;
+	margin-top: -7rem;
+	padding: 20px;
+}
+
+@media (min-width: 768px) {
+	.content-inner {
+		padding: 50px;
+	}
+}
+
+@media (min-width: 992px) {
+	.content-inner--narrow {
+		padding: 50px 150px;
+	}
+}
+
+.mb-paragraph {
+	margin-bottom: var(--ldr-paragraph-margin);
+}

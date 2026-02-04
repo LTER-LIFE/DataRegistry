@@ -10,9 +10,9 @@ $(document).ready(function() {
      */
     $('#spatial_coverage').click(function() {
         const selectGeoLoc = $('#select-geo-loc');
-        selectGeoLoc.toggleClass('hidden');
+        selectGeoLoc.toggleClass('visually-hidden');
 
-        if (!selectGeoLoc.hasClass('hidden')) {
+        if (!selectGeoLoc.hasClass('visually-hidden')) {
             if (mapInstance === null) {
                 const mapAndLayers = initializeMap();
                 mapInstance = mapAndLayers.map;

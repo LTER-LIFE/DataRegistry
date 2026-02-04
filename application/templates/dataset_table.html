@@ -1,9 +1,9 @@
-{% extends "nioo_bootstrap.html" %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<div class="main-content ps-3" xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
-    <div align="center">
+<div class="mb-5">
+    <div class="text-center">
         <a data-bs-toggle="collapse" href="#collapse-upload" role="button"
            aria-expanded="false" aria-controls="collapse-upload">filters</a>
 
@@ -11,23 +11,23 @@
     <div class="collapse row" id="collapse-upload">
         <div class="col-sm-10">
            <form id="index_search_form">
-               <div class="form-group">
-                   <label for="free">Free text search.</label>
+               <div class="mb-3">
+                   <label for="free" class="form-label">Free text search</label>
                    <input type="text" class="form-control" id="free" name="free">
                </div>
 
-               <div class="form-group">
-                   <label for="amount">Time period:</label>
+               <div class="mb-3">
+                   <label for="amount" class="form-label">Time period</label>
                    <div id="slider-range"></div>
                    <input type="text" class="form-control" id="amount" readonly="">
                    <input type="hidden" id="min_year_input" name="min_year">
                    <input type="hidden" id="max_year_input" name="max_year">
                </div>
 
-               <div class="form-group">
-                   <label for="spatial_coverage">Search on spatial</label>
+               <div class="mb-3">
+                   <label for="spatial_coverage" class="form-label">Search on spatial</label>
                    <input class="form-control" id="spatial_coverage" name="spatial_coverage" type="text" value=""/>
-                   <div class="hidden" id="select-geo-loc"></div>
+                   <div class="visually-hidden map--small mt-3" id="select-geo-loc"></div>
                </div>
            </form>
         </div>
@@ -36,6 +36,9 @@
 
 
 <div class="cardbox" data-add-to-cart-base-url="{{ url_for('main_bp.add_to_cart', dataset_id='') }}"></div>
+{% endblock %}
+
+{% block app_js %}
 <script type="application/javascript">
 
 function serializeObject($form) {
@@ -102,15 +105,15 @@ function addCardToCardBox(dataset) {
     const addToCartUrl = `${baseUrl}${dataset.dataset_id}`;
     // Create the card HTML structure
     var cardHtml = `
-    <div class="card">
+    <div class="card mb-5">
         <div class="card-header">
             <b>${dataset.title}</b> -  - <a href="${addToCartUrl}">Add to Cart</a>
         </div>
         <div class="card-body">
             <p></p>
             <div class="row">
-                <div class="table-responsive col-md-4">
-                    <table class="table table-borderless mb-5">
+                <div class="table-responsive col-md-5">
+                    <table class="table table-borderless">
                         <tbody>
                             <tr>
                                 <th scope="row" class="p-1">Submission date:</th>
@@ -175,7 +178,7 @@ function addCardToCardBox(dataset) {
                         </tbody>
                     </table>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-7">
                     <div>
                         <b>Description: </b>${dataset.description}<br>
                         <b>Keywords: </b>
@@ -195,7 +198,6 @@ function addCardToCardBox(dataset) {
 $('.cardbox').append(cardHtml);
 
 // Load the dataset map
-console.log(dataset);
 loadDatasetMapWithGeoJSON(dataset.dataset_id, dataset.dataset_spatial_coverage.geometry);
 }
 
@@ -252,7 +254,6 @@ $(document).ready(function() {
 
     cleanData();
     debouncedFetchData(formData);
-    console.log(formData);
     });
 });
 

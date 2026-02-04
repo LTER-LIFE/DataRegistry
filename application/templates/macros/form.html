@@ -1,0 +1,30 @@
+{% macro render_field(field, label=true) %}
+    {%- set input_class = '' -%}
+
+    {% if label %}
+        {{ field.label(class='form-label') }} {% if field.flags.required %}*{% endif %}
+    {% endif %}
+
+    {% if field.type == "SelectField" %}
+        {% set input_class = 'form-select' %}
+    {% else %}
+        {% set input_class = 'form-control' %}
+    {% endif %}
+
+    {{
+        field(
+            class=input_class + (' is-invalid' if field.errors else ''),
+            **{ 'aria-describedby': field.id + '-help' }
+        )
+    }}
+
+    {% if field.errors %}
+        <div class="invalid-feedback">{{ field.errors|join(', ') }}</div>
+    {% endif %}
+
+    {% if field.description %}
+        <small class="form-text text-secondary" id="{{ field.id }}-help">
+            {{ field.description }}
+        </small>
+    {% endif %}
+{% endmacro %}

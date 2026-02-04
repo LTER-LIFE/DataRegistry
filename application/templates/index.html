@@ -1,50 +1,21 @@
-{% extends "nioo_bootstrap.html" %}
+{% extends "base.html" %}
+
+{% block vendor_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename ='vendor/leaflet.markercluster/MarkerCluster.css')}}">
+<link rel="stylesheet" href="{{ url_for('static', filename ='vendor/leaflet.markercluster/MarkerCluster.Default.css')}}">
+{% endblock %}
+
+{% block content_container_classes %}content-container--narrow{% endblock %}
 
 {% block content %}
+<div id="map" class="map"></div>
+{% endblock %}
 
-<main>
-    <div class="layout-content">
-        <div class="region region-content">
-            <div class="region-inner region-content-inner">
-                <div class="content--header">
-                    <div class="content--header-inner">
-                        <div class="textual">
-                            <div class="grid-container">
-                                <div class="limit-1-col"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="content--main">
-                    <div class="content--main--main">
-                        <div class="grid-container">
+{% block vendor_js %}
+<script src="{{ url_for('static', filename='vendor/leaflet.markercluster/leaflet.markercluster.js')}}"></script>
+{% endblock %}
 
-                            <div class="limit-1-col content--main--bg-color">
-                                    <div id="map"> </div>
-
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</main>
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script src="{{ url_for('static', filename='js/deps/jquery-3.6.0.js')}}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.4/js/bootstrap-switch.js" data-turbolinks-track="true"></script>
-<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-
-
-<script src="{{ url_for('static', filename='js/leaflet.markercluster.js')}}"></script>
-<script src="{{ url_for('static', filename='js/leaflet.markercluster-src.js')}}"></script>
-
-<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/MarkerCluster.css')}}">
-<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/MarkerCluster.Default.css')}}">
-<link rel="stylesheet" media="print" href="{{ url_for('static', filename ='css/css_V_I-DQgK_4l9rw80Q6_fanPTTbvvy8karZ4pxTsPnoU.css')}}">
-
-
+{% block app_js %}
 <script type="application/javascript">
 var map = L.map('map').setView([52.075919, 5.891922],10)
 
@@ -58,13 +29,11 @@ googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
     maxZoom: 20,
     subdomains:['mt0','mt1','mt2','mt3']
  });
-googleStreets.addTo(map);
 
-googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
    maxZoom: 20,
    subdomains:['mt0','mt1','mt2','mt3']
 });
-googleSat.addTo(map);
 
 // Layer control
 var baseLayers ={
@@ -89,22 +58,31 @@ const geo_json = {{ list_o_geo |tojson | safe}};
 // add a new marker with a popup overtop
 let all_points = [];
 Object.entries(geo_json).forEach(dataset_items => {
-    dataset_id = dataset_items[0];
     dataset = dataset_items[1];
     all_points.push(L.geoJson(dataset.centroid, {
-
         pointToLayer: (feature, latlng) => {
             const div = document.createElement("div");
-            var id_code = dataset_id;
-            div.innerHTML = "<h4>"+dataset.properties.title+"</h4> <br>" +
-                "Description: "+dataset.properties.description+"<br>"+
-                "Temporal coverage: "+dataset.properties.temporal_coverage+"<br>"+
-                "Creator: "+dataset.properties.creator+"<br>"+
-                "<br>";
+            div.innerHTML = `
+                <h2> \
+                    <a class="text-decoration-none" href="${dataset.properties.url}"> \
+                        ${dataset.properties.title} \
+                    </a> \
+                </h2> \
+                <p>
+                    ${dataset.properties.description.substring(0, 125)}... \
+                    <a href="${dataset.properties.url}">read more</a> \
+                </p>
+                <dl> \
+                    <dt>Temporal coverage</dt> \
+                    <dd>${dataset.properties.temporal_coverage}</dd> \
+                    <dt>Creator</dt> \
+                    <dd>${dataset.properties.creator}</dd> \
+                </dl>`
 
             var area_poly = dataset.geometry;
             const button = document.createElement("button");
-            button.innerHTML= "Show Area";
+            button.className = "btn btn-sm btn-primary"
+            button.innerHTML= "Show area";
             button.onclick = function() {
                 if (Areagroup.getLayers().length >=1){
                     Areagroup.clearLayers()

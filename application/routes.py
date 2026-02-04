@@ -31,8 +31,6 @@ url_prefix = f"{proxy_prefix}/".replace("//", "/") if proxy_prefix else "/"
 # Blueprint Configuration
 main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_folder="static", url_prefix=url_prefix)
 
-TITLE = "Veluwe Metadata Portal (Beta)"
-
 
 @main_bp.route('/')
 def home():
@@ -52,13 +50,16 @@ def home():
             dataset_dict = {
                 "centroid": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("centroid", None),
                 "geometry": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("geometry", None),
-                "properties": {"id": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
+                "properties": {"id": es_dataset.get("_source", {}).get("dataset_id", None),
                                "title": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
                                "description": _json_safe_string(es_dataset.get("_source", {}).get("description", None)),
                                "creator": Agent(**es_dataset.get("_source", {}).get("creator", None)).web(),
                                "temporal_coverage":
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start"), None} / "
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}"}}
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start", None)} / "
+                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}",
+                               "url": url_for('main_bp.datasets', dataset_id=es_dataset.get("_source", {}).get("dataset_id"))
+                               }
+            }
 
             datasets_shapes[es_dataset.get("_source").get("dataset_id")] = dataset_dict
 
@@ -66,7 +67,7 @@ def home():
         if user_logged_in:
             user_info = get_userinfo(session.get("access_token"))
 
-        page = render_template('index.html', list_o_geo=datasets_shapes, title=TITLE, user=user_logged_in)
+        page = render_template('index.html', list_o_geo=datasets_shapes, title='Map', user=user_logged_in)
         return page
     except exc.PendingRollbackError as pre:
         db_session.rollback()
@@ -134,7 +135,7 @@ def add_dataset(dataset_id=None):
             # Feedback
             flash(f"Added dataset with title {dataset.title}.", "success")
 
-        page = render_template('dataset_form.html', form=dataset_form, name=name, title=TITLE)
+        page = render_template('dataset_form.html', form=dataset_form, name=name, title='Register your dataset')
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -156,7 +157,7 @@ def datasets(dataset_id=None):
             datasets_table = [Dataset.query.get(dataset_id)]
         else:
             datasets_table = db_session.query(Dataset).all()
-        page = render_template('dataset_table.html', datasets=datasets_table, title=TITLE)
+        page = render_template('dataset_table.html', datasets=datasets_table, title='Datasets')
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -166,7 +167,7 @@ def datasets(dataset_id=None):
 def cart():
     dataset_ids = session.get('cart', [])
     cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
-    return render_template('cart.html', cart=cart_items)
+    return render_template('cart.html', cart=cart_items, title='Your Shopping Cart')
 
 @main_bp.route('/cart/add/<dataset_id>')
 def add_to_cart(dataset_id):
@@ -321,7 +322,8 @@ def dashboard():
 
     return render_template('dashboard.html',
                            database_datasets_stats=database_datasets_stats,
-                           index_datasets_stats=index_datasets_stats)
+                           index_datasets_stats=index_datasets_stats,
+                           title='Dashboard')
 
 @main_bp.context_processor
 def cart_item_count():
@@ -389,7 +391,7 @@ def about():
     Renders a simple about page.
 
     :return: rendered flask template from templates/about.html    """
-    return render_template('about.html', title=TITLE)
+    return render_template('about.html', title='About the Veluwe Metadata Portal')
 
 
 @main_bp.route('/instructions')
@@ -399,17 +401,17 @@ def instructions():
 
     :return: rendered flask template from templates/veluwe-metadata-portal-instructions.html
     """
-    return render_template('veluwe-metadata-portal-instructions.html', title=TITLE)
+    return render_template('veluwe-metadata-portal-instructions.html')
 
 
 @main_bp.route('/contact')
 def contact():
     """
-    Renders a simple contact page.
+    Redirects to about page.
 
-    :return: rendered flask template from templates/contact.html
+    :return: A redirect response to the about page
     """
-    return render_template('about.html', title=TITLE)
+    return redirect(url_for("main_bp.about"))
 
 
 @main_bp.errorhandler(404)

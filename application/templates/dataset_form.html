@@ -1,4 +1,10 @@
-{% extends "nioo_bootstrap.html" %}
+{% extends "base.html" %}
+
+{% block content_container_classes %}content-container--narrow{% endblock %}
+
+{% block content_classes %}content-inner--narrow{% endblock %}
+
+{% from 'macros/form.html' import render_field %}
 
 {% block content %}
 {% if form.errors | length > 0 %}
@@ -25,384 +31,226 @@
         </div>
     </div>
 </div>
+{% endif %}
+
+<p>
+    Please follow these <a href="{{url_for('main_bp.instructions')}}" target="popup">instructions</a>
+    when registering your dataset in the Veluwe Metadata Portal.
+</p>
+
+<form action="" enctype="multipart/form-data" method="POST" novalidate>
+    {{form.hidden_tag()}}
+
+    <div class="mb-3">
+        {{ render_field(form.release_date) }}
+    </div>
+
+    <div class="mb-paragraph">
+        {{ render_field(form.language) }}
+    </div>
+
+    <h2>Metadata provider</h2>
+    <p class="mb-3">
+        A metadata provider is the person who created and provided the documentation and other metadata for a dataset. In other words, who are you?
+    </p>
+
+    <div class="mb-3">
+        {{ render_field(form.metadata_provider_name) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.metadata_provider_organisation) }}
+    </div>
+
+    <div class="mb-paragraph">
+        {{ render_field(form.metadata_provider_mbox) }}
+    </div>
+
+    <h2>Creator</h2>
+    <p class="mb-3">
+        A creator is the author of the dataset, who is responsible for
+        intellectual input into its creation. The creator can be a person
+        or an organisation.
+    </p>
+
+    <div class="mb-3">
+        {{ render_field(form.creator_organisation) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.creator_name) }}
+    </div>
+
+    <div class="mb-paragraph">
+        {{ render_field(form.creator_mbox) }}
+    </div>
+
+    <h2>Contact point</h2>
+    <p class="mb-3">
+        A contact point is a person or position at an organisation (e.g.
+        data steward, data manager) to contact with questions about the use
+        and/or interpretation of a dataset.
+    </p>
+
+    <div class="mb-3">
+        {{ render_field(form.dataset_contact_point_name) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.dataset_contact_point_organisation) }}
+    </div>
+
+    <div class="mb-paragraph">
+        {{ render_field(form.dataset_contact_point_mbox) }}
+    </div>
+
+    <h2>Describe your dataset</h2>
+
+    <div class="mb-3">
+        {{ render_field(form.title) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.description) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.keywords) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.resource_type) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.license) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.access_rights) }}
+    </div>
+
+    <p class="fst-italic">
+        The following fields are only relevant when your dataset is
+        published/shared online.
+    </p>
+
+    <div class="mb-3">
+        {{ render_field(form.publisher) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.public_id) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.landing_page) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.temporal_coverage_start) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.temporal_coverage_end) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.temporal_resolution) }}
+    </div>
+
+    <ul class="nav nav-tabs" id="spatial-resolution-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button aria-controls="spatial-map" aria-selected="true" class="nav-link active"
+                    data-bs-target="#spatial-map"
+                    data-bs-toggle="tab" id="spatial-map-tab" role="tab" type="button">
+                Map
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button aria-controls="spatial-upload" aria-selected="false" class="nav-link"
+                    data-bs-target="#spatial-upload"
+                    data-bs-toggle="tab" id="spatial-upload-tab" role="tab" type="button">
+                Shapefile
+            </button>
+        </li>
+    </ul>
+    <div class="tab-content" id="map_content">
+        <div
+            id="spatial-map"
+            class="tab-pane fade show active"
+            role="tabpanel"
+            aria-labelledby="spatial-map-tab"
+        >
+
+            <div class="mb-3">
+                {{ render_field(form.spatial_coverage) }}
+            </div>
+
+            <div class="visually-hidden map--small my-3" id="select-geo-loc"></div>
+        </div>
+
+        <div
+            id="spatial-upload"
+            class="tab-pane fade"
+            role="tabpanel"
+            aria-labelledby="spatial-upload-tab"
+        >
+            <div class="mb-3">
+                {{ render_field(form.spatial_coverage_shapefile) }}
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.spatial_resolution) }}
+    </div>
+
+    <div class="mb-3">
+        {{ render_field(form.taxonomic_coverage) }}
+    </div>
+
+    <div class="mb-paragraph">
+        {{ form.consent.label(class="form-label") }} {% if form.consent.flags.required %}*{% endif %}
+
+        <p class="mb-3">
+            Before you submit your metadata, please read the following terms and conditions.
+            By submitting this form, you
+        </p>
+
+        <ul class="text-formatted">
+            <li>
+                confirm that you have the rights and/or permissions to submit
+                the metadata provided above to the Veluwe Metadata Portal;
+            </li>
+            <li>
+                consent that the metadata may be archived at NIOO-KNAW as part
+                of the Veluwe Metadata Portal;
+            </li>
+            <li>
+                consent that the metadata, including names and email addresses
+                of yourselves and others, may be displayed online on the
+                Veluwe Metadata Portal.
+            </li>
+        </ul>
+
+        {% for subfield in form.consent %}
+            <div class="form-check">
+                {{ subfield(class="form-check-input") }}
+                {{ subfield.label(class="form-check-label") }}
+            </div>
+        {% endfor %}
+    </div>
+
+    {{form.submit_button(class="btn btn-primary")}}
+</form>
+
+{% endblock %}
+
+{% block app_js %}
 <script type="text/javascript">
     $(window).on('load', function() {
         $('#staticBackdrop').modal('show');
     });
 </script>
-{% endif %}
-<div align="center">
-    <h1> Register your dataset </h1>
-    <br/>
-
-    <p>
-        Please follow these <a href="{{url_for('main_bp.instructions')}}" target="popup">instructions</a>
-        when registering your dataset in the Veluwe Metadata Portal.
-    </p>
-</div>
-<form action="" enctype="multipart/form-data" method="POST" novalidate>
-    <br/>
-    <div class="container">
-        {{form.hidden_tag()}}
-
-        <div class="form-group row">
-            {{form.release_date.label}} {{ "*" if form.release_date.validators | length > 0 else "" }}
-            {{form.release_date}}
-            <small class="form-text text-muted" id="release_dateeHelp">
-                {{ form.release_date.description + " " + " ".join(form.release_date.errors) }}
-            </small>
-        </div>
-        <br>
-        <div class="form-group row">
-            {{form.language.label}} {{ "*" if form.language.validators | length > 0 else "" }}
-            {{form.language}}
-            <small class="form-text text-muted" id="languageHelp">
-                {{ form.language.description + " " + " ".join(form.language.errors) }}
-            </small>
-        </div>
-        <br>
-
-
-        <!-- Metadata provider -->
-        <div class="border rounded-2 m-1">
-            <div class="jumbotron bg-light">
-                <div class="mt-0 m-3">
-                    <h2 class="section">Metadata provider</h2>
-                    <p class="lead">A metadata provider is the person who created and provided the documentation and
-                        other metadata for a
-                        dataset. In other words, who are you?</p>
-                </div>
-            </div>
-            <div class="row m-3">
-                <div class="form-group row">
-                    {{form.metadata_provider_name.label}} {{ "*" if form.metadata_provider_name.validators | length > 0
-                    else "" }}
-                    {{form.metadata_provider_name(size=80)}}
-                    <small class="form-text text-muted" id="metadata_provider_nameHelp">
-                        {{ form.metadata_provider_name.description + " " + "
-                        ".join(form.metadata_provider_name.errors) }}
-                    </small>
-                </div>
-
-                <div class="form-group row">
-                    {{form.metadata_provider_organisation.label}} {{ "*" if
-                    form.metadata_provider_organisation.validators | length > 0
-                    else "" }}
-                    {{form.metadata_provider_organisation(size=80)}}
-                    <small class="form-text text-muted" id="metadata_metadata_provider_organisationHelp">
-                        {{ form.metadata_provider_organisation.description + " " + "
-                        ".join(form.metadata_provider_organisation.errors) }}
-                    </small>
-                </div>
-
-                <div class="form-group row">
-                    {{form.metadata_provider_mbox.label}} {{ "*" if form.metadata_provider_mbox.validators | length > 0
-                    else "" }}
-                    {{form.metadata_provider_mbox(size=80)}}
-                    <small class="form-text text-muted" id="metadata_provider_mboxHelp">
-                        {{ form.metadata_provider_mbox.description + " " + " ".join(form.metadata_provider_mbox.errors)
-                        }}
-                    </small>
-                </div>
-            </div>
-        </div>
-        <br>
-        <!-- Creator -->
-        <div class="border rounded-2 m-1">
-            <div class="jumbotron bg-light">
-                <div class="mt-0 m-3">
-                    <h2 class="section">Creator</h2>
-                    <p class="lead">A creator is the author of the dataset, who is responsible for intellectual input
-                        into its creation.
-                        The creator can be a person or an organisation.</p>
-                </div>
-            </div>
-
-            <div class="row m-3">
-                <div class="form-group row">
-
-                    {{form.creator_organisation.label}} {{ "*" if form.creator_organisation.validators | length > 0 else
-                    "" }}<br>
-                    {{form.creator_organisation(size=80)}}
-                    <small class="form-text text-muted" id="creator_organisationHelp">
-                        {{ form.creator_organisation.description + " " + " ".join(form.creator_organisation.errors) }}
-                    </small>
-                </div>
-                <div class="form-group row">
-
-                    {{form.creator_name.label}} {{ "*" if form.creator_name.validators | length > 0 else "" }}<br>
-                    {{form.creator_name(size=80)}}
-                    <small class="form-text text-muted" id="creator_nameHelp">
-                        {{ form.creator_name.description + " " + " ".join(form.creator_name.errors) }}
-                    </small>
-                </div>
-                <div class="form-group row">
-                    {{form.creator_mbox.label}} {{ "*" if form.creator_mbox.validators | length > 0 else "" }}<br>
-                    {{form.creator_mbox(size=80)}}
-                    <small class="form-text text-muted" id="creator_mboxHelp">
-                        {{ form.creator_mbox.description + " " + " ".join(form.creator_mbox.errors) }}
-                    </small>
-                </div>
-            </div>
-        </div>
-        <br>
-        <!-- Contact point -->
-        <div class="border rounded-2 m-1">
-            <div class="jumbotron bg-light">
-                <div class="mt-0 m-3">
-                    <h2 class="section">Contact point</h2>
-                    <p class="lead">A contact point is a person or position at an organisation (e.g., data steward, data
-                        manager) to
-                        contact with questions about the use and/or interpretation of a dataset..</p>
-                </div>
-            </div>
-            <div class="row m-3">
-                <div class="form-group row">
-                    {{form.dataset_contact_point_name.label}}
-                    {{ "*" if form.dataset_contact_point_name.validators | length > 0 else "" }}
-                    <br>
-                    {{form.dataset_contact_point_name(size=80)}}
-                    <small class="form-text text-muted" id="dataset_contact_point_nameHelp">
-                        {{ form.dataset_contact_point_name.description +
-                        " " +
-                        " ".join(form.dataset_contact_point_name.errors)
-                        }}
-                    </small>
-                </div>
-                <div class="form-group row">
-                    {{ form.dataset_contact_point_organisation.label}}
-                    {{ "*" if form.dataset_contact_point_organisation.validators | length > 0 else "" }}
-                    <br>
-                    {{form.dataset_contact_point_organisation(size=80)}}
-                    <small class="form-text text-muted" id="dataset_contact_point_organisationHelp">
-                        {{ form.dataset_contact_point_organisation.description +
-                        " " +
-                        " ".join(form.dataset_contact_point_organisation.errors)
-                        }}
-                    </small>
-                </div>
-                <div class="form-group row">
-                    {{ form.dataset_contact_point_mbox.label}}
-                    {{ "*" if form.dataset_contact_point_mbox.validators | length > 0 else "" }}
-                    <br>
-                    {{form.dataset_contact_point_mbox(size=80)}}
-                    <small class="form-text text-muted" id="dataset_contact_point_mboxHelp">
-                        {{ form.dataset_contact_point_mbox.description +
-                        " " +
-                        " ".join(form.dataset_contact_point_mbox.errors)
-                        }}
-                    </small>
-                </div>
-            </div>
-        </div>
-        <br>
-        <div class="border rounded-2 m-1">
-            <div class="jumbotron bg-light">
-                <div class="mt-0 m-3">
-                    <h2 class="section">Describe your dataset</h2>
-                </div>
-            </div>
-            <div class="row m-3">
-                <div class="form-group row">
-                    {{form.title.label}} {{ "*" if form.title.validators | length > 0 else "" }}
-                    {{form.title(size=80)}}
-                    <small class="form-text text-muted" id="titleHelp">
-                        {{ form.title.description + " " + " ".join(form.title.errors) }}
-                    </small>
-                </div>
-                <br>
-                <div class="form-group row">
-                    {{form.description.label}} {{ "*" if form.description.validators | length > 0 else "" }}
-                    {{form.description(size=80)}}
-                    <small class="form-text text-muted" id="descriptionHelp">
-                        {{ form.description.description + " " + " ".join(form.description.errors) }}
-                    </small>
-                </div>
-                <br>
-
-                <div class="form-group row">
-                    {{form.keywords.label}} {{ "*" if form.keywords.validators | length > 0 else "" }}<br>
-                    {{form.keywords(size=80)}}
-                    <small class="form-text text-muted" id="keywordsHelp">
-                        {{ form.keywords.description + " " + " ".join(form.keywords.errors) }}
-                    </small>
-                </div>
-                <br>
-
-                <div class="form-group row">
-                    {{form.resource_type.label}} {{ "*" if form.resource_type.validators | length > 0 else "" }}
-                    {{form.resource_type(size=80)}}
-                    <small class="form-text text-muted" id="resource_typeHelp">
-                        {{ form.resource_type.description + " " + " ".join(form.resource_type.errors) }}
-                    </small>
-                </div>
-                <br>
-                <div class="form-group row">
-                    {{form.license.label}} {{ "*" if form.license.validators | length > 0 else "" }}<br>
-                    {{form.license(size=80)}}
-                    <small class="form-text text-muted" id="licenseHelp">
-                        {{ form.license.description + " " + " ".join(form.license.errors) }}
-                    </small>
-                </div>
-                <br>
-                <div class="form-group row">
-                    {{form.access_rights.label}} {{ "*" if form.access_rights.validators | length > 0 else "" }}<br>
-                    {{form.access_rights(size=80)}}
-                    <small class="form-text text-muted" id="access_rightsHelp">
-                        {{ form.access_rights.description + " " + " ".join(form.access_rights.errors) }}
-                    </small>
-                </div>
-                <hr class="my-4">
-                <i>The following fields are only relevant when your dataset is published/shared online.</i>
-
-                <div class="form-group row">
-                    {{form.publisher.label}} {{ "*" if form.publisher.validators | length > 0 else "" }}<br>
-                    {{form.publisher(size=80)}}
-                    <small class="form-text text-muted" id="publisherHelp">
-                        {{ form.publisher.description + " " + " ".join(form.publisher.errors) }}
-                    </small>
-                </div>
-                <br>
-                <div class="form-group row">
-                    {{form.public_id.label}} {{ "*" if form.public_id.validators | length > 0 else "" }}<br>
-                    {{form.public_id(size=80)}}
-                    <small class="form-text text-muted" id="public_idHelp">
-                        {{ form.public_id.description + " " + " ".join(form.public_id.errors) }}
-                    </small>
-                </div>
-                <div class="form-group row">
-                    {{form.landing_page.label}} {{ "*" if form.landing_page.validators | length > 0 else "" }}<br>
-                    {{form.landing_page(size=80)}}
-                    <small class="form-text text-muted" id="landing_pageHelp">
-                        {{ form.landing_page.description + " " + " ".join(form.landing_page.errors) }}
-                    </small>
-                </div>
-                <br>
-                <hr class="my-4">
-                <div class="form-group row">
-                    {{form.temporal_coverage_start.label}}
-                    {{ "*" if form.temporal_coverage_start.validators | length > 0 else "" }}
-                    <br>
-                    {{form.temporal_coverage_start(size=80)}}
-                    <small class="form-text text-muted" id="temporal_coverageStartHelp">
-                        {{ form.temporal_coverage_start.description + " " + "".join(form.temporal_coverage_end.errors)
-                        }}
-                    </small>
-                    {{form.temporal_coverage_end.label}} {{ "*" if form.temporal_coverage_end.validators | length > 0
-                    else
-                    "" }}<br>
-                    {{form.temporal_coverage_end(size=80)}}
-                    <small class="form-text text-muted" id="temporal_coverageEndHelp">
-                        {{ form.temporal_coverage_end.description + " " + " ".join(form.temporal_coverage_end.errors) }}
-                    </small>
-                </div>
-                <br>
-                <div class="form-group row">
-                    {{form.temporal_resolution.label}} {{ "*" if form.temporal_resolution.validators | length > 0 else
-                    ""
-                    }}<br>
-                    {{form.temporal_resolution(size=80)}}
-                    <small class="form-text text-muted" id="temporal_resolutionHelp">
-                        {{ form.temporal_resolution.description + " " + " ".join(form.temporal_resolution.errors) }}
-                    </small>
-                </div>
-                <br>
-                <div class="form-group row">
-                    <ul class="nav nav-tabs" id="spatial-resolution-tab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button aria-controls="spatial-map" aria-selected="true" class="nav-link active"
-                                    data-bs-target="#spatial-map"
-                                    data-bs-toggle="tab" id="spatial-map-tab" role="tab" type="button">
-                                Map
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button aria-controls="spatial-upload" aria-selected="false" class="nav-link"
-                                    data-bs-target="#spatial-upload"
-                                    data-bs-toggle="tab" id="spatial-upload-tab" role="tab" type="button">
-                                Shapefile
-                            </button>
-                        </li>
-                    </ul>
-                    <div class="tab-content" id="map_content">
-                        <div aria-labelledby="spatial-map-tab" class="tab-pane fade show active" id="spatial-map"
-                             role="tabpanel">
-
-                            {{ form.spatial_coverage.label }}
-                            <br>
-                            {{ "*" if form.spatial_coverage.validators | length > 0 else "" }}
-                            {{ form.spatial_coverage(size=116, class_=(" is-invalid" if form.spatial_coverage.errors
-                            else "")) }}
-                            <br>
-                            <small class="form-text text-muted" id="spatial_coverageHelp">
-                                {{ form.spatial_coverage.description + " " + " ".join(form.spatial_coverage.errors) + ""
-                                }}
-                            </small>
-                            <div class="hidden" id="select-geo-loc"></div>
-                        </div>
-                        <div aria-labelledby="spatial-upload-tab" class="tab-pane fade" id="spatial-upload"
-                             role="tabpanel">
-                            {{ form.spatial_coverage_shapefile.label }}
-                            <br>
-                            {{ "*" if form.spatial_coverage_shapefile.validators | length > 0 else "" }}
-                            {{ form.spatial_coverage_shapefile(size=116, class_=(" is-invalid" if
-                            form.spatial_coverage_shapefile.errors
-                            else "")) }}
-                            <br>
-                            <small class="form-text text-muted" id="spatial_coverage_shapefileHelp">
-                                {{ form.spatial_coverage_shapefile.description + " " + "
-                                ".join(form.spatial_coverage_shapefile.errors) + "" }}
-                            </small>
-
-                        </div>
-                    </div>
-                </div>
-                <br/>
-                <div class="form-group row">
-                    {{form.spatial_resolution.label}} {{ "*" if form.spatial_resolution.validators | length > 0 else ""
-                    }}<br>
-                    {{form.spatial_resolution(size=80)}}
-                    <small class="form-text text-muted" id="spatial_resolutionHelp">
-                        {{ form.spatial_resolution.description + " " + " ".join(form.spatial_resolution.errors) }}
-                    </small>
-                </div>
-
-                <br>
-                <div class="form-group row">
-                    {{form.taxonomic_coverage.label}} {{ "*" if form.taxonomic_coverage.validators | length > 0 else ""
-                    }}<br>
-                    {{form.taxonomic_coverage}}
-                    <small class="form-text text-muted" id="taxonomic_coverageHelp">
-                        {{ form.taxonomic_coverage.description + " " + " ".join(form.taxonomic_coverage.errors) }}
-                    </small>
-                </div>
-                <br>
-                <div class="form-group row">
-                    {{form.consent.label}} {{ "*" if form.consent.validators | length > 0 else "" }}<br>
-                    Before you submit your metadata, please read the following terms and conditions.
-                    By submitting this form, you
-                    <p>
-                    <ul style="list-style-type:disc; padding-left: 50px;">
-                        <li>confirm that you have the rights and/or permissions to submit the metadata provided above
-                            to the Veluwe Metadata Portal;
-                        </li>
-                        <li>consent that the metadata may be archived at NIOO-KNAW as part of the Veluwe
-                            Metadata Portal;
-                        </li>
-                        <li>consent that the metadata, including names and email addresses of yourselves and others, may
-                            be displayed online on the Veluwe Metadata Portal.
-                        </li>
-                    </ul>
-                    {{form.consent }}
-                    <small class="form-text text-muted" id="consentHelp">
-                        {{ form.consent.description + " " + " ".join(form.consent.errors) }}
-                    </small>
-                </div>
-            </div>
-        </div>
-
-        {{form.submit_button()}}
-    </div>
-</form>
-
 {% endblock %}

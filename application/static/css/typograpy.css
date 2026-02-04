@@ -1,0 +1,67 @@
+/*
+ * Typography
+ */
+
+.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+	margin-bottom: 0.6rem;
+  font-family: 'EB Garamond', serif;
+	font-weight: 600;
+	line-height: 1.25;
+}
+
+h1, .h1 {
+  font-size: 3rem;
+}
+
+.h2, h2 {
+  font-size: 1.75rem;
+}
+
+.h3, h3 {
+  font-size: 1.5rem;
+}
+
+.h4, h4 {
+  font-size: 1.25rem;
+}
+
+b, strong {
+	font-weight: 600;
+}
+
+p {
+	margin-bottom: var(--ldr-paragraph-margin);
+}
+
+.text--medium {
+	font-size: 1rem;
+	line-height: 1.8;
+}
+
+ul.text-formatted {
+	font-size: 1rem;
+	line-height: 1.8;
+	list-style: none;
+	padding-left: 0;
+}
+
+ul.text-formatted li {
+	padding-left: 2rem;
+	background-position: 0 0.7rem;
+	background-repeat: no-repeat;
+	background-image: url(../img/bullet-blue.svg);
+}
+
+a {
+	text-underline-offset: 40%;
+}
+
+a:focus,
+a:hover {
+  text-decoration: none;
+}
+
+::selection {
+	background: #fdd447;
+	text-shadow: none;
+}

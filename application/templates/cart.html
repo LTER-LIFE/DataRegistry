@@ -1,24 +1,28 @@
-{% extends "nioo_bootstrap.html" %}
+{% extends "base.html" %}
 
 {% block content %}
-    <h1>Your Shopping Cart</h1>
-
     {% if cart %}
-        <ul>
+        <ul class="mb-paragraph text-formatted">
         {% for item in cart %}
             <li>
-                {{ item.title }} (ID: {{ item.dataset_id }})
-                <a href="{{ url_for('main_bp.remove_from_cart', dataset_id=item.dataset_id) }}">[Remove]</a>
+                {{ item.title }}
+                <a class="ps-2" href="{{ url_for('main_bp.remove_from_cart', dataset_id=item.dataset_id) }}">Remove</a>
             </li>
         {% endfor %}
         </ul>
 
-        <a href="{{ url_for('main_bp.export_cart') }}">Export Cart</a><br><br>
-        <a href="{{ url_for('main_bp.empty_cart') }}">Empty Cart</a>
+        <ul class="list-inline mb-5">
+            <li class="list-inline-item">
+                <a class="btn btn-primary" href="{{ url_for('main_bp.export_cart') }}">Export Cart</a>
+            </li>
+            <li class="list-inline-item">
+                <a class="btn btn-outline-secondary" href="{{ url_for('main_bp.empty_cart') }}">Empty Cart</a>
+            </li>
+        </ul>
     {% else %}
         <p>Your cart is empty.</p>
     {% endif %}
 
-    <br><a href="{{ url_for('main_bp.datasets') }}">Back to datasets</a>
+    <a href="{{ url_for('main_bp.datasets') }}">Back to datasets</a>
 {% endblock %}
 

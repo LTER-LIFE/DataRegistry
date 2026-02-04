@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" href="{{url_for('static', filename='img/favicon.ico')}}" type="image/vnd.microsoft.icon">
+        <title>{{ title }} | Veluwe Metadata Portal (beta)</title>
+
+        <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}"/>
+        <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap-icons.min.1.13.1.css')}}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css')}}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet.draw/leaflet.draw.css')}}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet-control-geocoder/Control.Geocoder.min.css')}}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='vendor/jquery-ui/jquery-ui.1.14.1.css')}}">
+
+        {% block vendor_css %}{% endblock %}
+
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css')}}">
+
+        {% block app_css %}{% endblock %}
+    </head>
+    <body>
+        {% include "partials/header.html" %}
+
+        <main class="content {% block content_container_classes %}{% endblock %}">
+            <div class="content--header">
+                <div class="container">
+                    <h1 class="text-white">{{ title }}</h1>
+                </div>
+            </div>
+
+            <div class="content--main">
+                <div class="container">
+                    <div class="content-inner {% block content_classes %}{% endblock %}">
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        {% include "partials/footer.html" %}
+
+        <!-- Modal -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+                {% if category == "success" %}
+                    <div aria-hidden="false" aria-labelledby="successBackdropLabel" class="modal fade" data-bs-backdrop="static"
+                         data-bs-keyboard="false" id="successBackdrop" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <i class="bi bi-check-circle text-success"></i>
+
+                                    <h5 class="modal-title" id="successBackdropLabel">&nbsp;Success</h5>
+                                    <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                                </div>
+                                <div class="modal-body">
+                                    {{ message }}
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-primary" data-bs-dismiss="modal" type="button">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+    </body>
+
+    <script src="{{ url_for('static', filename='vendor/jquery/jquery-3.7.1.js')}}"></script>
+    <script src="{{ url_for('static', filename='vendor/jquery-ui/jquery-ui.1.14.1.js')}}"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js')}}"></script>
+    <script src="{{ url_for('static', filename='vendor/leaflet.draw/leaflet.draw.js')}}"></script>
+    <script src="{{ url_for('static', filename='vendor/leaflet-control-geocoder/Control.Geocoder.min.js')}}"></script>
+    <script src="{{ url_for('static', filename='vendor/openlayers/ol.min.js')}}"></script>
+
+    {% block vendor_js %}{% endblock %}
+
+    <script type="text/javascript">
+        $(window).on('load', function() {
+            $('#successBackdrop').modal('show');
+        });
+    </script>
+
+    <script src="{{ url_for('static', filename='js/dataentry.js')}}"></script>
+    <script src="{{ url_for('static', filename='js/popover.js')}}"></script>
+
+    {% block app_js %}{% endblock %}
+</html>
