@@ -11,7 +11,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from wtforms import StringField, SelectField, RadioField
 from wtforms.fields.simple import SubmitField, TextAreaField
-from wtforms.validators import DataRequired, AnyOf, ValidationError
+from wtforms.validators import DataRequired, AnyOf, ValidationError, URL
 
 from application.models import Dataset, Agent, Location, LicenseDocument, Keyword
 
@@ -285,13 +285,15 @@ class DatasetForm(FlaskForm):
                                                     mbox=self.creator_mbox.raw_data[0])
         # dataset_contact_point -> Agent
         dataset.dataset_contact_point = Agent.add_or_update_agent(name=self.dataset_contact_point_name.raw_data[0],
-                                                                  organisation=self.dataset_contact_point_organisation.raw_data[0],
+                                                                  organisation=
+                                                                  self.dataset_contact_point_organisation.raw_data[0],
                                                                   mbox=self.dataset_contact_point_mbox.raw_data[0])
 
         # dataset_contact_point -> Agent
         dataset.dataset_metadata_provider = Agent.add_or_update_agent(name=self.metadata_provider_name.raw_data[0],
                                                                       mbox=self.metadata_provider_mbox.raw_data[0],
-                                                                      organisation=self.metadata_provider_organisation.raw_data[0])
+                                                                      organisation=
+                                                                      self.metadata_provider_organisation.raw_data[0])
 
         # publisher -> Agent
         dataset.dataset_publisher = Agent.add_or_update_agent(organisation=self.publisher.raw_data[0])
@@ -304,7 +306,8 @@ class DatasetForm(FlaskForm):
             dataset.dataset_spatial_coverage = Location.from_shapefile(
                 request.files[self.spatial_coverage_shapefile.name])
         else:
-            dataset.dataset_spatial_coverage = Location.add_or_update_location(geometry=self.spatial_coverage.raw_data[0])
+            dataset.dataset_spatial_coverage = Location.add_or_update_location(
+                geometry=self.spatial_coverage.raw_data[0])
 
         # licence -> LicenceDocument
         if self.license.raw_data[0] != '':
@@ -321,26 +324,27 @@ class DatasetForm(FlaskForm):
         """
 
         # Reset the form
-        if dataset.creator.type == 'Organisation':
-            self.creator_organisation.data = dataset.creator.name
-            self.creator_mbox.data = dataset.creator.mbox
-        elif dataset.creator.type == 'Person':
-            self.creator_name.data = dataset.creator.name
-            self.creator_mbox.data = dataset.creator.mbox
-
-        if dataset.dataset_contact_point.type == 'Organisation':
-            self.dataset_contact_point_organisation.data = dataset.dataset_contact_point.name
-            self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
-        elif dataset.dataset_contact_point.type == 'Person':
-            self.dataset_contact_point_name.data = dataset.dataset_contact_point.name
-            self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
-
-        if dataset.dataset_metadata_provider.type == 'Organisation':
-            self.metadata_provider_organisation.data = dataset.dataset_metadata_provider.name
-            self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
-        elif dataset.dataset_metadata_provider.type == 'Person':
-            self.metadata_provider_name.data = dataset.dataset_metadata_provider.name
-            self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
+        if dataset.creator:
+            if dataset.creator.type == 'Organisation':
+                self.creator_organisation.data = dataset.creator.name
+                self.creator_mbox.data = dataset.creator.mbox
+            elif dataset.creator.type == 'Person':
+                self.creator_name.data = dataset.creator.name
+                self.creator_mbox.data = dataset.creator.mbox
+        if dataset.dataset_contact_point:
+            if dataset.dataset_contact_point.type == 'Organisation':
+                self.dataset_contact_point_organisation.data = dataset.dataset_contact_point.name
+                self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
+            elif dataset.dataset_contact_point.type == 'Person':
+                self.dataset_contact_point_name.data = dataset.dataset_contact_point.name
+                self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
+        if dataset.dataset_metadata_provider:
+            if dataset.dataset_metadata_provider.type == 'Organisation':
+                self.metadata_provider_organisation.data = dataset.dataset_metadata_provider.name
+                self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
+            elif dataset.dataset_metadata_provider.type == 'Person':
+                self.metadata_provider_name.data = dataset.dataset_metadata_provider.name
+                self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
 
         if dataset.dataset_publisher:
             self.publisher.data = dataset.dataset_publisher.name
@@ -366,3 +370,76 @@ class DatasetForm(FlaskForm):
         self.temporal_resolution.data = dataset.temporal_resolution
         self.spatial_resolution.data = dataset.spatial_resolution
         self.access_rights.data = dataset.access_rights
+
+
+class LlmForm(FlaskForm):
+    dataset_url = StringField("Dataset url", validators=[DataRequired(), URL()], description="The web page (URL) that can be "
+                                                                        "navigated to in a web browser to "
+                                                                        "gain access to the dataset.")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def to_dataset(self, ai_response, dataset=None):
+        if not dataset:
+            dataset = Dataset()
+
+        # 1. Extract and Clean the inner 'result' dict
+        # We turn 'Metadata language' -> 'metadata_language'
+        raw_result = ai_response.get('result', {})
+        data = {
+            k.lower().replace(" ", "_"): str(v).strip().rstrip(';')
+            for k, v in raw_result.items()
+        }
+
+        dataset.modified = datetime.now()
+        dataset.title = data.get('title')
+        dataset.description = data.get('description')
+
+        dataset.release_date = parse_times(data.get('metadata_date'))
+        dataset.language = data.get('metadata_language', 'English')
+        dataset.resource_type = data.get('resource_type', 'dataset')
+
+        dataset.temporal_coverage_start = parse_times(data.get('temporal_coverage'))
+        dataset.temporal_resolution = data.get('temporal_resolution')
+        dataset.spatial_resolution = data.get('spatial_resolution')
+
+        dataset.access_rights = data.get('access_rights')
+        dataset.landing_page = data.get('landing_page')
+        dataset.public_id = data.get('unique_identifier')
+
+        def get_first_name(val):
+            return val.split(';')[0].strip() if val and val.lower() != 'n/a' else None
+
+        creator_name = get_first_name(data.get('data_creator'))
+        if creator_name:
+            dataset.creator = Agent.add_or_update_agent(
+                name=creator_name,
+                persist=False
+            )
+
+        contact_name = get_first_name(data.get('data_contact_point'))
+        if contact_name:
+            dataset.dataset_contact_point = Agent.add_or_update_agent(
+                name=contact_name,
+                persist=False
+            )
+
+        publisher_name = get_first_name(data.get('data_publisher'))
+        if publisher_name:
+            dataset.dataset_publisher = Agent.add_or_update_agent(
+                organisation=publisher_name,
+                persist=False
+            )
+
+        kw_raw = data.get('keywords', '')
+        if kw_raw and kw_raw.lower() != 'n/a':
+            # Replace semicolons with commas to standardize for your Keyword tool
+            clean_kws = kw_raw.replace(';', ',')
+            dataset.dataset_keywords = Keyword.add_or_update_keywords(keyword_names=clean_kws, persist=False)
+
+        lic_code = data.get('license')
+        if lic_code and lic_code.lower() != 'n/a':
+            dataset.dataset_license = LicenseDocument(code=lic_code)
+
+        return dataset

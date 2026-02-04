@@ -19,9 +19,10 @@ from sqlalchemy import exc
 from application import search_index
 from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
-from application.forms import DatasetForm
+from application.forms import DatasetForm, LlmForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
     LicenseDocument, MediaType, Location
+from application.services import LlmMetadataService
 
 # Blueprint Configuration
 # Here the static folder and the templates folder are annotated
@@ -94,6 +95,7 @@ def add_dataset(dataset_id=None):
     try:
         name = None
         dataset_form = DatasetForm()
+        llm_form = LlmForm()
         dataset = None
 
         # Delete the dataset or edit
@@ -116,6 +118,7 @@ def add_dataset(dataset_id=None):
             elif request.url_rule.rule.find("edit") > -1 or request.url_rule.rule.find("copy") > -1:
                 dataset_form.from_dataset(dataset)
 
+
         # If the form validates
         if dataset_form.validate_on_submit():
             if request.url_rule.rule.find("edit") > -1:
@@ -134,11 +137,52 @@ def add_dataset(dataset_id=None):
             # Feedback
             flash(f"Added dataset with title {dataset.title}.", "success")
 
-        page = render_template('dataset_form.html', form=dataset_form, name=name, title=TITLE)
+        page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title=TITLE)
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
+
+@main_bp.route('/dataset/from-ai', methods=['POST'])
+async def dataset_from_ai():
+    """
+    Bootstrap a dataset form using AI-extracted metadata from a URL.
+
+    This endpoint acts as a bridge between an LLM-driven extraction service
+    and the standard dataset creation workflow. It performs the following steps:
+    1. Validates the incoming URL/extraction request via LlmForm.
+    2. Invokes the LLM service to parse the target landing page into a Dataset entity.
+    3. Transfers the resulting Dataset attributes into a standard DatasetForm.
+    4. Renders the main dataset edit page, allowing the user to review and
+       supplement the AI-generated metadata before final persistence.
+
+    :return: Rendered HTML of the dataset form pre-filled with AI data.
+    :raises: 500 Internal Server Error if the LLM extraction or form mapping fails.
+    """
+    llm_form = LlmForm()
+    llm_metadata_service = LlmMetadataService()
+
+    name = "LLM Prefilled dataset"
+    try:
+        if llm_form.validate_on_submit():
+            dataset_json = await llm_metadata_service.get_metadata(llm_form.dataset_url.data)
+
+            print(dataset_json)
+            dataset = llm_form.to_dataset(dataset_json)
+
+            print(dataset.to_dict())
+
+            dataset_form = DatasetForm()
+            dataset_form.from_dataset(dataset)
+
+            print(dataset_form)
+
+            page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title=TITLE)
+            return page
+        return redirect(url_for('add_dataset'))
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        abort(500, description=f"Failed to fetch dataset for {llm_form.dataset_url.data}.", original_exception=e)
 
 
 @main_bp.route('/datasets')
