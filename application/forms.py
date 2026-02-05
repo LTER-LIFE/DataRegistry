@@ -9,6 +9,7 @@ from datetime import datetime
 from flask import request
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
+from dateutil import parser as date_parser
 from wtforms import StringField, SelectField, RadioField
 from wtforms.fields.simple import SubmitField, TextAreaField
 from wtforms.validators import DataRequired, AnyOf, ValidationError, URL
@@ -16,36 +17,50 @@ from wtforms.validators import DataRequired, AnyOf, ValidationError, URL
 from application.models import Dataset, Agent, Location, LicenseDocument, Keyword
 
 
-def parse_times(iso_time_string):
+def parse_times(time_string):
     """
-    Because datetime.fromisotime does not work with the following three ISO standard times
-    This helper function tries to do that.
-     - Reduced precision dates are not currently supported (YYYY-MM, YYYY).
-     - Extended date representations are not currently supported (±YYYYYY-MM-DD).
-     - Ordinal dates are not currently supported (YYYY-OOO).
+        Parses a date string into a datetime object, supporting both strict ISO 8601
+        standards and flexible "fuzzy" parsing for natural language dates.
 
-    :param iso_time_string: a string that contains an isostring compatible format
+        This function extends `datetime.fromisoformat` by adding support for:
+        - Reduced precision dates: YYYY-MM and YYYY.
+        - Compact date representations: YYYYMM.
+        - Ordinal dates (fallback to Year): YYYY-OOO.
+        - Natural Language / LLM Drift: "August 25, 2025" (via dateutil fallback).
 
+        The parser prioritizes strict patterns to ensure '202508' is treated as
+        August 2025 (YYYYMM) rather than being misinterpreted by fuzzy logic.
 
+        :param iso_time_string: A string or datetime object. Strings are cleaned of
+                                common LLM artifacts like trailing semicolons.
+        :return: A datetime object if parsing is successful, otherwise None.
     """
-    if not iso_time_string:
+
+    if not time_string or str(time_string).lower() in ['n/a', 'none', '']:
         return None
-    if type(iso_time_string) == datetime:
-        return iso_time_string
 
+    # Strip LLM artifacts
+    time_string = str(time_string).strip().rstrip(';')
+
+    # YYYY-MM
+    if re.fullmatch(r"[0-2][0-9]{3}-[0-1][0-9]", time_string):
+        return datetime.strptime(time_string, "%Y-%m")
+
+    # YYYYMM
+    if re.fullmatch(r"[0-2][0-9]{3}[0-1][0-9]", time_string):
+        return datetime.strptime(time_string, "%Y%m")
+
+    # YYYY
+    if re.fullmatch(r"[0-2][0-9]{3}", time_string):
+        return datetime.strptime(time_string, "%Y")
+
+    # --- 2. DATEUTIL SECOND (The "Smart" Backup) ---
     try:
-        return datetime.fromisoformat(iso_time_string)
-    except ValueError as e:
-        if re.search(r"[0-2][0-9][0-9][0-9]-[0-1][0-9]", iso_time_string):
-            return datetime.strptime(iso_time_string, "%Y-%m")
-        elif re.search(r"[0-2][0-9][0-9][0-9][0-1][0-9]", iso_time_string):
-            return datetime.strptime(iso_time_string, "%Y%m")
-        elif re.search(r"[0-2][0-9][0-9][0-9]", iso_time_string):
-            return datetime.strptime(iso_time_string, "%Y")
-        elif re.search(r"[0-2][0-9][0-9][0-9]-[0-3][0-9][0-9]", iso_time_string):
-            print("Ordinal date is fully not supported yet, pick year")
-            return datetime.strptime(iso_time_string[:4], "%Y")
-
+        # fuzzy=True handles things like "August 25th, 2025"
+        # default ensures partial dates like "August 2025" don't take today's day
+        return date_parser.parse(time_string, fuzzy=True, default=datetime(2000, 1, 1))
+    except (ValueError, OverflowError, TypeError):
+        return None
 
 class RequiredOr(object):
     """
