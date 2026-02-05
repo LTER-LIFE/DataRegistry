@@ -179,7 +179,7 @@ async def dataset_from_ai():
 
             page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title=TITLE)
             return page
-        return redirect(url_for('add_dataset'))
+        return redirect(url_for('main_bp.add_dataset'))
     except Exception as e:
         logging.error(traceback.format_exc())
         abort(500, description=f"Failed to fetch dataset for {llm_form.dataset_url.data}.", original_exception=e)

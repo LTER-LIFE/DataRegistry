@@ -15,9 +15,9 @@
                 data-bs-toggle="collapse"
                 data-bs-target="#collapse-tools"
                 aria-expanded="false">
-            <i class="fa-solid fa-wand-magic-sparkles me-2"></i>
-            <span>Data Tools & Filters</span>
-            get
+
+            <span>AI fill.</span>
+            <i class="bi bi-sparkles me-2"></i>
         </button>
     </div>
 
@@ -26,7 +26,7 @@
 
             <div class="mb-4">
                 <label class="form-label fw-bold text-primary">
-                    <i class="fa-solid fa-robot me-1"></i> AI Metadata Import
+                    <i class="bi bi-robot"></i> AI Metadata Import
                 </label>
                 <form action="{{ url_for('main_bp.dataset_from_ai') }}" method="POST" id="llm-harvester-form">
                     {{ llm_form.hidden_tag() }}
