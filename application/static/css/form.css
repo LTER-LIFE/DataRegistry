@@ -28,3 +28,19 @@
 	border-color: var(--ldr-border);
   box-shadow: 0 0 10px 0 rgba(0,0,0,.12);;
 }
+
+/* Slider */
+.ui-slider .slider-handle-label {
+	display: block;
+	position: relative;
+	top: -28px;
+	left: -7px;
+}
+
+.ui-slider .ui-state-active {
+  color: var(--ldr-text);
+}
+
+.ui-slider .ui-state-hover {
+  border-color: var(--ldr-links-and-box-background);
+}
