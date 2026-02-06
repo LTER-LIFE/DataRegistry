@@ -33,6 +33,7 @@ url_prefix = f"{proxy_prefix}/".replace("//", "/") if proxy_prefix else "/"
 # Blueprint Configuration
 main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_folder="static", url_prefix=url_prefix)
 
+TITLE = "" #TODO will be replaced by sidney pr
 
 @main_bp.route('/')
 def home():

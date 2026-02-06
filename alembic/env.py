@@ -12,6 +12,13 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+# Make sure metadata is loaded
+# This loops through your models folder and imports everything automatically
+from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
+    LicenseDocument, MediaType, Location
+from application.models import AgentStaging, KeywordStaging, CatalogStaging, ChecksumStaging, DataServiceStaging, DatasetStaging, DataThemeStaging, DistributionStaging, \
+    LicenseDocumentStaging, MediaTypeStaging, LocationStaging
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel

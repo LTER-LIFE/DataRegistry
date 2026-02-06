@@ -23,6 +23,7 @@ from geoalchemy2 import Geometry
 from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
 import shapely
 from shapely.geometry import box, shape
+from shapely.geometry.collection import GeometryCollection
 from shapely.validation import explain_validity
 from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, or_, and_, Boolean
 from sqlalchemy.orm import relationship

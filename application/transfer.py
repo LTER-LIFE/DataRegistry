@@ -32,6 +32,7 @@ catalog_cache = {}
 # Transfer AgentStaging → Agent
 # ---------------------------------------------------------
 def get_or_create_agent(session: db_session, staging_agent: AgentStaging):
+    #TODO this was in place meiert,
     if staging_agent is None:
         return None
 
@@ -60,6 +61,10 @@ def get_or_create_agent(session: db_session, staging_agent: AgentStaging):
 # Transfer KeywordStaging → Keyword
 # ---------------------------------------------------------
 def get_or_create_keyword(session: db_session, staging_keyword: KeywordStaging):
+    #TODO please check meiert
+    if not staging_keyword:
+        return None
+
     if staging_keyword.keyword_id in keyword_cache:
         return keyword_cache[staging_keyword.keyword_id]
 
@@ -83,8 +88,12 @@ def get_or_create_keyword(session: db_session, staging_keyword: KeywordStaging):
 # Transfer DataThemeStaging → DataTheme
 # ---------------------------------------------------------
 def get_or_create_theme(session: db_session, staging_theme: DataThemeStaging):
+    #TODO pleas check meiert
+    if not staging_theme:
+        return None
+
     if staging_theme.theme_id in theme_cache:
-        return theme_cache[staging_theme.theme_id]
+            return theme_cache[staging_theme.theme_id]
 
     theme = session.query(DataTheme).filter_by(
         code=staging_theme.code
@@ -131,8 +140,12 @@ def get_or_create_location(session: db_session, staging_location: LocationStagin
 # Transfer LicenseDocumentStaging → LicenseDocument
 # ---------------------------------------------------------
 def get_or_create_license(session: db_session, staging_license: LicenseDocumentStaging):
+    #TODO: please check meiert
+    if not staging_license:
+        return None
+
     if staging_license.license_document_id in license_cache:
-        return license_cache[staging_license.license_document_id]
+            return license_cache[staging_license.license_document_id]
 
     license_doc = session.query(LicenseDocument).filter_by(
         code=staging_license.code
@@ -143,7 +156,7 @@ def get_or_create_license(session: db_session, staging_license: LicenseDocumentS
             code=staging_license.code,
             label=staging_license.label,
             url_general=staging_license.url_general,
-            url_document=staging_license_url_document
+            url_document=staging_license.url_document
         )
         session.add(license_doc)
         session.flush()
