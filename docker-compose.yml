@@ -9,8 +9,6 @@ services:
       - "${PORT}:${PORT}"  # Map the port from .env
     volumes:
       - certs:/app/certs
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       database:
         condition: service_healthy
