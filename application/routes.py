@@ -433,7 +433,7 @@ def about():
     Renders a simple about page.
 
     :return: rendered flask template from templates/about.html    """
-    return render_template('about.html', title=TITLE)
+    return render_template('about.html', title='About the LTER-NL Data Registry')
 
 
 @main_bp.route('/instructions')
@@ -441,9 +441,9 @@ def instructions():
     """
     Renders a simple instructions page.
 
-    :return: rendered flask template from templates/veluwe-metadata-portal-instructions.html
+    :return: rendered flask template from templates/instructions.html
     """
-    return render_template('veluwe-metadata-portal-instructions.html', title=TITLE)
+    return render_template('instructions.html')
 
 
 @main_bp.route('/contact')

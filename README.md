@@ -1,7 +1,7 @@
 
-# 🌿 Ecological Metadata Portal Veluwe
+# 🌿 LTER-NL Data Registry
 
-A portal to manage and visualize ecological metadata from the Veluwe region.
+A portal to manage and visualize ecological metadata.
 
 **Authors:**  
 - **Sander Vlugter** – Internship project at NIOO-KNAW, part of the WUR MSc Bioinformatics programme, 2024  
