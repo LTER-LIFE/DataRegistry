@@ -1,0 +1,109 @@
+{% extends "nioo_bootstrap.html" %}
+
+{% block content %}
+    {% for dataset in datasets %}
+        <div class="card">
+            <div class="card-header">
+                <b>{{ dataset.title }}</b> - <a href="{{ url_for('main_bp.add_to_cart', dataset_id=dataset.dataset_id) }}">Add to Cart</a>
+            </div>
+            <div class="card-body">
+                <p></p>
+                <div class="row">
+                    <div class="table-responsive col-md-4">
+                        <table class="table table-borderless mb-5">
+                            <tbody>
+                            <tr>
+                                <th scope="row" class="p-1">Submission date:</th>
+                                <td class="p-1">{{ dataset.release_date }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Language:</th>
+                                <td class="p-1">{{ dataset.language }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Metadata provider:</th>
+                                <td class="p-1">{{ (dataset.dataset_metadata_provider.web() if
+                                    dataset.dataset_metadata_provider) | safe }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Creator:</th>
+                                <td class="p-1">{{ dataset.creator.web() | safe }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Contact point:</th>
+                                <td class="p-1">{{ (dataset.dataset_contact_point.web() if
+                                    dataset.dataset_contact_point) | safe }}</td>
+                            </tr>
+
+                            <tr>
+                                <th scope="row" class="p-1">Resource type:</th>
+                                <td class="p-1">{{ dataset.resource_type }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1 col-md-4">License:</th>
+                                <td class="p-1 col-md-8">{{ dataset.dataset_license |safe }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Access rights:</th>
+                                <td class="p-1">{{ dataset.access_rights }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Dataset publisher:</th>
+                                <td class="p-1">{{ (dataset.dataset_publisher.web() if
+                                    dataset.dataset_publisher) | safe }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Dataset ID:</th>
+                                <td class="p-1">{{ dataset.public_id }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Landing page:</th>
+                                <td>
+                                    <a href="{{ dataset.landing_page }}">
+                                        {{ dataset.landing_page }}
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Temporal coverage:</th>
+                                <td class="p-1">{{ dataset.temporal_coverage_start}} / {{ dataset.temporal_coverage_end }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Temporal resolution:</th>
+                                <td class="p-1">{{ dataset.temporal_resolution }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Spatial resolution:</th>
+                                <td class="p-1">{{ dataset.spatial_resolution}}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row" class="p-1">Taxonomic coverage:</th>
+                                <td class="p-1">{{ dataset.taxonomic_coverage }}</td>
+                            </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-8">
+                        <div>
+                            <b>Description: </b>
+                            {{ dataset.description }}
+                            <br>
+                            <b>Keywords: </b>
+                            {% for kw in dataset.dataset_keywords %}
+                                <span class="badge rounded-pill bg-primary">{{ kw.name }}</span>
+                            {% endfor %}
+                            <br/>
+                        </div>
+                        <b>Spatial coverage:</b>
+                        <div id="geo-{{ dataset.dataset_id }}" style="height: 450px;"></div>
+                    </div>
+                </div>
+                <br/>
+            </div>
+        </div>
+        <script type="application/javascript">
+            loadDatasetMap({{dataset.dataset_id}}, "{{dataset.dataset_spatial_coverage.to_shape()}}");
+        </script>
+    {% endfor %}
+{% endblock %}
