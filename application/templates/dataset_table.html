@@ -114,10 +114,7 @@ function addDataset(dataset) {
     const itemHtml = `
         <li class="datasets-list__item">
             <h3>
-                <a class="link-underline-hover link-offset-2" href="${datasetUrl}">
-                    ${dataset.title}
-                    <i class="bi bi-arrow-right-short heading-icon"></i>
-                </a>
+                ${dataset.title}
             </h3>
 
             <p class="mb-0 text--medium truncate-text--2">
@@ -126,17 +123,10 @@ function addDataset(dataset) {
 
             <div class="d-flex justify-content-end">
                 <a
-                    class="btn btn-link btn-sm me-3 p-0 link-underline-hover"
+                    class="btn btn-link btn-sm p-0 link-underline-hover"
                     href="${addToCartUrl}"
                 >
                     add to cart
-                </a>
-
-                <a
-                    class="btn btn-link btn-sm p-0 link-underline-hover"
-                    href="${datasetUrl}"
-                >
-                    read more
                 </a>
             </div>
         </li>
