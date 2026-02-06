@@ -1,41 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="row datasets-overview-container">
+    <div class="col-md-4">
+        <h2>Filters</h2>
 
-<div class="mb-5">
-    <div class="text-center">
-        <a data-bs-toggle="collapse" href="#collapse-upload" role="button"
-           aria-expanded="false" aria-controls="collapse-upload">filters</a>
+        <form id="index_search_form">
+           <div class="mb-4">
+               <label for="free" class="form-label">Free text</label>
+               <input type="text" class="form-control" id="free" name="free">
+           </div>
 
+           <div class="mb-4">
+               <label class="form-label">Time period</label>
+               <div id="slider-range" class="mt-4 mx-3">
+                   <div id="custom-handle-min" class="ui-slider-handle">
+                       <small class="slider-handle-label"></small>
+                   </div>
+                   <div id="custom-handle-max" class="ui-slider-handle">
+                       <small class="slider-handle-label"></small>
+                   </div>
+               </div>
+               <input type="hidden" id="min_year_input" name="min_year">
+               <input type="hidden" id="max_year_input" name="max_year">
+           </div>
+
+           <div class="mb-3">
+               <label for="spatial_coverage" class="form-label">Area</label>
+               <input class="form-control" id="spatial_coverage" name="spatial_coverage" type="text" value=""/>
+               <div class="visually-hidden map--small mt-3" id="select-geo-loc"></div>
+           </div>
+       </form>
     </div>
-    <div class="collapse row" id="collapse-upload">
-        <div class="col-sm-10">
-           <form id="index_search_form">
-               <div class="mb-3">
-                   <label for="free" class="form-label">Free text search</label>
-                   <input type="text" class="form-control" id="free" name="free">
-               </div>
 
-               <div class="mb-3">
-                   <label for="amount" class="form-label">Time period</label>
-                   <div id="slider-range"></div>
-                   <input type="text" class="form-control" id="amount" readonly="">
-                   <input type="hidden" id="min_year_input" name="min_year">
-                   <input type="hidden" id="max_year_input" name="max_year">
-               </div>
-
-               <div class="mb-3">
-                   <label for="spatial_coverage" class="form-label">Search on spatial</label>
-                   <input class="form-control" id="spatial_coverage" name="spatial_coverage" type="text" value=""/>
-                   <div class="visually-hidden map--small mt-3" id="select-geo-loc"></div>
-               </div>
-           </form>
-        </div>
+    <div class="col-md-8">
+        <div
+            class="datasets-list"
+            data-add-to-cart-base-url="{{ url_for('main_bp.add_to_cart', dataset_id='') }}"
+        ></div>
     </div>
 </div>
-
-
-<div class="cardbox" data-add-to-cart-base-url="{{ url_for('main_bp.add_to_cart', dataset_id='') }}"></div>
 {% endblock %}
 
 {% block app_js %}
@@ -83,136 +87,70 @@ function fetchData(query) {
             success: function(data) {
                 // Process the successful response
                 // Clear the existing cards first
-                $('#cardBox').empty();
+                $('.datasets-list').empty();
 
                 if (data.hits && data.hits.length > 0) {
-                     data.hits.forEach(function(dataset) {
-                         addCardToCardBox(dataset._source);
-                     });
+                    $('.datasets-list').append('<ul class="list-unstyled"></ul>');
+
+                    data.hits.forEach(function(dataset) {
+                        addDataset(dataset._source);
+                    });
                 } else {
-                    $('#cardBox').append("<p>No results found.</p>");
+                    $('.datasets-list').append("<p>No results found.</p>");
                 }
             },
             error: function(xhr, status, error) {
                 console.error("Error fetching data:", error);
-                $('#cardBox').append("<p>An error occurred while fetching data. Please try again later.</p>");
+                $('.datasets-list').append("<p>An error occurred while fetching data. Please try again later.</p>");
             }
         });
 }
 
-function addCardToCardBox(dataset) {
-    const baseUrl = $('.cardbox').data('add-to-cart-base-url');
+function addDataset(dataset) {
+    const baseUrl = $('.datasets-list').data('add-to-cart-base-url');
     const addToCartUrl = `${baseUrl}${dataset.dataset_id}`;
-    // Create the card HTML structure
-    var cardHtml = `
-    <div class="card mb-5">
-        <div class="card-header">
-            <b>${dataset.title}</b> -  - <a href="${addToCartUrl}">Add to Cart</a>
-        </div>
-        <div class="card-body">
-            <p></p>
-            <div class="row">
-                <div class="table-responsive col-md-5">
-                    <table class="table table-borderless">
-                        <tbody>
-                            <tr>
-                                <th scope="row" class="p-1">Submission date:</th>
-                                <td class="p-1">${dataset.release_date}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Language:</th>
-                                <td class="p-1">${dataset.language}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Metadata provider:</th>
-                                <td class="p-1">${dataset.dataset_metadata_provider}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Creator:</th>
-                                <td class="p-1">${dataset.creator}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Contact point:</th>
-                                <td class="p-1">${dataset.dataset_contact_point}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Resource type:</th>
-                                <td class="p-1">${dataset.resource_type}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1 col-md-4">License:</th>
-                                <td class="p-1 col-md-8">${dataset.dataset_license}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Access rights:</th>
-                                <td class="p-1">${dataset.access_rights}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Dataset publisher:</th>
-                                <td class="p-1">${dataset.dataset_publisher}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Dataset ID:</th>
-                                <td class="p-1">${dataset.public_id}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Landing page:</th>
-                                <td><a href="${dataset.landing_page}">${dataset.landing_page}</a></td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Temporal coverage:</th>
-                                <td class="p-1">${dataset.temporal_coverage_start} / ${dataset.temporal_coverage_end}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Temporal resolution:</th>
-                                <td class="p-1">${dataset.temporal_resolution}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Spatial resolution:</th>
-                                <td class="p-1">${dataset.spatial_resolution}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row" class="p-1">Taxonomic coverage:</th>
-                                <td class="p-1">${dataset.taxonomic_coverage}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="col-md-7">
-                    <div>
-                        <b>Description: </b>${dataset.description}<br>
-                        <b>Keywords: </b>
-                        ${dataset.dataset_keywords.map(kw => `<span class="badge rounded-pill bg-primary">${kw}</span>`).join(' ')}
-                        <br/>
-                    </div>
-                    <b>Spatial coverage:</b>
-                    <div id="geo-${dataset.dataset_id}" style="height: 450px;"></div>
-                </div>
+    const datasetUrl = '{{ url_for('main_bp.datasets', dataset_id='') }}' + dataset.dataset_id
+
+    const itemHtml = `
+        <li class="datasets-list__item">
+            <h3>
+                ${dataset.title}
+            </h3>
+
+            <p class="mb-0 text--medium truncate-text--2">
+                ${dataset.description.substring(0, 300)}...
+            </p>
+
+            <div class="d-flex justify-content-end">
+                <a
+                    class="btn btn-link btn-sm p-0 link-underline-hover"
+                    href="${addToCartUrl}"
+                >
+                    add to cart
+                </a>
             </div>
-            <br/>
-        </div>
-    </div>
-`;
+        </li>
+    `;
 
-// Append the card to the cardbox div
-$('.cardbox').append(cardHtml);
-
-// Load the dataset map
-loadDatasetMapWithGeoJSON(dataset.dataset_id, dataset.dataset_spatial_coverage.geometry);
+$('.datasets-list ul').append(itemHtml);
 }
 
-function cleanData() {
-
-    $('.cardbox').html("");
-};
 $(function () {
+    const minHandle = $("#custom-handle-min .slider-handle-label")
+    const maxHandle = $("#custom-handle-max .slider-handle-label")
+
     $("#slider-range").slider({
         range: true,
         min: 1900,
-        max: 2025,
-        values: [1990, 2025],
+        max: 2026,
+        values: [1990, 2026],
+        create: function () {
+            minHandle.text( $( this ).slider("option", "values")[0] );
+            maxHandle.text( $( this ).slider("option", "values")[1] );
+        },
         slide: function (event, ui) {
-            $("#amount").val(ui.values[0] + " - " + ui.values[1]);
+            minHandle.text(ui.values[0])
+            maxHandle.text(ui.values[1])
 
             // Update the hidden form fields
             $("#min_year_input").val(ui.values[0]).trigger('change');
@@ -252,7 +190,6 @@ $(document).ready(function() {
 
     formData =  serializeObject($('#index_search_form'))
 
-    cleanData();
     debouncedFetchData(formData);
     });
 });

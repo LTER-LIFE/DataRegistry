@@ -1,0 +1,16 @@
+/*
+ * Styles for datasets overview page
+ */
+@media (min-width: 768px) {
+	.datasets-overview-container {
+    --bs-gutter-x: 3.5rem;
+  }
+}
+
+.datasets-list__item:not(:last-child) {
+  border-bottom: 1px solid var(--ldr-border);
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+}
+
+

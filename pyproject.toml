@@ -16,6 +16,7 @@ dependencies = [
     "asgiref>=3.11.1",
     "elasticsearch",
     "flask",
+    "flask-admin",
     "flask-jwt-extended",
     "flask-login",
     "flask-session>=0.8.0",

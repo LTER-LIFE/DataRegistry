@@ -64,13 +64,10 @@ Object.entries(geo_json).forEach(dataset_items => {
             const div = document.createElement("div");
             div.innerHTML = `
                 <h2> \
-                    <a class="text-decoration-none" href="${dataset.properties.url}"> \
-                        ${dataset.properties.title} \
-                    </a> \
+                    ${dataset.properties.title}
                 </h2> \
                 <p>
                     ${dataset.properties.description.substring(0, 125)}... \
-                    <a href="${dataset.properties.url}">read more</a> \
                 </p>
                 <dl> \
                     <dt>Temporal coverage</dt> \
