@@ -99,6 +99,7 @@ def add_dataset(dataset_id=None):
     try:
         name = None
         dataset_form = DatasetForm()
+        llm_form = LlmForm()
         dataset = None
 
         # Delete the dataset or edit
@@ -139,7 +140,7 @@ def add_dataset(dataset_id=None):
             # Feedback
             flash(f"Added dataset with title {dataset.title}.", "success")
 
-        page = render_template('dataset_form.html', form=dataset_form, name=name, title='Register your dataset')
+        page = render_template('dataset_form.html', form=dataset_form, name=name, llm_form=llm_form, title='Register your dataset')
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -160,6 +161,7 @@ def stage_dataset(dataset_id=None):
     try:
         name = None
         dataset_form = DatasetStagingForm()
+        llm_form = LlmForm()
         dataset = None
 
         # Delete the dataset or edit
@@ -200,7 +202,8 @@ def stage_dataset(dataset_id=None):
             # Feedback
             flash(f"Staged dataset with title {dataset.title}.", "success")
 
-        page = render_template('dataset_form.html', form=dataset_form, name=name, title="Register your dataset")
+        page = render_template('dataset_form.html', form=dataset_form, name=name, llm_form=llm_form,
+                               title="Register your dataset")
         return page
     except Exception as e:
         logging.error(traceback.format_exc())

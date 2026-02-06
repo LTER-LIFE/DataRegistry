@@ -16,7 +16,7 @@
                 data-bs-target="#collapse-tools"
                 aria-expanded="false">
 
-git             <span>Prefill by AI</span>
+            <span>Prefill by AI</span>
             <i class="bi bi-sparkles me-2"></i>
         </button>
     </div>
@@ -26,7 +26,7 @@ git             <span>Prefill by AI</span>
 
             <div class="mb-4">
                 <label class="form-label fw-bold text-primary">
-                    <i class="bi bi-robot"></i> Use LLM metadata harvester to prefill fieldsd
+                    <i class="bi bi-robot"></i> Use LLM metadata harvester to prefill fields
                 </label>
                 <form action="{{ url_for('main_bp.dataset_from_ai') }}" method="POST" id="llm-harvester-form">
                     {{ llm_form.hidden_tag() }}
