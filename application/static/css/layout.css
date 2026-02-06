@@ -40,3 +40,7 @@ body {
 .mb-paragraph {
 	margin-bottom: var(--ldr-paragraph-margin);
 }
+
+.pb-paragraph {
+	padding-bottom: var(--ldr-paragraph-margin);
+}

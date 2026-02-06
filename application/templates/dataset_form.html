@@ -7,42 +7,32 @@
 {% from 'macros/form.html' import render_field %}
 
 {% block content %}
+<button
+    class="btn btn-outline-primary d-flex mx-auto mb-3"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#collapse-ai-form"
+    aria-expanded="false"
+>
+    Prefill by AI <i class="bi bi-stars ms-1"></i>
+</button>
 
-<div class="main-content ps-3">
-    <div class="d-flex justify-content-center mb-3">
-        <button class="btn btn-outline-primary d-flex align-items-center collapsed"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#collapse-tools"
-                aria-expanded="false">
+<div class="collapse mb-paragraph pb-paragraph border-bottom" id="collapse-ai-form">
+    <label class="form-label">
+        <i class="bi bi-robot"></i> Use LLM metadata harvester to prefill fields
+    </label>
 
-            <span>Prefill by AI</span>
-            <i class="bi bi-sparkles me-2"></i>
-        </button>
-    </div>
+    <form action="{{ url_for('main_bp.dataset_from_ai') }}" method="POST" id="llm-harvester-form">
+        {{ llm_form.hidden_tag() }}
 
-    <div class="collapse" id="collapse-tools">
-        <div class="card card-body shadow-sm bg-light mb-4">
-
-            <div class="mb-4">
-                <label class="form-label fw-bold text-primary">
-                    <i class="bi bi-robot"></i> Use LLM metadata harvester to prefill fields
-                </label>
-                <form action="{{ url_for('main_bp.dataset_from_ai') }}" method="POST" id="llm-harvester-form">
-                    {{ llm_form.hidden_tag() }}
-                    <div class="input-group">
-                        {{ llm_form.dataset_url(class="form-control", placeholder="Paste dataset URL here...") }}
-                        <button class="btn btn-primary" type="submit" id="llm-submit-btn">
-                            <span id="llm-btn-text">Extract</span>
-                            <div id="llm-spinner" class="spinner-border spinner-border-sm d-none"></div>
-                        </button>
-                    </div>
-                </form>
-            </div>
+        <div class="input-group">
+            {{ llm_form.dataset_url(class="form-control", placeholder="Paste dataset URL here...") }}
+            <button class="btn btn-primary" type="submit" id="llm-submit-btn">
+                Extract
+            </button>
         </div>
-    </div>
+    </form>
 </div>
-
 
 {% if form.errors | length > 0 %}
 <div class="modal" id="staticBackdrop" tabindex="-1">
