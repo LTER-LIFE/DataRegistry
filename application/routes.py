@@ -199,7 +199,7 @@ def stage_dataset(dataset_id=None):
             # Feedback
             flash(f"Staged dataset with title {dataset.title}.", "success")
 
-        page = render_template('dataset_form.html', form=dataset_form, name=name, title=TITLE)
+        page = render_template('dataset_form.html', form=dataset_form, name=name, title='Register your dataset')
         return page
     except Exception as e:
         logging.error(traceback.format_exc())

@@ -29,11 +29,7 @@ class DatasetStagingAdmin(ModelView):
 
     def _actions_formatter(self, context, model, name):
         buttons = []
-        #if not model.is_validated:
-        #    validate_url = url_for(".validate_view", id=entry.id)
-        #    buttons.append(f'<a class="btn btn-sm btn-info" href="{validate_url}">Validate</a>')
         if not model.is_approved:
-        #if model.is_validated and not model.is_approved:
             approve_url = url_for(".approve_view", id=model.dataset_id)
             buttons.append(f'<a class="btn btn-sm btn-success" href="{approve_url}">Approve</a>')
         return Markup("&nbsp;".join(buttons))
@@ -49,10 +45,6 @@ class DatasetStagingAdmin(ModelView):
         if not entry:
             flash("Dataset not found.", "error")
             return redirect(url_for(".index_view"))
-
-        #if not entry.is_validated:
-        #    flash("Dataset must be validated before approval.", "error")
-        #    return redirect(url_for(".index_view"))
 
         approve_staged_dataset(self.session, entry.dataset_id)
         flash(f"Approved dataset '{entry.title}'.", "success")

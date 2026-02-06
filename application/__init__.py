@@ -3,13 +3,13 @@ from os import environ
 from flask import Flask, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from application.database import validate_db, db_session
+from application.database import validate_db 
 from application.search_index import validate_index
 from config import Config
 from flask_login import LoginManager
 from flask_session import Session
 from flask_jwt_extended import JWTManager
-from flask_admin import Admin, expose
+
 
 import logging
 
@@ -45,8 +45,6 @@ def create_app():
         app.login_manager = login_manager
 
         from application import models
-        
-
         from application import routes
         from application.admin import admin
 
