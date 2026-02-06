@@ -25,6 +25,10 @@ h1, .h1 {
   font-size: 1.25rem;
 }
 
+.heading-icon.bi::before {
+	vertical-align: -.25em;
+}
+
 b, strong {
 	font-weight: 600;
 }
@@ -61,7 +65,24 @@ a:hover {
   text-decoration: none;
 }
 
+a.link-underline-hover {
+	text-decoration: none;
+}
+
+a.link-underline-hover:focus,
+a.link-underline-hover:hover {
+	color: var(--ldr-links-and-box-background);
+	text-decoration: underline;
+}
+
 ::selection {
 	background: #fdd447;
 	text-shadow: none;
+}
+
+.truncate-text--2 {
+	display: -webkit-inline-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow: hidden;
 }
