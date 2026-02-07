@@ -12,7 +12,7 @@ from flask_wtf.file import FileField
 from dateutil import parser as date_parser
 from wtforms import StringField, SelectField, RadioField
 from wtforms.fields.simple import SubmitField, TextAreaField
-from wtforms.validators import DataRequired, AnyOf, ValidationError, URL
+from wtforms.validators import DataRequired, AnyOf, ValidationError
 
 from application.models import Dataset, Agent, Location, LicenseDocument, Keyword
 from application.models import DatasetStaging, AgentStaging, LocationStaging, LicenseDocumentStaging, KeywordStaging
@@ -385,7 +385,7 @@ class DatasetForm(FlaskForm):
 
 
 class LlmForm(FlaskForm):
-    dataset_url = StringField("Dataset url", validators=[DataRequired(), URL()], description="The web page (URL) that can be "
+    dataset_url = StringField("Dataset url", validators=[DataRequired()], description="The web page (URL) that can be "
                                                                         "navigated to in a web browser to "
                                                                         "gain access to the dataset.")
 
