@@ -40,7 +40,7 @@ class LlmMetadataService:
                     data = data_res.json()
                     return data
 
-                if status == "failed":
+                if status.find("fail") > -1:
                     raise Exception(f"AI Job failed: {data.get('error')}")
 
                 # If "pending" or "queued", we just wait
