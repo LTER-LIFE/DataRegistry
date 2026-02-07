@@ -104,7 +104,6 @@ def rebuild_index(datasets):
     rebuild index
     """
     global es
-    from application import db_session
 
     # Recreate index
     if not es:
