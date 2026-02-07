@@ -19,9 +19,11 @@ from sqlalchemy import exc
 from application import search_index
 from application.authentication import get_userinfo, valid_token, in_editor_group
 from application.database import db_session
+from application.forms import DatasetForm, LlmForm
 from application.forms import DatasetForm, DatasetStagingForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
     LicenseDocument, MediaType, Location
+from application.services import LlmMetadataService
 from application.models import AgentStaging, KeywordStaging, CatalogStaging, ChecksumStaging, DataServiceStaging, DatasetStaging, DataThemeStaging, DistributionStaging, \
     LicenseDocumentStaging, MediaTypeStaging, LocationStaging
 
@@ -33,7 +35,6 @@ url_prefix = f"{proxy_prefix}/".replace("//", "/") if proxy_prefix else "/"
 # Blueprint Configuration
 main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_folder="static", url_prefix=url_prefix)
 
-TITLE = "" #TODO will be replaced by sidney pr
 
 @main_bp.route('/')
 def home():
@@ -98,6 +99,7 @@ def add_dataset(dataset_id=None):
     try:
         name = None
         dataset_form = DatasetForm()
+        llm_form = LlmForm()
         dataset = None
 
         # Delete the dataset or edit
@@ -138,7 +140,7 @@ def add_dataset(dataset_id=None):
             # Feedback
             flash(f"Added dataset with title {dataset.title}.", "success")
 
-        page = render_template('dataset_form.html', form=dataset_form, name=name, title='Register your dataset')
+        page = render_template('dataset_form.html', form=dataset_form, name=name, llm_form=llm_form, title='Register your dataset')
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -159,6 +161,7 @@ def stage_dataset(dataset_id=None):
     try:
         name = None
         dataset_form = DatasetStagingForm()
+        llm_form = LlmForm()
         dataset = None
 
         # Delete the dataset or edit
@@ -199,11 +202,48 @@ def stage_dataset(dataset_id=None):
             # Feedback
             flash(f"Staged dataset with title {dataset.title}.", "success")
 
-        page = render_template('dataset_form.html', form=dataset_form, name=name, title='Register your dataset')
+        page = render_template('dataset_form.html', form=dataset_form, name=name, llm_form=llm_form,
+                               title="Register your dataset")
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
+
+@main_bp.route('/dataset/from-ai', methods=['POST'])
+async def dataset_from_ai():
+    """
+    Bootstrap a dataset form using AI-extracted metadata from a URL.
+
+    This endpoint acts as a bridge between an LLM-driven extraction service
+    and the standard dataset creation workflow. It performs the following steps:
+    1. Validates the incoming URL/extraction request via LlmForm.
+    2. Invokes the LLM service to parse the target landing page into a Dataset entity.
+    3. Transfers the resulting Dataset attributes into a standard DatasetForm.
+    4. Renders the main dataset edit page, allowing the user to review and
+       supplement the AI-generated metadata before final persistence.
+
+    :return: Rendered HTML of the dataset form pre-filled with AI data.
+    :raises: 500 Internal Server Error if the LLM extraction or form mapping fails.
+    """
+    llm_form = LlmForm()
+    llm_metadata_service = LlmMetadataService()
+
+    name = "LLM Prefilled dataset"
+    try:
+        if llm_form.validate_on_submit():
+            dataset_json = await llm_metadata_service.get_metadata(llm_form.dataset_url.data)
+
+            dataset = llm_form.to_dataset(dataset_json)
+
+            dataset_form = DatasetForm()
+            dataset_form.from_dataset(dataset)
+
+            page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title="Register your dataset")
+            return page
+        return redirect(url_for('main_bp.add_dataset'))
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        abort(500, description=f"Failed to fetch dataset for {llm_form.dataset_url.data}.", original_exception=e)
 
 
 @main_bp.route('/datasets')
@@ -242,7 +282,7 @@ def stageddatasets(dataset_id=None):
             datasets_table = [DatasetStaging.query.get(dataset_id)]
         else:
             datasets_table = db_session.query(DatasetStaging).all()
-        page = render_template('dataset_table.html', datasets=datasets_table, title=TITLE)
+        page = render_template('dataset_table.html', datasets=datasets_table, title="Staged datasets")
         return page
     except Exception as e:
         logging.error(traceback.format_exc())

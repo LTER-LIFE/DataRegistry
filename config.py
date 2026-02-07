@@ -25,8 +25,12 @@ def get_code_challenge():
 
 
 class Config(object):
+    LLM_API_KEY = environ.get('LLM_API_KEY', 'none')
+    LLM_SERVICE_URL = environ.get('LLM_SERVICE_URL', '')
+    LLM_MODEL = environ.get('LLM_MODEL', 'gemini-2.5-flash')
+
     SECRET_KEY = environ.get('SECRET_KEY') or urandom(24)
-    SESSION_TYPE = environ.get('SESSION_TYPE', "filesystem")
+    SESSION_TYPE = environ.get('SESSION_TYPE', 'filesystem')
     PROXY_PREFIX = environ.get('PROXY_PREFIX') or "/"
     SESSION_COOKIE_SAMESITE = environ.get("SESSION_COOKIE_SAMESITE", "None")
 

@@ -1,4 +1,7 @@
 services:
+  app:
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # make sure to get access to the host docker, as long /llm tool will run on same host
   database:
     volumes:
       - /path/to/the/local/folder:/opt/data

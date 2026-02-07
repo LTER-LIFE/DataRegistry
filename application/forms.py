@@ -9,6 +9,7 @@ from datetime import datetime
 from flask import request
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
+from dateutil import parser as date_parser
 from wtforms import StringField, SelectField, RadioField
 from wtforms.fields.simple import SubmitField, TextAreaField
 from wtforms.validators import DataRequired, AnyOf, ValidationError
@@ -17,36 +18,50 @@ from application.models import Dataset, Agent, Location, LicenseDocument, Keywor
 from application.models import DatasetStaging, AgentStaging, LocationStaging, LicenseDocumentStaging, KeywordStaging
 
 
-def parse_times(iso_time_string):
+def parse_times(time_string):
     """
-    Because datetime.fromisotime does not work with the following three ISO standard times
-    This helper function tries to do that.
-     - Reduced precision dates are not currently supported (YYYY-MM, YYYY).
-     - Extended date representations are not currently supported (±YYYYYY-MM-DD).
-     - Ordinal dates are not currently supported (YYYY-OOO).
+        Parses a date string into a datetime object, supporting both strict ISO 8601
+        standards and flexible "fuzzy" parsing for natural language dates.
 
-    :param iso_time_string: a string that contains an isostring compatible format
+        This function extends `datetime.fromisoformat` by adding support for:
+        - Reduced precision dates: YYYY-MM and YYYY.
+        - Compact date representations: YYYYMM.
+        - Ordinal dates (fallback to Year): YYYY-OOO.
+        - Natural Language / LLM Drift: "August 25, 2025" (via dateutil fallback).
 
+        The parser prioritizes strict patterns to ensure '202508' is treated as
+        August 2025 (YYYYMM) rather than being misinterpreted by fuzzy logic.
 
+        :param iso_time_string: A string or datetime object. Strings are cleaned of
+                                common LLM artifacts like trailing semicolons.
+        :return: A datetime object if parsing is successful, otherwise None.
     """
-    if not iso_time_string:
+
+    if not time_string or str(time_string).lower() in ['n/a', 'none', '']:
         return None
-    if type(iso_time_string) == datetime:
-        return iso_time_string
 
+    # Strip LLM artifacts
+    time_string = str(time_string).strip().rstrip(';')
+
+    # YYYY-MM
+    if re.fullmatch(r"[0-2][0-9]{3}-[0-1][0-9]", time_string):
+        return datetime.strptime(time_string, "%Y-%m")
+
+    # YYYYMM
+    if re.fullmatch(r"[0-2][0-9]{3}[0-1][0-9]", time_string):
+        return datetime.strptime(time_string, "%Y%m")
+
+    # YYYY
+    if re.fullmatch(r"[0-2][0-9]{3}", time_string):
+        return datetime.strptime(time_string, "%Y")
+
+    # --- 2. DATEUTIL SECOND (The "Smart" Backup) ---
     try:
-        return datetime.fromisoformat(iso_time_string)
-    except ValueError as e:
-        if re.search(r"[0-2][0-9][0-9][0-9]-[0-1][0-9]", iso_time_string):
-            return datetime.strptime(iso_time_string, "%Y-%m")
-        elif re.search(r"[0-2][0-9][0-9][0-9][0-1][0-9]", iso_time_string):
-            return datetime.strptime(iso_time_string, "%Y%m")
-        elif re.search(r"[0-2][0-9][0-9][0-9]", iso_time_string):
-            return datetime.strptime(iso_time_string, "%Y")
-        elif re.search(r"[0-2][0-9][0-9][0-9]-[0-3][0-9][0-9]", iso_time_string):
-            print("Ordinal date is fully not supported yet, pick year")
-            return datetime.strptime(iso_time_string[:4], "%Y")
-
+        # fuzzy=True handles things like "August 25th, 2025"
+        # default ensures partial dates like "August 2025" don't take today's day
+        return date_parser.parse(time_string, fuzzy=True, default=datetime(2000, 1, 1))
+    except (ValueError, OverflowError, TypeError):
+        return None
 
 class RequiredOr(object):
     """
@@ -321,26 +336,27 @@ class DatasetForm(FlaskForm):
         """
 
         # Reset the form
-        if dataset.creator.type == 'Organisation':
-            self.creator_organisation.data = dataset.creator.name
-            self.creator_mbox.data = dataset.creator.mbox
-        elif dataset.creator.type == 'Person':
-            self.creator_name.data = dataset.creator.name
-            self.creator_mbox.data = dataset.creator.mbox
-
-        if dataset.dataset_contact_point.type == 'Organisation':
-            self.dataset_contact_point_organisation.data = dataset.dataset_contact_point.name
-            self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
-        elif dataset.dataset_contact_point.type == 'Person':
-            self.dataset_contact_point_name.data = dataset.dataset_contact_point.name
-            self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
-
-        if dataset.dataset_metadata_provider.type == 'Organisation':
-            self.metadata_provider_organisation.data = dataset.dataset_metadata_provider.name
-            self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
-        elif dataset.dataset_metadata_provider.type == 'Person':
-            self.metadata_provider_name.data = dataset.dataset_metadata_provider.name
-            self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
+        if dataset.creator:
+            if dataset.creator.type == 'Organisation':
+                self.creator_organisation.data = dataset.creator.name
+                self.creator_mbox.data = dataset.creator.mbox
+            elif dataset.creator.type == 'Person':
+                self.creator_name.data = dataset.creator.name
+                self.creator_mbox.data = dataset.creator.mbox
+        if dataset.dataset_contact_point:
+            if dataset.dataset_contact_point.type == 'Organisation':
+                self.dataset_contact_point_organisation.data = dataset.dataset_contact_point.name
+                self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
+            elif dataset.dataset_contact_point.type == 'Person':
+                self.dataset_contact_point_name.data = dataset.dataset_contact_point.name
+                self.dataset_contact_point_mbox.data = dataset.dataset_contact_point.mbox
+        if dataset.dataset_metadata_provider:
+            if dataset.dataset_metadata_provider.type == 'Organisation':
+                self.metadata_provider_organisation.data = dataset.dataset_metadata_provider.name
+                self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
+            elif dataset.dataset_metadata_provider.type == 'Person':
+                self.metadata_provider_name.data = dataset.dataset_metadata_provider.name
+                self.metadata_provider_mbox.data = dataset.dataset_metadata_provider.mbox
 
         if dataset.dataset_publisher:
             self.publisher.data = dataset.dataset_publisher.name
@@ -366,6 +382,79 @@ class DatasetForm(FlaskForm):
         self.temporal_resolution.data = dataset.temporal_resolution
         self.spatial_resolution.data = dataset.spatial_resolution
         self.access_rights.data = dataset.access_rights
+
+
+class LlmForm(FlaskForm):
+    dataset_url = StringField("Dataset url", validators=[DataRequired()], description="The web page (URL) that can be "
+                                                                        "navigated to in a web browser to "
+                                                                        "gain access to the dataset.")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def to_dataset(self, ai_response, dataset=None):
+        if not dataset:
+            dataset = Dataset()
+
+        # 1. Extract and Clean the inner 'result' dict
+        # We turn 'Metadata language' -> 'metadata_language'
+        raw_result = ai_response.get('result', {})
+        data = {
+            k.lower().replace(" ", "_"): str(v).strip().rstrip(';')
+            for k, v in raw_result.items()
+        }
+
+        dataset.modified = datetime.now()
+        dataset.title = data.get('title')
+        dataset.description = data.get('description')
+
+        dataset.release_date = parse_times(data.get('metadata_date'))
+        dataset.language = data.get('metadata_language', 'English')
+        dataset.resource_type = data.get('resource_type', 'dataset')
+
+        dataset.temporal_coverage_start = parse_times(data.get('temporal_coverage'))
+        dataset.temporal_resolution = data.get('temporal_resolution')
+        dataset.spatial_resolution = data.get('spatial_resolution')
+
+        dataset.access_rights = data.get('access_rights')
+        dataset.landing_page = data.get('landing_page')
+        dataset.public_id = data.get('unique_identifier')
+
+        def get_first_name(val):
+            return val.split(';')[0].strip() if val and val.lower() != 'n/a' else None
+
+        creator_name = get_first_name(data.get('data_creator'))
+        if creator_name:
+            dataset.creator = Agent.add_or_update_agent(
+                name=creator_name,
+                persist=False
+            )
+
+        contact_name = get_first_name(data.get('data_contact_point'))
+        if contact_name:
+            dataset.dataset_contact_point = Agent.add_or_update_agent(
+                name=contact_name,
+                persist=False
+            )
+
+        publisher_name = get_first_name(data.get('data_publisher'))
+        if publisher_name:
+            dataset.dataset_publisher = Agent.add_or_update_agent(
+                organisation=publisher_name,
+                persist=False
+            )
+
+        kw_raw = data.get('keywords', '')
+        if kw_raw and kw_raw.lower() != 'n/a':
+            # Replace semicolons with commas to standardize for your Keyword tool
+            clean_kws = kw_raw.replace(';', ',')
+            dataset.dataset_keywords = Keyword.add_or_update_keywords(keyword_names=clean_kws, persist=False)
+
+        lic_code = data.get('license')
+        if lic_code and lic_code.lower() != 'n/a':
+            dataset.dataset_license = LicenseDocument(code=lic_code)
+
+        return dataset
 
 
 
