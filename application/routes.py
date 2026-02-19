@@ -61,7 +61,7 @@ def home():
                                "temporal_coverage":
                                    f"{es_dataset.get("_source", {}).get("temporal_coverage_start", None)} / "
                                    f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}",
-                               "url": url_for('main_bp.datasets', dataset_id=es_dataset.get("_source", {}).get("dataset_id"))
+                               "url": es_dataset.get("_source", {}).get("url")
                                }
             }
 

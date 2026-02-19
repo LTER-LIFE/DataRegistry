@@ -19,6 +19,7 @@ import zipfile
 from datetime import datetime
 
 import geopandas as gpd
+from flask import url_for
 from geoalchemy2 import Geometry
 from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
 import shapely
@@ -628,6 +629,7 @@ class Dataset(Base):
             "taxonomic_coverage": self.taxonomic_coverage,
             "landing_page": self.landing_page,
             "public_id": self.public_id,
+            "url": url_for('main_bp.datasets_detail', dataset_id=self.dataset_id),
         }
 
         # Handle relationships, potentially nesting their dictionary representations
