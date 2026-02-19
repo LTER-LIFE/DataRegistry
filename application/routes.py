@@ -247,25 +247,39 @@ async def dataset_from_ai():
 
 
 @main_bp.route('/datasets')
-@main_bp.route('/Dataset/<dataset_id>')
-def datasets(dataset_id=None):
+def datasets():
     """
-    Renders a form to show all datasets in a table form. When a dataset_id is given only one dataset is shown
-
-    :param dataset_id: The param dataset id can be used to Edit or Delete datasets
+    Renders a form to show all datasets from the Elasticsearch index.
 
     :return: rendered flask template from templates/dataset_table.html
     """
+    return render_template('dataset_table.html', title='Datasets')
+
+
+@main_bp.route('/Dataset/<int:dataset_id>')
+def datasets_detail(dataset_id):
+    """
+    Renders the dataset detail page.
+
+    :param dataset_id: The id of a dataset
+
+    :return: rendered flask template from templates/dataset_detail.html
+    """
     try:
-        if dataset_id:
-            datasets_table = [Dataset.query.get(dataset_id)]
-        else:
-            datasets_table = db_session.query(Dataset).all()
-        page = render_template('dataset_table.html', datasets=datasets_table, title='Datasets')
-        return page
+        dataset = db_session.get(Dataset, dataset_id)
     except Exception as e:
         logging.error(traceback.format_exc())
-        abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
+        abort(500, description="Failed to fetch dataset.", original_exception=e)
+
+    if not dataset:
+        abort(404)
+
+    return render_template(
+        'dataset_detail.html',
+        dataset=dataset,
+        title=dataset.title
+    )
+
 
 @main_bp.route('/stageddatasets')
 @main_bp.route('/StagedDataset/<dataset_id>')
@@ -548,10 +562,10 @@ def page_not_found(e):
     :param e: The exception is printed on the page
     :return: rendered flask template from templates/errors/400.html
     """
-    return render_template("errors/400.html", error=e), 400
+    return render_template("errors/400.html", error=e, title="Page not found"), 404
 
 
-#@main_bp.errorhandler(500)
+@main_bp.errorhandler(500)
 def internal_server_error(e):
     """
     Prints a 500 error message
@@ -559,7 +573,7 @@ def internal_server_error(e):
     :param e: The exception is printed on the page
     :return: rendered flask template from templates/errors/500.html
     """
-    return render_template("errors/500.html", error=e), 500
+    return render_template("errors/500.html", error=e, title="Internal server error"), 500
 
 
 def is_logged_in():
