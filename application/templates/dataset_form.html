@@ -186,15 +186,19 @@
         {{ render_field(form.temporal_resolution) }}
     </div>
 
-    <ul class="nav nav-tabs" id="spatial-resolution-tab" role="tablist">
-        <li class="nav-item" role="presentation">
+    <ul class="nav nav-tabs mb-3" id="spatial-resolution-tab" role="tablist">
+        <li class="nav-item d-flex lh-1" role="presentation">
+            <i class="bi bi-geo-alt-fill me-1"></i>
+
             <button aria-controls="spatial-map" aria-selected="true" class="nav-link active"
                     data-bs-target="#spatial-map"
                     data-bs-toggle="tab" id="spatial-map-tab" role="tab" type="button">
                 Map
             </button>
         </li>
-        <li class="nav-item" role="presentation">
+        <li class="nav-item d-flex lh-1" role="presentation">
+            <i class="bi bi-file-zip-fill me-1"></i>
+
             <button aria-controls="spatial-upload" aria-selected="false" class="nav-link"
                     data-bs-target="#spatial-upload"
                     data-bs-toggle="tab" id="spatial-upload-tab" role="tab" type="button">
