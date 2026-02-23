@@ -276,7 +276,7 @@ def datasets_detail(dataset_id):
 
     return render_template(
         'dataset_detail.html',
-        dataset=dataset,
+        dataset=dataset.to_dict(),
         title=dataset.title
     )
 
@@ -316,7 +316,7 @@ def add_to_cart(dataset_id):
     if dataset_id not in session['cart']:
         session['cart'].append(dataset_id)
         session.modified = True
-    return redirect(url_for('main_bp.datasets'))
+    return redirect(request.referrer)
 
 
 @main_bp.route('/cart/remove/<dataset_id>')
