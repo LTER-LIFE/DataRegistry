@@ -59,3 +59,4 @@ class Config(object):
     ELASTIC_PASSWORD = environ.get("ELASTIC_PASSWORD")
     ELASTIC_VERIFY_CERTS = environ.get("ELASTIC_VERIFY_CERTS", True)
     ELASTIC_INDEX_NAME = environ.get("ELASTIC_INDEX_NAME", "dataset")
+    ELASTIC_MAX_RESULTS = environ.get("ELASTIC_MAX_RESULTS", 1000)

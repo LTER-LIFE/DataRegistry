@@ -48,6 +48,7 @@ AGG_BLUEPRINTS = {
 
 
 INDEX_NAME = Config.ELASTIC_INDEX_NAME
+MAX_RESULTS = Config.ELASTIC_MAX_RESULTS
 es = None
 def validate_index():
     global es
@@ -170,7 +171,7 @@ def delete_document(object):
 
 
 def fetch_all():
-    all_documents_query = {"query": {"match_all": {}}}
+    all_documents_query = {"query": {"match_all": {}}, "size": MAX_RESULTS}
     return es.search(index=INDEX_NAME, body=all_documents_query)
 
 def query(query):
@@ -250,7 +251,7 @@ def build_es_query(filters):
                 "must": must_clauses
             }
         },
-        "size": 10,
+        "size": MAX_RESULTS,
         "aggs": {
             # Aggregations for your facets can be added here
         }
