@@ -5,11 +5,12 @@ from application.database import db_session
 from application.models import Dataset, Location
 import unittest
 
+from test.base_test_case import BaseTestCase
 from test.db import engine
 from test.mock_objects import MockObjects
 
 
-class TestDataset(unittest.TestCase):
+class TestDataset(BaseTestCase):
 
     def setUp(self):
         """
@@ -39,7 +40,8 @@ class TestDataset(unittest.TestCase):
         instances = db_session.query(Dataset).all()
         eq_(0, len(instances))
 
-        self.mock_objects.create_mock_dataset("one")
+        with self.app.app_context():
+            self.mock_objects.create_mock_dataset("one")
 
         all_db_datasets = db_session.query(Dataset).all()
 
@@ -49,7 +51,8 @@ class TestDataset(unittest.TestCase):
         instances = db_session.query(Dataset).all()
         eq_(0, len(instances))
 
-        self.mock_objects.create_mock_dataset("two")
+        with self.app.app_context():
+            self.mock_objects.create_mock_dataset("two")
 
         all_db_datasets = db_session.query(Dataset).all()
 
