@@ -625,7 +625,7 @@ class Dataset(Base):
             "temporal_resolution": self.temporal_resolution,
             "spatial_resolution": self.spatial_resolution,
             "access_rights": self.access_rights,
-            "modified": self.modified.isoformat() if self.modified else None,
+            "modified": self.modified.isoformat(timespec="minutes") if self.modified else None,
             "taxonomic_coverage": self.taxonomic_coverage,
             "landing_page": self.landing_page,
             "public_id": self.public_id,
