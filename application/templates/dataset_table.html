@@ -8,7 +8,12 @@
         <form id="index_search_form">
            <div class="mb-4">
                <label for="free" class="form-label">Free text</label>
-               <input type="text" class="form-control" id="free" name="free">
+               <input
+                   type="text"
+                   class="form-control js-input"
+                   id="free"
+                   name="free"
+               >
            </div>
 
            <div class="mb-4">
@@ -21,14 +26,54 @@
                        <small class="slider-handle-label"></small>
                    </div>
                </div>
-               <input type="hidden" id="min_year_input" name="min_year">
-               <input type="hidden" id="max_year_input" name="max_year">
+
+               <input
+                   type="hidden"
+                   class="js-input"
+                   id="min_year_input"
+                   name="min_year"
+               >
+
+               <input
+                   type="hidden"
+                   class="js-input"
+                   id="max_year_input"
+                   name="max_year"
+               >
            </div>
 
-           <div class="mb-3">
-               <label for="spatial_coverage" class="form-label">Area</label>
-               <input class="form-control" id="spatial_coverage" name="spatial_coverage" type="text" value=""/>
-               <div class="visually-hidden map--small mt-3" id="select-geo-loc"></div>
+           <div class="mb-4">
+               <label class="form-label" for="area">Area</label>
+
+               <select class="form-select" name="area" aria-label="Select an area">
+                   <option id="area-none" value="">
+                       None
+                   </option>
+
+                   <option id="area-veluwe" value="POLYGON((5.530243 51.974899,5.530243 52.276729,6.112518 52.276729,6.112518 51.974899,5.530243 51.974899))">
+                       Veluwe
+                   </option>
+
+                   <option id="area-ijsselmeer" value="POLYGON((5.013885 52.60655,5.013885 53.066141,5.678558 53.066141,5.678558 52.60655,5.013885 52.60655))">
+                       IJsselmeer
+                   </option>
+
+                   <option id="area-custom" value="">
+                       Custom
+                   </option>
+               </select>
+
+               <div id="input-map" class="visually-hidden">
+                   <input
+                        class="form-control js-input visually-hidden"
+                        id="spatial_coverage"
+                        name="spatial_coverage"
+                        type="text"
+                        value=""
+                   />
+
+                   <div class="map--small mt-3" id="select-geo-loc"></div>
+               </div>
            </div>
        </form>
     </div>
@@ -44,6 +89,23 @@
 
 {% block app_js %}
 <script type="application/javascript">
+const areas = ['veluwe', 'ijsselmeer']
+
+function parseUrlParams() {
+    const queryString = window.location.search
+
+    if (queryString) {
+        const params = new URLSearchParams(queryString)
+        const area = params.get('area').toLowerCase()
+
+        if (areas.includes(area)) {
+            $(`select[name="area"] option[id=area-${area}]`)
+                .prop("selected", true)
+
+            $('select[name="area"]').trigger('change')
+        }
+    }
+}
 
 function serializeObject($form) {
     var o = {};
@@ -193,7 +255,7 @@ $(document).ready(function() {
 
     const debouncedFetchData = debounce(fetchData, 100);
 
-    $('#index_search_form').on('change input', 'input, select, textarea', function() {
+    $('#index_search_form').on('change input', '.js-input', function() {
     // This will fire for both change and input events.
     // It's a good way to catch all user interactions.
 
@@ -201,6 +263,27 @@ $(document).ready(function() {
 
     debouncedFetchData(formData);
     });
+
+    // Set spatial coverage or show the map when selecting an Area option
+    $('select[name="area"]').change(function() {
+        const selectedId = $('select[name="area"] option:selected').attr('id')
+
+        if (selectedId === 'area-custom') {
+            $('#input-map').removeClass('visually-hidden');
+
+            $('#spatial_coverage').val("")
+
+            initInputByMap()
+        } else {
+            $('#input-map').addClass('visually-hidden');
+
+            $('#spatial_coverage')
+                .val($(`#${selectedId}`).val())
+                .trigger('change')
+        }
+    });
+
+    parseUrlParams()
 });
 
 
