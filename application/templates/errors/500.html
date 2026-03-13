@@ -1,21 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
+<p>
+	Oops something went wrong.
+    Contact <a href="mailto:s.vriend@nioo.knaw.nl">Stefan Vriend</a> or
+    <a href="mailto:e.kuijt@nioo.knaw.nl">Eric Kuijt</a> for help.
+</p>
 
-<div class="container">
-	<p></p>
-	<h1>Internal server error</h1>
-	Oops something went wrong. Contact <a href="mailto:s.vriend@nioo.knaw.nl">Stefan Vriend</a> or
-		<a href="mailto:e.kuijt@nioo.knaw.nl">Eric Kuijt</a> for help.
-	<p>
-		{% if error %}
-			<div>
-			<h2>Debugging information:</h2>
-				{{ error }}
-				<br>
-				{{ error.original_exception }}
-			</div>
-		{% endif %}
-</div>
+{% if error %}
+    <h2>Debugging information:</h2>
+    {{ error }}
+    <br>
+    {{ error.original_exception }}
+{% endif %}
 
 {% endblock %}

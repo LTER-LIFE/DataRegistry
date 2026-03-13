@@ -1,0 +1,31 @@
+/*
+ * Tab styles
+ */
+.nav-tabs {
+	--bs-nav-tabs-border-width: 0;
+	--bs-nav-link-color: var(--ldr-text);
+	--bs-nav-tabs-link-active-color: var(--ldr-links-and-box-background);
+}
+
+.nav-tabs .nav-item {
+  margin-right: 0.75rem;
+}
+
+.nav-tabs .nav-item:not(:last-child) {
+  border-right: .1rem solid var(--ldr-border);
+}
+
+.nav-tabs .nav-link {
+  --bs-nav-link-padding-x: 0;
+  --bs-nav-link-padding-y: 0;
+  --bs-nav-link-font-weight: 600;
+  line-height: 1.15;
+  padding-right: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 40%;
+}
+
+.nav-tabs .nav-link:focus,
+.nav-tabs .nav-link:hover {
+  --bs-nav-link-hover-color: var(--ldr-links-and-box-background);
+}

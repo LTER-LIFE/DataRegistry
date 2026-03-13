@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-paragraph">
+    <ul class="nav nav-tabs" id="dataset-tabs" role="tablist">
+        <li
+            class="nav-item d-flex lh-1 align-items-center border-end-0"
+            role="presentation"
+        >
+            <i class="bi bi-file-text-fill me-1"></i>
+
+            <button
+                class="nav-link border-end active"
+                id="dataset-description-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#tab-description"
+                type="button"
+                role="tab"
+                aria-controls="tab-description"
+                aria-selected="true"
+            >
+                Description
+            </button>
+        </li>
+
+        <li class="nav-item d-flex lh-1 align-items-center" role="presentation">
+            <i class="bi bi-person-lines-fill me-1"></i>
+
+            <button
+                class="nav-link"
+                id="dataset-contact-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#tab-contact"
+                type="button"
+                role="tab"
+                aria-controls="tab-contact"
+                aria-selected="true"
+            >
+                Contact
+            </button>
+        </li>
+    </ul>
+
+    <a
+        class="btn btn-primary btn-sm"
+        href="{{ url_for('main_bp.add_to_cart', dataset_id=dataset.dataset_id) }}"
+    >
+        add to cart
+    </a>
+</div>
+
+<div class="tab-content" id="dataset-tab-content">
+    <div
+        class="tab-pane fade show active"
+        id="tab-description"
+        role="tabpanel"
+        aria-labelledby="dataset-description-tab"
+        tabindex="0"
+    >
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-paragraph">
+                    {{ dataset.description }}
+                </div>
+
+                <dl>
+                    {% if dataset.dataset_keywords|join(', ') %}
+                        <dt>Keywords</dt>
+                        <dd>{{ dataset.dataset_keywords|join(', ') }}</dd>
+                    {% endif %}
+
+                    {% if dataset.resource_type %}
+                        <dt>Resource type</dt>
+                        <dd>{{ dataset.resource_type }}</dd>
+                    {% endif %}
+
+                    {% if dataset.spatial_resolution %}
+                        <dt>Spatial resolution</dt>
+                        <dd>{{ dataset.spatial_resolution }}</dd>
+                    {% endif %}
+
+                    {% if dataset.taxonomic_coverage %}
+                        <dt>Taxonomic coverage</dt>
+                        <dd>{{ dataset.taxonomic_coverage }}</dd>
+                    {% endif %}
+
+                    <dt>Temporal coverage</dt>
+                    <dd>
+                        {{
+                            dataset.temporal_coverage_start + ' - '
+                            + (
+                                dataset.temporal_coverage_end
+                                    if dataset.temporal_coverage_end
+                                    else 'now'
+                               )
+                        }}
+                    </dd>
+
+                    {% if dataset.temporal_resolution %}
+                        <dt>Temporal resolution</dt>
+                        <dd>{{ dataset.temporal_resolution }}</dd>
+                    {% endif %}
+
+                    {% if dataset.dataset_license %}
+                        <dt>License</dt>
+                        <dd>{{ dataset.dataset_license.code }}</dd>
+                    {% endif %}
+
+                    {% if dataset.access_rights %}
+                        <dt>Access rights</dt>
+                        <dd>{{ dataset.access_rights }}</dd>
+                    {% endif %}
+
+                    {% if dataset.dataset_publisher %}
+                        <dt>Publisher</dt>
+                        <dd>{{ dataset.dataset_publisher.name }}</dd>
+                    {% endif %}
+
+                    {% if dataset.public_id %}
+                        <dt>Public ID</dt>
+                        <dd>{{ dataset.public_id }}</dd>
+                    {% endif %}
+
+                    {% if dataset.landing_page %}
+                        <dt>Landing page</dt>
+                        <dd>
+                            <a href="{{ dataset.landing_page }}" target="_blank">
+                                Visit landing page
+                            </a>
+                        </dd>
+                    {% endif %}
+                </dl>
+            </div>
+
+            <div class="col-md-6">
+                <div id="geo-{{ dataset.dataset_id }}" class="map--small mb-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div
+        class="tab-pane fade"
+        id="tab-contact"
+        role="tabpanel"
+        aria-labelledby="dataset-contact-tab"
+        tabindex="0"
+    >
+        <dl>
+            {% if dataset.dataset_contact_point %}
+                <dt>Contact point</dt>
+                <dd>
+                    {% if dataset.dataset_contact_point.mbox %}
+                        <a href="mailto:{{ dataset.dataset_contact_point.mbox }}">
+                            {{ dataset.dataset_contact_point.name }}
+                        </a>
+                    {% else %}
+                        {{ dataset.dataset_contact_point.name }}
+                    {% endif %}
+                </dd>
+            {% endif %}
+
+            {% if dataset.creator %}
+                <dt>Creator</dt>
+                <dd>
+                    {% if dataset.creator.mbox %}
+                        <a href="mailto:{{ dataset.creator.mbox }}">
+                            {{ dataset.creator.name }}
+                        </a>
+                    {% else %}
+                        {{ dataset.creator.name }}
+                    {% endif %}
+                </dd>
+            {% endif %}
+
+            {% if dataset.dataset_metadata_provider %}
+                <dt>Metadata provider</dt>
+                <dd>
+                    {% if dataset.dataset_metadata_provider.mbox %}
+                        <a href="mailto:{{ dataset.dataset_metadata_provider.mbox }}">
+                            {{ dataset.dataset_metadata_provider.name }}
+                        </a>
+                    {% else %}
+                        {{ dataset.dataset_metadata_provider.name }}
+                    {% endif %}
+                </dd>
+            {% endif %}
+        </dl>
+    </div>
+</div>
+
+<small class="fst-italic">Last updated on {{ dataset.modified }}</small>
+{% endblock %}
+
+{% block app_js %}
+<script>
+const datasetId = {{ dataset.dataset_id }}
+const datasetGeometry = {{ dataset.dataset_spatial_coverage.geometry|tojson }}
+
+loadDatasetMapWithGeoJSON(datasetId, datasetGeometry)
+</script>
+{% endblock %}

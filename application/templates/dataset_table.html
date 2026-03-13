@@ -109,12 +109,14 @@ function fetchData(query) {
 function addDataset(dataset) {
     const baseUrl = $('.datasets-list').data('add-to-cart-base-url');
     const addToCartUrl = `${baseUrl}${dataset.dataset_id}`;
-    const datasetUrl = '{{ url_for('main_bp.datasets', dataset_id='') }}' + dataset.dataset_id
 
     const itemHtml = `
         <li class="datasets-list__item">
             <h3>
-                ${dataset.title}
+                <a class="link-underline-hover link-offset-2" href="${dataset.url}">
+                    ${dataset.title}
+                    <i class="bi bi-arrow-right-short heading-icon"></i>
+                </a>
             </h3>
 
             <p class="mb-0 text--medium truncate-text--2">
@@ -123,10 +125,17 @@ function addDataset(dataset) {
 
             <div class="d-flex justify-content-end">
                 <a
-                    class="btn btn-link btn-sm p-0 link-underline-hover"
+                    class="btn btn-link btn-sm me-3 p-0 link-underline-hover"
                     href="${addToCartUrl}"
                 >
                     add to cart
+                </a>
+
+                <a
+                    class="btn btn-link btn-sm p-0 link-underline-hover"
+                    href="${dataset.url}"
+                >
+                    read more
                 </a>
             </div>
         </li>

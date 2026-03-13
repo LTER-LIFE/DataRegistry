@@ -56,6 +56,10 @@ ul.text-formatted li {
 	background-image: url(../img/bullet-blue.svg);
 }
 
+dd {
+	margin-bottom: 1rem;
+}
+
 a {
 	text-underline-offset: 40%;
 }
