@@ -1,0 +1,9 @@
+[Unit]
+Description=EcoSearchEngine database backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/deploy
+ExecStart=docker compose run --rm backup

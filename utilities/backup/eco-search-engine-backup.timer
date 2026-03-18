@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily EcoSearchEngine database backup
+Requires=eco-search-engine-backup.service
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target
