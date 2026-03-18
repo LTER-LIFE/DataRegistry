@@ -11,3 +11,7 @@ docker compose exec app python utilities/seed/seed_database.py                  
 docker compose exec app python utilities/seed/seed_database.py --count 500                 # 500 datasets
 docker compose exec app python utilities/seed/seed_database.py --count 2000 --prefix test  # 2000 datasets, prefixed 'test'
 ```
+
+After seeding, go to `/rebuild` in the app to index the new datasets into Elasticsearch.
+
+> **Note:** Rebuilding a large number of datasets can exceed the default gunicorn timeout (30s). For large seeds (500+), increase `GUNICORN_TIMEOUT` in `.env` before rebuilding — e.g. `GUNICORN_TIMEOUT=120`.

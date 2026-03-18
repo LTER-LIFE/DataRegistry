@@ -57,14 +57,23 @@ class MockObjects:
         # Wageningen coordinates: ~5.67 E, 51.97 N
         center_lon = 5.67 + random.uniform(-0.5, 0.5)
         center_lat = 51.97 + random.uniform(-0.5, 0.5)
-        # Create a random polygon around the center
+        # convex_hull ensures a valid non-degenerate polygon (collinear points produce
+        # a zero-area geometry that Elasticsearch rejects even though Shapely considers it valid)
         num_points = random.randint(4, 7)
         points = []
         for _ in range(num_points):
             lon = center_lon + random.uniform(-0.05, 0.05)
             lat = center_lat + random.uniform(-0.05, 0.05)
             points.append((lon, lat))
-        polygon = Polygon(points)
+        polygon = Polygon(points).convex_hull
+        if polygon.area == 0:
+            # Fallback: a small guaranteed square around the center
+            polygon = Polygon([
+                (center_lon - 0.01, center_lat - 0.01),
+                (center_lon + 0.01, center_lat - 0.01),
+                (center_lon + 0.01, center_lat + 0.01),
+                (center_lon - 0.01, center_lat + 0.01),
+            ])
         geometry_wkt = shapely.to_wkt(GeometryCollection([polygon]))
         dataset.dataset_spatial_coverage = Location.add_or_update_location(geometry=geometry_wkt)
 
