@@ -141,6 +141,19 @@ services:
       timeout: 10s
       retries: 120
 
+  backup:
+    image: kartoza/postgis:16-3.4
+    container_name: ${COMPOSE_PROJECT_NAME}-backup
+    env_file: .env
+    volumes:
+      - ./utilities/backup/backup.sh:/backup.sh:ro
+      - ${BACKUP_DIR}:/var/backups/ecometa
+    entrypoint: [ "/bin/bash", "/backup.sh" ]
+    restart: "no"
+    depends_on:
+      database:
+        condition: service_healthy
+
 networks:
   default:
     name: ${COMPOSE_PROJECT_NAME}
