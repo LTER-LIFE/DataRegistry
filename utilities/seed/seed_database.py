@@ -10,6 +10,9 @@ import argparse
 import os
 import sys
 
+# Ensure the project root is on the path when running from a subdirectory
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
 from application import create_app
 from application import database
 from test.mock_objects import MockObjects
