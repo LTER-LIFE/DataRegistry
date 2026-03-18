@@ -209,38 +209,62 @@ def stage_dataset(dataset_id=None):
         logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
 
+@main_bp.route('/dataset/from-ai/submit', methods=['POST'])
+async def dataset_from_ai_submit():
+    """Submit a URL to the LLM service and return the job_id immediately."""
+    llm_form = LlmForm()
+    try:
+        if llm_form.validate_on_submit():
+            service = LlmMetadataService()
+            job_id = await service.submit_job(llm_form.dataset_url.data)
+            return jsonify({"job_id": job_id})
+        return jsonify({"error": "Invalid form"}), 400
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+
+@main_bp.route('/dataset/from-ai/poll/<job_id>', methods=['GET'])
+async def dataset_from_ai_poll(job_id):
+    """Check the current status of an LLM job. Returns status and result when done."""
+    try:
+        service = LlmMetadataService()
+        status, data = await service.check_job(job_id)
+        return jsonify({"status": status, "data": data})
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+
 @main_bp.route('/dataset/from-ai', methods=['POST'])
 async def dataset_from_ai():
     """
     Bootstrap a dataset form using AI-extracted metadata from a URL.
 
-    This endpoint acts as a bridge between an LLM-driven extraction service
-    and the standard dataset creation workflow. It performs the following steps:
-    1. Validates the incoming URL/extraction request via LlmForm.
-    2. Invokes the LLM service to parse the target landing page into a Dataset entity.
-    3. Transfers the resulting Dataset attributes into a standard DatasetForm.
-    4. Renders the main dataset edit page, allowing the user to review and
-       supplement the AI-generated metadata before final persistence.
-
-    :return: Rendered HTML of the dataset form pre-filled with AI data.
-    :raises: 500 Internal Server Error if the LLM extraction or form mapping fails.
+    Accepts either:
+    - A job_id (from the JS polling flow) to fetch a completed job result, or
+    - A direct URL submission (legacy path via llm_form).
     """
     llm_form = LlmForm()
     llm_metadata_service = LlmMetadataService()
 
     name = "LLM Prefilled dataset"
     try:
-        if llm_form.validate_on_submit():
+        job_id = request.form.get("job_id")
+        if job_id:
+            _, dataset_json = await llm_metadata_service.check_job(job_id)
+        elif llm_form.validate_on_submit():
             dataset_json = await llm_metadata_service.get_metadata(llm_form.dataset_url.data)
+        else:
+            return redirect(url_for('main_bp.add_dataset'))
 
-            dataset = llm_form.to_dataset(dataset_json)
+        dataset = llm_form.to_dataset(dataset_json)
 
-            dataset_form = DatasetForm()
-            dataset_form.from_dataset(dataset)
+        dataset_form = DatasetForm()
+        dataset_form.from_dataset(dataset)
 
-            page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title="Register your dataset")
-            return page
-        return redirect(url_for('main_bp.add_dataset'))
+        page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title="Register your dataset")
+        return page
     except Exception as e:
         logging.error(traceback.format_exc())
         abort(500, description=f"Failed to fetch dataset for {llm_form.dataset_url.data}.", original_exception=e)
