@@ -9,6 +9,8 @@ threads = int(environ.get("GUNICORN_THREADS", 1))
 timeout = int(environ.get("GUNICORN_TIMEOUT", 120))
 reload = bool(environ.get("GUNICORN_RELOAD", 0))
 
+timeout = int(environ.get("GUNICORN_TIMEOUT", 30))
+
 # https://docs.gunicorn.org/en/latest/faq.html#blocking-os-fchmod
 # place tmp dir in tmpfs location - instead of overlay - to avoid delays
 worker_tmp_dir = "/dev/shm"
