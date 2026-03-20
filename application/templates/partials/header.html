@@ -54,11 +54,11 @@
 
             <li class="nav-item">
               <a
-                class="nav-link {% if request.path == url_for('main_bp.cart') %}active{% endif %}"
-                href="{{ url_for('main_bp.cart') }}"
+                class="nav-link {% if request.path == url_for('main_bp.download_list') %}active{% endif %}"
+                href="{{ url_for('main_bp.download_list') }}"
               >
-                  Shopping cart
-                  {% if cart_item_count > 0 %} ({{ cart_item_count }}) {% endif %}
+                  Download list
+                  {% if download_list_item_count > 0 %} ({{ download_list_item_count }}) {% endif %}
               </a>
             </li>
 
