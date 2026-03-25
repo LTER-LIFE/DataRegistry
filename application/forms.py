@@ -473,7 +473,7 @@ class DatasetStagingForm(FlaskForm):
                                                      "LTER-LIFE in case there are questions about the metadata form "
                                                      "you are currently submitting. NB: by providing this email "
                                                      "address, you give consent to LTER-LIFE to display the email "
-                                                     "address on the Veluwe Metadata Portal.")
+                                                     "address on the LTER-NL Data Registry.")
 
     # Creator
     creator_name = StringField("Name", validators=[],
@@ -488,7 +488,7 @@ class DatasetStagingForm(FlaskForm):
     creator_mbox = StringField("Email address", description="If the creator of the dataset is a person, please "
                                                             "provide their email address. NB: by providing this email "
                                                             "address, you give consent to LTER-LIFE to display the "
-                                                            "email address on the Veluwe Metadata Portal. ")
+                                                            "email address on the LTER-NL Data Registry. ")
 
     # Contact point
     dataset_contact_point_name = StringField("Name", validators=[DataRequired()],
@@ -503,7 +503,7 @@ class DatasetStagingForm(FlaskForm):
                                                          "users of the Veluwe Metadata Portal in case they have "
                                                          "questions about the dataset. NB: by providing this email "
                                                          "address, you give consent to LTER-LIFE to display the email "
-                                                         "address on the Veluwe Metadata Portal. ")
+                                                         "address on the LTER-NL Data Registry. ")
 
     title = StringField("Title", validators=[DataRequired()], description="A brief description of the dataset. "
                                                                           "Recommended to include: subject, location,"
