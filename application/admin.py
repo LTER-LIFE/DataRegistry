@@ -21,7 +21,7 @@ from application.models import AgentStaging, KeywordStaging, CatalogStaging, Che
 class DatasetStagingAdmin(ModelView):
     can_create=False
     can_edit=True
-    can_delete=False
+    can_delete=True
 
     column_list = ["dataset_id", "title", "creator_id","is_approved","description","actions"]
     column_filters = ["is_approved", "creator_id"]
