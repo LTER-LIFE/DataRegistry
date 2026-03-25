@@ -584,7 +584,7 @@ class Dataset(Base):
     dataset_spatial_coverage_id = Column(Integer, ForeignKey('Location.location_id'))
     dataset_spatial_coverage = relationship('Location', lazy=True)
 
-    spatial_resolution = Column(String(255), nullable=False)
+    spatial_resolution = Column(String(255), nullable=True)
 
     dataset_license_id = Column(Integer, ForeignKey('LicenseDocument.license_document_id'))
     dataset_license = relationship("LicenseDocument", foreign_keys=[dataset_license_id])
@@ -790,8 +790,9 @@ class DatasetStaging(Base):
 
     dataset_spatial_coverage_id = Column(Integer, ForeignKey('LocationStaging.location_id'))
     dataset_spatial_coverage = relationship('LocationStaging', lazy=True)
+    
 
-    spatial_resolution = Column(String(255), nullable=False)
+    spatial_resolution = Column(String(255), nullable=True)
 
     dataset_license_id = Column(Integer, ForeignKey('LicenseDocumentStaging.license_document_id'))
     dataset_license = relationship("LicenseDocumentStaging", foreign_keys=[dataset_license_id])
