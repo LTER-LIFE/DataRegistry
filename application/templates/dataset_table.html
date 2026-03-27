@@ -113,21 +113,22 @@ function parseUrlParams() {
     }
 }
 
-function serializeObject($form) {
-    var o = {};
-    var a = $form.serializeArray();
-    $.each(a, function() {
-        if (o[this.name]) {
-            if (!o[this.name].push) {
-                o[this.name] = [o[this.name]];
-            }
-            o[this.name].push(this.value || '');
-        } else {
-            o[this.name] = this.value || '';
+function getFormData() {
+    // only a subset of form fields should be sent to the search index,
+    // which are defined below. E.g. the leaflet and area input are excluded.
+    const formKeys = ['free', 'min_year', 'max_year', 'spatial_coverage']
+    const form = document.getElementById('index_search_form')
+    const formData = new FormData(form)
+    const query = {}
+
+    for (const [key, value] of formData) {
+        if (formKeys.includes(key)) {
+            query[key] = value
         }
-    });
-    return o;
-};
+    }
+
+    return query
+}
 
 function debounce(func, wait) {
   let timeout;
@@ -262,12 +263,9 @@ $(document).ready(function() {
     const debouncedFetchData = debounce(fetchData, 100);
 
     $('#index_search_form').on('change input', '.js-input', function() {
-    // This will fire for both change and input events.
-    // It's a good way to catch all user interactions.
+        const formData = getFormData()
 
-    formData =  serializeObject($('#index_search_form'))
-
-    debouncedFetchData(formData);
+        debouncedFetchData(formData);
     });
 
     // Set spatial coverage or show the map when selecting an Area option
