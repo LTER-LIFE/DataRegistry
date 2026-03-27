@@ -60,6 +60,30 @@
 </div>
 {% endif %}
 
+<div class="modal fade" id="llm-loading-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="bi bi-robot me-2"></i>AI Harvester</h3>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" id="llm-spinner" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mb-0" id="llm-status-message">Submitting job...</p>
+            </div>
+            <div class="modal-footer d-none" id="llm-modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="llm-result-form" action="{{ url_for('main_bp.dataset_from_ai') }}" method="POST" class="d-none">
+    {{ llm_form.hidden_tag() }}
+    <input type="hidden" name="job_id" id="llm-job-id">
+</form>
+
 <p>
     Please follow these <a href="{{url_for('main_bp.instructions')}}" target="popup">instructions</a>
     when registering your dataset in the LTER-NL Data Registry.
@@ -282,6 +306,60 @@
 <script type="text/javascript">
     $(window).on('load', function() {
         $('#staticBackdrop').modal('show');
+
+        const pollBase = "{{ url_for('main_bp.dataset_from_ai_poll', job_id='JOB_ID') }}";
+
+        function showError(message) {
+            $('#llm-spinner').addClass('d-none');
+            $('#llm-status-message').html(
+                `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>${message}</span>`
+            );
+            $('#llm-modal-footer').removeClass('d-none');
+            $('#llm-submit-btn').prop('disabled', false);
+        }
+
+        function pollJob(jobId) {
+            fetch(pollBase.replace('JOB_ID', jobId))
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
+
+                    const status = data.status;
+                    $('#llm-status-message').text(`Job is ${status}...`);
+
+                    if (status === 'success') {
+                        $('#llm-status-message').text('Done! Loading prefilled form...');
+                        $('#llm-job-id').val(jobId);
+                        $('#llm-result-form').submit();
+                    } else if (status.includes('fail')) {
+                        showError(`Job failed with status: ${status}`);
+                    } else {
+                        setTimeout(() => pollJob(jobId), 2000);
+                    }
+                })
+                .catch(err => showError(err.message));
+        }
+
+        $('#llm-harvester-form').on('submit', function(e) {
+            e.preventDefault();
+
+            $('#llm-submit-btn').prop('disabled', true);
+            $('#llm-spinner').removeClass('d-none');
+            $('#llm-status-message').text('Submitting job...');
+            $('#llm-modal-footer').addClass('d-none');
+            $('#llm-loading-modal').modal('show');
+
+            fetch("{{ url_for('main_bp.dataset_from_ai_submit') }}", {
+                method: 'POST',
+                body: new FormData(this)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
+                    pollJob(data.job_id);
+                })
+                .catch(err => showError(err.message));
+        });
     });
 </script>
 {% endblock %}
