@@ -130,6 +130,25 @@ function getFormData() {
     return query
 }
 
+// Set spatial coverage or show the map when selecting an Area option
+function setSpatialCoverageFilter() {
+    const selectedId = $('select[name="area"] option:selected').attr('id')
+
+    if (selectedId === 'area-custom') {
+        $('#input-map').removeClass('visually-hidden');
+
+        $('#spatial_coverage').val("")
+
+        initInputByMap()
+    } else {
+        $('#input-map').addClass('visually-hidden');
+
+        $('#spatial_coverage')
+            .val($(`#${selectedId}`).val())
+            .trigger('change')
+    }
+}
+
 function debounce(func, wait) {
   let timeout;
   return function executed(...args) {
@@ -268,23 +287,8 @@ $(document).ready(function() {
         debouncedFetchData(formData);
     });
 
-    // Set spatial coverage or show the map when selecting an Area option
     $('select[name="area"]').change(function() {
-        const selectedId = $('select[name="area"] option:selected').attr('id')
-
-        if (selectedId === 'area-custom') {
-            $('#input-map').removeClass('visually-hidden');
-
-            $('#spatial_coverage').val("")
-
-            initInputByMap()
-        } else {
-            $('#input-map').addClass('visually-hidden');
-
-            $('#spatial_coverage')
-                .val($(`#${selectedId}`).val())
-                .trigger('change')
-        }
+        setSpatialCoverageFilter()
     });
 
     parseUrlParams()
