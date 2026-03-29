@@ -303,14 +303,14 @@ def stageddatasets(dataset_id=None):
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
 
 
-@main_bp.route('/download_list')
+@main_bp.route('/download-list')
 def download_list():
     dataset_ids = session.get('download_list', [])
     download_list = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
-    return render_template('download_list.html', download_list=download_list, title='Your download list')
+    return render_template('download-list.html', download_list=download_list, title='Your download list')
 
 
-@main_bp.route('/download_list/add/<dataset_id>')
+@main_bp.route('/download-list/add/<dataset_id>')
 def add_to_download_list(dataset_id):
     if 'download_list' not in session:
         session['download_list'] = []
@@ -320,7 +320,7 @@ def add_to_download_list(dataset_id):
     return redirect(request.referrer)
 
 
-@main_bp.route('/download_list/remove/<dataset_id>')
+@main_bp.route('/download-list/remove/<dataset_id>')
 def remove_from_download_list(dataset_id):
     download_list = session.get('download_list', [])
     if dataset_id in download_list:
@@ -330,13 +330,13 @@ def remove_from_download_list(dataset_id):
     return redirect(request.referrer)
 
 
-@main_bp.route('/download_list/empty')
+@main_bp.route('/download-list/empty')
 def empty_download_list():
     session.pop('download_list', None)
     return redirect(request.referrer)
 
 
-@main_bp.route('/download_list/export')
+@main_bp.route('/download-list/export')
 def export_download_list():
     dataset_ids = session.get('download_list', [])
     if len(dataset_ids) > 0:
