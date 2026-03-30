@@ -36,7 +36,7 @@
     <div class="col-md-8">
         <div
             class="datasets-list"
-            data-add-to-cart-base-url="{{ url_for('main_bp.add_to_cart', dataset_id='') }}"
+            data-add-to-download-list-base-url="{{ url_for('main_bp.add_to_download_list', dataset_id='') }}"
         ></div>
     </div>
 </div>
@@ -107,8 +107,8 @@ function fetchData(query) {
 }
 
 function addDataset(dataset) {
-    const baseUrl = $('.datasets-list').data('add-to-cart-base-url');
-    const addToCartUrl = `${baseUrl}${dataset.dataset_id}`;
+    const baseUrl = $('.datasets-list').data('add-to-download-list-base-url');
+    const addToDownloadListUrl = `${baseUrl}${dataset.dataset_id}`;
 
     const itemHtml = `
         <li class="datasets-list__item">
@@ -126,9 +126,9 @@ function addDataset(dataset) {
             <div class="d-flex justify-content-end">
                 <a
                     class="btn btn-link btn-sm me-3 p-0 link-underline-hover"
-                    href="${addToCartUrl}"
+                    href="${addToDownloadListUrl}"
                 >
-                    add to cart
+                    add to download list
                 </a>
 
                 <a
