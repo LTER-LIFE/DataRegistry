@@ -1,8 +1,51 @@
 {% extends "base.html" %}
 
+{% block vendor_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename ='vendor/leaflet.markercluster/MarkerCluster.css')}}">
+<link rel="stylesheet" href="{{ url_for('static', filename ='vendor/leaflet.markercluster/MarkerCluster.Default.css')}}">
+{% endblock %}
+
 {% block content %}
 <div class="row datasets-overview-container">
-    <div class="col-md-4">
+    <div class="col-12 col-md-8 offset-md-4 mb-4 mt-4 mt-md-0">
+        <ul id="datasets-view-tabs" class="nav nav-tabs" role="tablist">
+            <li class="nav-item d-flex lh-1" role="presentation">
+                <i class="bi bi-list-task me-1"></i>
+
+                <button
+                    id="datasets-list-button"
+                    class="nav-link active"
+                    data-bs-target="#datasets-list-tab"
+                    data-bs-toggle="tab"
+                    aria-controls="datasets-list-tab"
+                    aria-selected="true"
+                    role="tab"
+                    type="button"
+                >
+                    List
+                </button>
+            </li>
+
+            <li class="nav-item d-flex lh-1" role="presentation">
+                <i class="bi bi-geo-alt-fill me-1"></i>
+
+                <button
+                    id="datasets-map-button"
+                    class="nav-link"
+                    data-bs-target="#datasets-map-tab"
+                    data-bs-toggle="tab"
+                    aria-controls="datasets-map-tab"
+                    aria-selected="false"
+                    role="tab"
+                    type="button"
+                >
+                    Map
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="col-md-4 order-first order-md-0">
         <h2>Filters</h2>
 
         <form id="index_search_form">
@@ -34,16 +77,39 @@
     </div>
 
     <div class="col-md-8">
-        <div
-            class="datasets-list"
-            data-add-to-download-list-base-url="{{ url_for('main_bp.add_to_download_list', dataset_id='') }}"
-        ></div>
+        <div class="tab-content">
+            <div
+                id="datasets-list-tab"
+                class="tab-pane fade show active"
+                role="tabpanel"
+                aria-labelledby="datasets-list-button"
+            >
+                <div
+                    class="datasets-list"
+                    data-add-to-download-list-base-url="{{ url_for('main_bp.add_to_download_list', dataset_id='') }}"
+                ></div>
+            </div>
+
+            <div
+                id="datasets-map-tab"
+                class="tab-pane fade"
+                role="tabpanel"
+                aria-labelledby="datasets-map-button"
+            >
+                <div id="datasets-map" class="map"></div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 
+{% block vendor_js %}
+<script src="{{ url_for('static', filename='vendor/leaflet.markercluster/leaflet.markercluster.js')}}"></script>
+{% endblock %}
+
 {% block app_js %}
-<script type="application/javascript">
+<script type="module">
+import { appState } from '{{ url_for('static', filename='js/app-state.js')}}'
 
 function serializeObject($form) {
     var o = {};
@@ -74,6 +140,10 @@ function debounce(func, wait) {
 }
 
 function fetchData(query) {
+    // the selection of datasets is stored, so when the map tab is
+    // activated, the data does not need to be retrieved a second time.
+    appState.datasets.selection = []
+
     // Sla het volledige query-object op in localStorage
     localStorage.setItem('last_search_filters', JSON.stringify(query));
 
@@ -90,11 +160,17 @@ function fetchData(query) {
                 $('.datasets-list').empty();
 
                 if (data.hits && data.hits.length > 0) {
+                    appState.datasets.selection = data.hits
+
                     $('.datasets-list').append('<ul class="list-unstyled"></ul>');
 
                     data.hits.forEach(function(dataset) {
                         addDataset(dataset._source);
                     });
+
+                    if (appState.datasets.mapTabActive){
+                        updateMap()
+                    }
                 } else {
                     $('.datasets-list').append("<p>No results found.</p>");
                 }
@@ -142,6 +218,86 @@ function addDataset(dataset) {
     `;
 
 $('.datasets-list ul').append(itemHtml);
+}
+
+function initMap() {
+    const osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        minZoom: 2,
+        maxZoom: 19,
+        attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    })
+
+    const esri = new L.TileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        minZoom: 2, maxZoom: 19, attribution: 'Tiles &copy; Esri...'
+    })
+
+    appState.datasets.map.mapInstance = new L.Map('datasets-map', {
+        doubleClickZoom: false,
+        maxBounds: [[90, -270], [-90, 270]],
+    })
+
+    osm.addTo(appState.datasets.map.mapInstance)
+
+    const baseMaps = { "OpenStreetMap": osm, "Esri Satellite": esri }
+    L.control.layers(baseMaps).addTo(appState.datasets.map.mapInstance)
+
+    appState.datasets.map.markerClustersGroup = L.markerClusterGroup()
+        .addTo(appState.datasets.map.mapInstance)
+
+    appState.datasets.map.areaGroup = L.featureGroup()
+        .addTo(appState.datasets.map.mapInstance)
+
+    appState.datasets.map.mapInstance.on('click', function () {
+        appState.datasets.map.areaGroup.clearLayers()
+    })
+
+    updateMap()
+}
+
+function updateMap() {
+    appState.datasets.map.mapInstance.setView([52.450988, 5.543826], 9)
+
+    appState.datasets.map.markerClustersGroup.clearLayers()
+
+    // add a new marker with a popup
+    let all_points = []
+    appState.datasets.selection.forEach(item => {
+        const dataset = item._source
+
+        all_points.push(L.geoJson(dataset.dataset_spatial_coverage.centroid, {
+            pointToLayer: (feature, latlng) => {
+                const popup = document.createElement("div")
+                popup.innerHTML = `
+                    <h2> \
+                        <a class="text-decoration-none" href="${dataset.url}"> \
+                            ${dataset.title} \
+                        </a> \
+                    </h2> \
+                    <p>
+                        ${dataset.description.substring(0, 125)}... \
+                        <a href="${dataset.url}">read more</a> \
+                    </p>`
+
+                const button = document.createElement("button")
+                button.className = "btn btn-sm btn-primary"
+                button.innerHTML= "Show area"
+                button.onclick = function() {
+                    if (appState.datasets.map.areaGroup.getLayers().length >=1) {
+                        appState.datasets.map.areaGroup.clearLayers()
+                    } else {
+                        const area = L.geoJson(dataset.dataset_spatial_coverage.geometry)
+                        area.addTo(appState.datasets.map.areaGroup)
+                    }
+                }
+
+                popup.appendChild(button)
+
+                return L.marker(latlng).bindPopup(popup)
+            }
+        }))
+    })
+
+    appState.datasets.map.markerClustersGroup.addLayer(L.layerGroup(all_points))
 }
 
 $(function () {
@@ -197,10 +353,25 @@ $(document).ready(function() {
     // This will fire for both change and input events.
     // It's a good way to catch all user interactions.
 
-    formData =  serializeObject($('#index_search_form'))
+    const formData =  serializeObject($('#index_search_form'))
 
     debouncedFetchData(formData);
     });
+
+    $('#datasets-view-tabs [data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        appState.datasets.mapTabActive = false
+
+        // The map can only be initialized when the map tab is active
+        if (e.target.id === 'datasets-map-button') {
+            appState.datasets.mapTabActive = true
+
+            if (!appState.datasets.map.mapInstance) {
+                initMap()
+            } else {
+                updateMap()
+            }
+        }
+    })
 });
 
 
