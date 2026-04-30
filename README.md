@@ -59,7 +59,9 @@ By default:
 Pull requests are welcome!  
 Please open an issue first to discuss major changes.
 
----
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of notable changes to this project.
 
 ## 📄 License
 
