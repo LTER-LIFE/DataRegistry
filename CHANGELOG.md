@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
 
+- Create a changelog following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+- Implement [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ## [0.6.0] - 2026-03-30
 Version demonstrated at the LTER-LIFE semi-annual meeting in March/April 2026
