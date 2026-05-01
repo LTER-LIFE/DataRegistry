@@ -88,6 +88,16 @@ Follow these guidelines when contributing content:
   - Provide specific, actionable feedback
   - Handle disagreements constructively; consider asking a third developer for their perspective
 
+## Making a release
+
+1. Determine a new version by looking at the changelog
+2. Create a commit, which
+    * moves the contents from the "[Unreleased]" section in the [CHANGELOG.md](CHANGELOG.md) to a new versioned section
+    * updates the version in `pyproject.toml`
+3. Tag this commit with a new version: `git tag -a <version> -m "<description>" <commit-hash>`
+4. Create a new GitHub release, point to relevant section in the changelog
+5. Deploy release on production
+6. Close milestone and move any remaining issues to next milestone
 
 ## 📄 License
 
