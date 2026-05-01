@@ -61,7 +61,7 @@ Please open an issue first to discuss major changes.
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for a list of notable changes to this project.
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes to this project.
 
 ## 📄 License
 
