@@ -167,12 +167,12 @@ function fetchData(query) {
                     data.hits.forEach(function(dataset) {
                         addDataset(dataset._source);
                     });
-
-                    if (appState.datasets.mapTabActive){
-                        updateMap()
-                    }
                 } else {
                     $('.datasets-list').append("<p>No results found.</p>");
+                }
+
+                if (appState.datasets.mapTabActive){
+                    updateMap()
                 }
             },
             error: function(xhr, status, error) {
@@ -255,7 +255,22 @@ function initMap() {
 }
 
 function updateMap() {
-    appState.datasets.map.mapInstance.setView([52.450988, 5.543826], 9)
+    const areaFilter = $('#spatial_coverage').val()
+
+    if (areaFilter !== "" && areaFilter !== "GEOMETRYCOLLECTION EMPTY") {
+        const geoJson = createGeoJSONFromWkt(areaFilter)
+        const geoJsonLayer = L.geoJSON(JSON.parse(geoJson))
+        const bounds = geoJsonLayer.getBounds()
+
+        if (boundsValid(bounds)) {
+            appState.datasets.map.mapInstance.fitBounds(
+                bounds,
+                { padding: [20, 20] }
+            )
+        }
+    } else {
+        appState.datasets.map.mapInstance.setView([52.450988, 5.543826], 9)
+    }
 
     appState.datasets.map.markerClustersGroup.clearLayers()
 
