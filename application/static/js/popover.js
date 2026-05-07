@@ -143,7 +143,7 @@ function loadMapContent(map, editableLayers) {
             const bounds = geoJsonLayer.getBounds();
             
             if (boundsValid(bounds)) {
-                map.fitBounds(bounds, { padding: [10] });
+                map.fitBounds(bounds, { padding: [10, 10] });
             }
         }
     }
