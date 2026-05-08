@@ -139,7 +139,11 @@ function loadMapContent(map, editableLayers) {
         if (geoJson.type) {
             $('#geographic_origin').val(wkt_string);
             const geoJsonLayer = L.geoJSON(geoJson);
-            geoJsonLayer.addTo(editableLayers);
+
+            geoJsonLayer.eachLayer(function(layer){
+                layer.addTo(editableLayers)
+            })
+
             const bounds = geoJsonLayer.getBounds();
             
             if (boundsValid(bounds)) {
