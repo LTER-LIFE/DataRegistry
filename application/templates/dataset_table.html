@@ -110,6 +110,7 @@
 {% block app_js %}
 <script type="module">
 import { appState } from '{{ url_for('static', filename='js/app-state.js')}}'
+import { setMapViewAsFilterControl } from '{{ url_for('static', filename='js/leaflet-control-set-map-view-as-filter.js')}}'
 
 function serializeObject($form) {
     var o = {};
@@ -240,6 +241,9 @@ function initMap() {
 
     const baseMaps = { "OpenStreetMap": osm, "Esri Satellite": esri }
     L.control.layers(baseMaps).addTo(appState.datasets.map.mapInstance)
+
+    setMapViewAsFilterControl({ position: 'bottomleft' })
+        .addTo(appState.datasets.map.mapInstance)
 
     appState.datasets.map.markerClustersGroup = L.markerClusterGroup()
         .addTo(appState.datasets.map.mapInstance)
