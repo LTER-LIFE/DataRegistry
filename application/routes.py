@@ -277,7 +277,12 @@ def datasets():
 
     :return: rendered flask template from templates/dataset_table.html
     """
-    return render_template('dataset_table.html', title='Datasets')
+    download_list = session.get('download_list', [])
+    return render_template(
+        'dataset_table.html',
+        title='Datasets',
+        download_list=download_list,
+    )
 
 
 @main_bp.route('/Dataset/<int:dataset_id>')
