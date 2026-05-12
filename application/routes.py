@@ -341,6 +341,7 @@ def add_to_download_list(dataset_id):
     if dataset_id not in session['download_list']:
         session['download_list'].append(dataset_id)
         session.modified = True
+    flash(f'Dataset {dataset_id} added to the download list', 'success')
     return redirect(request.referrer)
 
 
@@ -351,6 +352,7 @@ def remove_from_download_list(dataset_id):
         download_list.remove(dataset_id)
         session['download_list'] = download_list
         session.modified = True
+    flash(f'Dataset {dataset_id} removed from the download list', 'success')
     return redirect(request.referrer)
 
 
