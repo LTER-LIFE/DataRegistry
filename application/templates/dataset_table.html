@@ -36,7 +36,7 @@
     <div class="col-md-8">
         <div
             class="datasets-list"
-            data-add-to-download-list-base-url="{{ url_for('main_bp.add_to_download_list', dataset_id='') }}"
+            data-add-to-download-list-base-url="{{ url_for('main_bp.add_to_download_list', dataset_id=-999) }}"
         ></div>
     </div>
 </div>
@@ -108,7 +108,7 @@ function fetchData(query) {
 
 function addDataset(dataset) {
     const baseUrl = $('.datasets-list').data('add-to-download-list-base-url');
-    const addToDownloadListUrl = `${baseUrl}${dataset.dataset_id}`;
+    const addToDownloadListUrl = baseUrl.replace(/-999$/, dataset.dataset_id);
 
     const itemHtml = `
         <li class="datasets-list__item">

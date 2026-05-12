@@ -334,7 +334,7 @@ def download_list():
     return render_template('download-list.html', download_list=download_list, title='Your download list')
 
 
-@main_bp.route('/download-list/add/<dataset_id>')
+@main_bp.route('/download-list/add/<int:dataset_id>')
 def add_to_download_list(dataset_id):
     if 'download_list' not in session:
         session['download_list'] = []
@@ -344,7 +344,7 @@ def add_to_download_list(dataset_id):
     return redirect(request.referrer)
 
 
-@main_bp.route('/download-list/remove/<dataset_id>')
+@main_bp.route('/download-list/remove/<int:dataset_id>')
 def remove_from_download_list(dataset_id):
     download_list = session.get('download_list', [])
     if dataset_id in download_list:
