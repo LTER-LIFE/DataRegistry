@@ -298,10 +298,12 @@ def datasets_detail(dataset_id):
     if not dataset:
         abort(404)
 
+    download_list = session.get('download_list', [])
     return render_template(
         'dataset_detail.html',
         dataset=dataset.to_dict(),
-        title=dataset.title
+        title=dataset.title,
+        is_dataset_in_download_list=dataset.dataset_id in download_list
     )
 
 

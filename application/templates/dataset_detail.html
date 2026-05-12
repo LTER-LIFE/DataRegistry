@@ -41,12 +41,21 @@
         </li>
     </ul>
 
-    <a
-        class="btn btn-primary btn-sm"
-        href="{{ url_for('main_bp.add_to_download_list', dataset_id=dataset.dataset_id) }}"
-    >
-        add to download list
-    </a>
+    {% if is_dataset_in_download_list %}
+        <a
+            class="btn btn-primary btn-sm"
+            href="{{ url_for('main_bp.remove_from_download_list', dataset_id=dataset.dataset_id) }}"
+        >
+            remove from download list
+        </a>
+    {% else %}
+        <a
+            class="btn btn-primary btn-sm"
+            href="{{ url_for('main_bp.add_to_download_list', dataset_id=dataset.dataset_id) }}"
+        >
+            add to download list
+        </a>
+    {% endif %}
 </div>
 
 <div class="tab-content" id="dataset-tab-content">
