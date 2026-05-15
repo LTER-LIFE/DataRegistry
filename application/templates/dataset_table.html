@@ -109,9 +109,14 @@ function parseUrlParams() {
         if (areas.includes(area)) {
             $(`select[name="area"] option[id=area-${area}]`)
                 .prop("selected", true)
+        } else {
+            alert('An invalid area was requested. Continuing without an area filter.')
 
-            $('select[name="area"]').trigger('change')
+            $(`select[name="area"] option[id=area-none]`)
+                .prop("selected", true)
         }
+
+        $('select[name="area"]').trigger('change')
     }
 }
 
