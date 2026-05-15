@@ -58,10 +58,10 @@
                    </option>
 
                    <option
-                     id="area-ijsselmeer"
-                     value="{% include "boundaries/ijsselmeer-region.txt" %}"
+                     id="area-ijsselmeergebied"
+                     value="{% include "boundaries/ijsselmeergebied.txt" %}"
                    >
-                       IJsselmeer
+                       IJsselmeergebied
                    </option>
 
                    <option id="area-custom" value="">
@@ -96,7 +96,7 @@
 
 {% block app_js %}
 <script type="application/javascript">
-const areas = ['veluwe', 'ijsselmeer']
+const areas = ['veluwe', 'ijsselmeergebied']
 const downloadList = {{ download_list | tojson }};
 
 function parseUrlParams() {
