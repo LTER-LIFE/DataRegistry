@@ -342,7 +342,7 @@ def add_to_download_list(dataset_id):
     if dataset_id not in session['download_list']:
         session['download_list'].append(dataset_id)
         session.modified = True
-    dataset = Dataset.query.get(dataset_id)
+    dataset = db_session.get(Dataset, dataset_id)
     flash(
         markupsafe.Markup(
             f'Dataset "{dataset.title}" added to the '
@@ -360,7 +360,7 @@ def remove_from_download_list(dataset_id):
         download_list.remove(dataset_id)
         session['download_list'] = download_list
         session.modified = True
-    dataset = Dataset.query.get(dataset_id)
+    dataset = db_session.get(Dataset, dataset_id)
     flash(
         markupsafe.Markup(
             f'Dataset "{dataset.title}" removed from the '
