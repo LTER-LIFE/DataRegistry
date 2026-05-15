@@ -277,7 +277,12 @@ def datasets():
 
     :return: rendered flask template from templates/dataset_table.html
     """
-    return render_template('dataset_table.html', title='Datasets')
+    download_list = session.get('download_list', [])
+    return render_template(
+        'dataset_table.html',
+        title='Datasets',
+        download_list=download_list,
+    )
 
 
 @main_bp.route('/Dataset/<int:dataset_id>')
@@ -298,10 +303,12 @@ def datasets_detail(dataset_id):
     if not dataset:
         abort(404)
 
+    download_list = session.get('download_list', [])
     return render_template(
         'dataset_detail.html',
         dataset=dataset.to_dict(),
-        title=dataset.title
+        title=dataset.title,
+        is_dataset_in_download_list=dataset.dataset_id in download_list
     )
 
 
@@ -327,41 +334,42 @@ def stageddatasets(dataset_id=None):
         abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
 
 
-@main_bp.route('/cart')
-def cart():
-    dataset_ids = session.get('cart', [])
-    cart_items = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
-    return render_template('cart.html', cart=cart_items, title='Your Shopping Cart')
+@main_bp.route('/download-list')
+def download_list():
+    dataset_ids = session.get('download_list', [])
+    download_list = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
+    return render_template('download-list.html', download_list=download_list, title='Your download list')
 
-@main_bp.route('/cart/add/<dataset_id>')
-def add_to_cart(dataset_id):
-    if 'cart' not in session:
-        session['cart'] = []
-    if dataset_id not in session['cart']:
-        session['cart'].append(dataset_id)
+
+@main_bp.route('/download-list/add/<int:dataset_id>')
+def add_to_download_list(dataset_id):
+    if 'download_list' not in session:
+        session['download_list'] = []
+    if dataset_id not in session['download_list']:
+        session['download_list'].append(dataset_id)
         session.modified = True
     return redirect(request.referrer)
 
 
-@main_bp.route('/cart/remove/<dataset_id>')
-def remove_from_cart(dataset_id):
-    cart = session.get('cart', [])
-    if dataset_id in cart:
-        cart.remove(dataset_id)
-        session['cart'] = cart
+@main_bp.route('/download-list/remove/<int:dataset_id>')
+def remove_from_download_list(dataset_id):
+    download_list = session.get('download_list', [])
+    if dataset_id in download_list:
+        download_list.remove(dataset_id)
+        session['download_list'] = download_list
         session.modified = True
-    return redirect(url_for('main_bp.cart'))
+    return redirect(request.referrer)
 
 
-@main_bp.route('/cart/empty')
-def empty_cart():
-    session.pop('cart', None)
-    return redirect(url_for('main_bp.cart'))
+@main_bp.route('/download-list/empty')
+def empty_download_list():
+    session.pop('download_list', None)
+    return redirect(request.referrer)
 
 
-@main_bp.route('/export')
-def export_cart():
-    dataset_ids = session.get('cart', [])
+@main_bp.route('/download-list/export')
+def export_download_list():
+    dataset_ids = session.get('download_list', [])
     if len(dataset_ids) > 0:
         stream = io.BytesIO()
         # Create Zip archive with one GeoJSON file per dataset, and a CSV file
@@ -490,17 +498,17 @@ def dashboard():
                            title='Dashboard')
 
 @main_bp.context_processor
-def cart_item_count():
+def download_list_item_count():
     """
-    Make the size of the cart globally available.
+    Make the size of the download list globally available.
 
-    This is to update the header that displays the number of items in the cart.
+    This is to update the header that displays the number of items in the download list.
 
-    :return: Number of elements in the cart
+    :return: Number of elements in the download list
     :rtype: dict
     """
-    cart = session.get("cart", [])
-    return dict(cart_item_count=len(cart))
+    download_list = session.get("download_list", [])
+    return dict(download_list_item_count=len(download_list))
 
 
 @main_bp.route('/login')

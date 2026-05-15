@@ -87,7 +87,8 @@
     <div class="col-md-8">
         <div
             class="datasets-list"
-            data-add-to-cart-base-url="{{ url_for('main_bp.add_to_cart', dataset_id='') }}"
+            data-add-to-download-list-base-url="{{ url_for('main_bp.add_to_download_list', dataset_id=-999) }}"
+            data-remove-from-download-list-base-url="{{ url_for('main_bp.remove_from_download_list', dataset_id=-999) }}"
         ></div>
     </div>
 </div>
@@ -96,6 +97,7 @@
 {% block app_js %}
 <script type="application/javascript">
 const areas = ['veluwe', 'ijsselmeer']
+const downloadList = {{ download_list | tojson }};
 
 function parseUrlParams() {
     const queryString = window.location.search
@@ -195,8 +197,18 @@ function fetchData(query) {
 }
 
 function addDataset(dataset) {
-    const baseUrl = $('.datasets-list').data('add-to-cart-base-url');
-    const addToCartUrl = `${baseUrl}${dataset.dataset_id}`;
+    const $datasetsList = $('.datasets-list');
+
+    const isInDownloadList = downloadList.includes(dataset.dataset_id);
+
+    const baseUrl = isInDownloadList
+        ? $datasetsList.data('remove-from-download-list-base-url')
+        : $datasetsList.data('add-to-download-list-base-url');
+    const downloadListUrl = baseUrl.replace(/-999$/, dataset.dataset_id);
+
+    const downloadListText = isInDownloadList
+        ? 'remove from download list'
+        : 'add to download list';
 
     const itemHtml = `
         <li class="datasets-list__item">
@@ -214,9 +226,9 @@ function addDataset(dataset) {
             <div class="d-flex justify-content-end">
                 <a
                     class="btn btn-link btn-sm me-3 p-0 link-underline-hover"
-                    href="${addToCartUrl}"
+                    href="${downloadListUrl}"
                 >
-                    add to cart
+                    ${downloadListText}
                 </a>
 
                 <a
