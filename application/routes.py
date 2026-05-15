@@ -361,7 +361,7 @@ def remove_from_download_list(dataset_id):
         session.modified = True
     flash(
         markupsafe.Markup(
-            f'Dataset {dataset_id} removed from the'
+            f'Dataset {dataset_id} removed from the '
             f'<a href="{url_for("main_bp.download_list")}">Download list</a>'
         ),
         'success'
