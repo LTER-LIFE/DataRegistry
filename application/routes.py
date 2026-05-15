@@ -13,6 +13,7 @@ from flask import render_template, Blueprint, flash, request, abort, redirect, s
 
 from flask import current_app as app
 import jwt
+import markupsafe
 import shapely
 from sqlalchemy import exc
 
@@ -348,6 +349,14 @@ def add_to_download_list(dataset_id):
     if dataset_id not in session['download_list']:
         session['download_list'].append(dataset_id)
         session.modified = True
+    dataset = db_session.get(Dataset, dataset_id)
+    flash(
+        markupsafe.Markup(
+            f'Dataset "{dataset.title}" added to the '
+            f'<a href="{url_for("main_bp.download_list")}">Download list</a>'
+        ),
+        'success'
+    )
     return redirect(request.referrer)
 
 
@@ -358,6 +367,14 @@ def remove_from_download_list(dataset_id):
         download_list.remove(dataset_id)
         session['download_list'] = download_list
         session.modified = True
+    dataset = db_session.get(Dataset, dataset_id)
+    flash(
+        markupsafe.Markup(
+            f'Dataset "{dataset.title}" removed from the '
+            f'<a href="{url_for("main_bp.download_list")}">Download list</a>'
+        ),
+        'success'
+    )
     return redirect(request.referrer)
 
 
