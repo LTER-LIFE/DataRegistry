@@ -116,9 +116,9 @@ function addDataset(dataset) {
     const baseUrl = isInDownloadList
         ? $datasetsList.data('remove-from-download-list-base-url')
         : $datasetsList.data('add-to-download-list-base-url');
-    const modifyDownloadListUrl = baseUrl.replace(/-999$/, dataset.dataset_id);
+    const downloadListUrl = baseUrl.replace(/-999$/, dataset.dataset_id);
 
-    const modifyDownloadListText = isInDownloadList
+    const downloadListText = isInDownloadList
         ? 'remove from download list'
         : 'add to download list';
 
@@ -138,9 +138,9 @@ function addDataset(dataset) {
             <div class="d-flex justify-content-end">
                 <a
                     class="btn btn-link btn-sm me-3 p-0 link-underline-hover"
-                    href="${modifyDownloadListUrl}"
+                    href="${downloadListUrl}"
                 >
-                    ${modifyDownloadListText}
+                    ${downloadListText}
                 </a>
 
                 <a
