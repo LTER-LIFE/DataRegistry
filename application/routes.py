@@ -104,7 +104,7 @@ def add_dataset(dataset_id=None):
 
         # Delete the dataset or edit
         if request.url_rule.rule.find("delete") > -1 or request.url_rule.rule.find("edit") > -1:
-            dataset = Dataset.query.get(dataset_id)
+            dataset = db_session.get(Dataset, dataset_id)
 
             if not dataset:
                 flash(f"{dataset_id} does not exist.", "error")
@@ -166,7 +166,7 @@ def stage_dataset(dataset_id=None):
 
         # Delete the dataset or edit
         if request.url_rule.rule.find("delete") > -1 or request.url_rule.rule.find("edit") > -1:
-            dataset = DatasetStaging.query.get(dataset_id)
+            dataset = db_session.get(DatasetStaging, dataset_id)
 
             if not dataset:
                 flash(f"{dataset_id} does not exist.", "error")
@@ -324,7 +324,7 @@ def stageddatasets(dataset_id=None):
     """
     try:
         if dataset_id:
-            datasets_table = [DatasetStaging.query.get(dataset_id)]
+            datasets_table = [db_session.get(DatasetStaging, dataset_id)]
         else:
             datasets_table = db_session.query(DatasetStaging).all()
         page = render_template('dataset_table.html', datasets=datasets_table, title="Staged datasets")
@@ -337,7 +337,7 @@ def stageddatasets(dataset_id=None):
 @main_bp.route('/download-list')
 def download_list():
     dataset_ids = session.get('download_list', [])
-    download_list = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
+    download_list = [db_session.get(Dataset, dataset_id) for dataset_id in dataset_ids]
     return render_template('download-list.html', download_list=download_list, title='Your download list')
 
 
@@ -377,7 +377,7 @@ def export_download_list():
         with zipfile.ZipFile(stream, 'w') as zf:
             toc_entries = []
             for dataset_id in dataset_ids:
-                dataset = Dataset.query.get(dataset_id)
+                dataset = db_session.get(Dataset, dataset_id)
                 dataset_geojson = _geojson_dump(dataset.to_dict())
                 dataset_encoded = dataset_geojson.encode()
                 dataset_hash = hashlib.md5(dataset_encoded).hexdigest()
