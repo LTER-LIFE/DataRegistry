@@ -109,14 +109,11 @@ function parseUrlParams() {
         if (areas.includes(area)) {
             $(`select[name="area"] option[id=area-${area}]`)
                 .prop("selected", true)
+
+            $('select[name="area"]').trigger('change')
         } else {
-            alert('An invalid area was requested. Continuing without an area filter.')
-
-            $(`select[name="area"] option[id=area-none]`)
-                .prop("selected", true)
+            alert('An invalid area was requested. Reverting to a previously saved area filter or no area filter.')
         }
-
-        $('select[name="area"]').trigger('change')
     }
 }
 
@@ -138,13 +135,13 @@ function getFormData() {
 }
 
 // Set spatial coverage or show the map when selecting an Area option
-function setSpatialCoverageFilter() {
-    const selectedId = $('select[name="area"] option:selected').attr('id')
+function setSpatialCoverageFilter(areaId = null, spatialCoverageWkt = "") {
+    const selectedId = areaId || $('select[name="area"] option:selected').attr('id')
 
     if (selectedId === 'area-custom') {
         $('#input-map').removeClass('visually-hidden');
 
-        $('#spatial_coverage').val("")
+        $('#spatial_coverage').val(spatialCoverageWkt)
 
         initInputByMap()
     } else {
@@ -168,10 +165,34 @@ function debounce(func, wait) {
   };
 }
 
-function fetchData(query) {
-    // Sla het volledige query-object op in localStorage
-    localStorage.setItem('last_search_filters', JSON.stringify(query));
+function applyFiltersFromLocalStorage() {
+    const savedFilters = localStorage.getItem('last_search_filters');
 
+    if (savedFilters) {
+        const filters = JSON.parse(savedFilters);
+
+        // reflect saved filters in the UI
+        $('#free').val(filters.free);
+        $('#min_year_input').val(filters.min_year);
+        $('#max_year_input').val(filters.max_year);
+
+        $(`select[name="area"] option[id=${filters.areaId}]`)
+                .prop("selected", true)
+
+        setSpatialCoverageFilter(filters.areaId, filters.spatial_coverage)
+
+        // refresh search results
+        fetchData(filters);
+    }
+}
+
+function saveFiltersToLocalStorage(formData) {
+    formData['areaId'] = $('select[name="area"] option:selected').attr('id')
+
+    localStorage.setItem('last_search_filters', JSON.stringify(formData))
+}
+
+function fetchData(query) {
     $.ajax({
             url: '{{ url_for('main_bp.query_index') }}', // The endpoint to send the data to
             type: 'POST',  // Use POST for sending the data in the body
@@ -279,27 +300,14 @@ $(function () {
 });
 
 $(document).ready(function() {
-    const savedFilters = localStorage.getItem('last_search_filters');
-
-    if (savedFilters) {
-        const filters = JSON.parse(savedFilters);
-
-        // Vul de formuliervelden met de opgeslagen waarden
-        $('#min_year_input').val(filters.min_year);
-        $('#max_year_input').val(filters.max_year);
-        $('#keywords').val(filters.keywords);
-        $('#free').val(filters.free);
-
-
-        // Voer de zoekopdracht uit met de opgeslagen filters
-        fetchData(filters);
-        };
-
+    applyFiltersFromLocalStorage()
 
     const debouncedFetchData = debounce(fetchData, 100);
 
     $('#index_search_form').on('change input', '.js-input', function() {
         const formData = getFormData()
+
+        saveFiltersToLocalStorage(formData)
 
         debouncedFetchData(formData);
     });
