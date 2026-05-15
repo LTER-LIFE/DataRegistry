@@ -46,6 +46,8 @@
 {% block app_js %}
 <script type="application/javascript">
 
+const downloadList = {{ download_list | tojson }};
+
 function serializeObject($form) {
     var o = {};
     var a = $form.serializeArray();
@@ -110,7 +112,6 @@ function fetchData(query) {
 function addDataset(dataset) {
     const $datasetsList = $('.datasets-list');
 
-    const downloadList = {{ download_list | tojson }};
     const isInDownloadList = downloadList.includes(dataset.dataset_id);
 
     const baseUrl = isInDownloadList
