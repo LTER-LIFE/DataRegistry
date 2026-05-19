@@ -18,7 +18,7 @@ Version demonstrated at the LTER-LIFE semi-annual meeting in March/April 2026
 ### Added
 
 - Add dataset detail page
-- Add loading indicator when LLM-based metadata harvester is in progress
+- Show loading indicator when LLM-based metadata harvester is in progress
 - Add delete option to staging, so that an admin can delete a submitted record
 
 ### Changed
@@ -39,7 +39,7 @@ Version demonstrated at the Netherlands Annual Ecology Meeting (NAEM) 10 & 11 Fe
 
 - Add Apache-2.0 license
 - Implement the [LTER-LIFE's LLM-based metadata harvester service](https://github.com/LTER-LIFE/LLM-metadata-harvester-service) to pre-fill a metadata registration form
-- Add staging and approval logic to the database, so that metadata records submitted by a user are first checked and approved by an admin before transferred to the database
+- Add staging and approval logic, so that metadata records submitted by a user are first checked and approved by an admin
 - Add reference to LTER-LIFE in footer
 
 ### Changed
@@ -51,7 +51,7 @@ Version demonstrated at the Netherlands Annual Ecology Meeting (NAEM) 10 & 11 Fe
 ### Fixed
 
 - Implement Docker to containerise project
-- Replace SQLite by PostgreSQL
+- Drop support for SQLite
 
 ## [0.4.0] - 2025-09-24
 Version demonstrated at the LTER-LIFE semi-annual meeting in September 2025
@@ -77,7 +77,7 @@ Version demonstrated at the LTER-LIFE semi-annual meeting in March 2025
 - Add options to edit and delete metadata records, only for users registered in the SRAM admin group
 - Add shapefile input option for spatial coverage in registration form
 - Add user instruction page
-- Add database functionality to convert a record to RDF graph
+- Add functionality to convert a record to RDF graph
 
 ### Changes
 
