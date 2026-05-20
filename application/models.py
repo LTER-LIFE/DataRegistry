@@ -21,7 +21,6 @@ from datetime import datetime
 import geopandas as gpd
 from flask import url_for
 from geoalchemy2 import Geometry
-from rdflib import Namespace, Graph, Literal, FOAF, RDF, DCTERMS, DCAT
 import shapely
 from shapely.geometry import box, shape
 from shapely.geometry.collection import GeometryCollection
@@ -32,47 +31,7 @@ from sqlalchemy.testing.schema import Table
 
 from application.database import Base, db_session
 
-DCATAP_NS = Namespace("http://data.europa.eu/r5r/")
-SCHEMA_ORG_NS = Namespace("https://schema.org/")
-EML_COV_NS = Namespace("https://eml.ecoinformatics.org/coverage-2.2.0/")
-SPDX = Namespace("http://spdx.org/rdf/terms#")
-
-VS_PREFIX = "https://lter-life-experience.org/veluwesearch"
-VSA = Namespace(f"{VS_PREFIX}/Agent/")
-VSAS = Namespace(f"{VS_PREFIX}/AgentStaging/")
-VSC = Namespace(f"{VS_PREFIX}/Catalog/")
-VSDS = Namespace(f"{VS_PREFIX}/Dataset/")
-VSCS = Namespace(f"{VS_PREFIX}/CatalogStaging/")  #added for staging tables
-VSDSS = Namespace(f"{VS_PREFIX}/DatasetStaging/") #added for staging tables
-VSDT = Namespace(f"{VS_PREFIX}/DataTheme/")
-VSDTS = Namespace(f"{VS_PREFIX}/DataThemeStaging/")
-VSLD = Namespace(f"{VS_PREFIX}/LicenseDocument/")
-VSLDS = Namespace(f"{VS_PREFIX}/LicenseDocumentStaging/")
-VSL = Namespace(f"{VS_PREFIX}/Location/")
-VSLS = Namespace(f"{VS_PREFIX}/LocationStaging/")
-VSD = Namespace(f"{VS_PREFIX}/Distribution/")
-VSDS = Namespace(f"{VS_PREFIX}/DistributionStaging/")
-VSMT = Namespace(f"{VS_PREFIX}/MediaType/")
-VSMTS = Namespace(f"{VS_PREFIX}/MediaTypeStaging/")
-
 metadata = Base.metadata
-
-GRAPH_PERSIST_HELP_TEXT = """
-            .. csv-table::
-               :header: "RDF Format", "Keyword", "Notes"
-
-               "Turtle",    "turtle, ttl or turtle2",     "turtle2 is just turtle with more spacing & linebreaks"
-               "RDF/XML",   "xml or pretty-xml",     "Was the default format, rdflib < 6.0.0"
-               "JSON-LD",   "json-ld",     "There are further options for compact syntax and other JSON-LD variants"
-               "N-Triples", "ntriples, nt or nt11",     "nt11 is exactly like nt, only utf8 encoded"
-               "Notation-3","n3",     "N3 is a superset of Turtle that also caters for rules and a few other things"
-
-               "Trig",     "trig",     "Turtle-like format for RDF triples + context (RDF quads) and thus multiple
-               graphs"
-               "Trix",     "trix",     "RDF/XML-like format for RDF quads"
-               "N-Quads",   "nquads",     "N-Triples-like format for RDF quads"
-"""
-
 
 class Agent(Base):
     """Any entity carrying out actions with respect to the (Core) entities.
@@ -95,38 +54,6 @@ class Agent(Base):
             "type": self.type,
             "mbox": self.mbox
         }
-
-    def to_graph(self):
-        """
-
-        @return: Agent object in RDFlib graph format
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSA)
-
-        # Create a foaf:Agent instance
-        agent = VSA[str(self.agent_id)]
-
-        # Add properties to the agent
-        g.add((agent, RDF.type, FOAF.Agent))
-        g.add((agent, FOAF.name, Literal(self.name)))
-        if self.type:
-            g.add((agent, DCTERMS.type, Literal(self.type)))
-        if self.type:
-            g.add((agent, DCAT.mbox, Literal(self.mbox)))
-        return g
-
-    def rdf_serialize(self, out_format="json-ld"):
-        f"""
-        Runs the serialize function of RDFlib
-
-        :param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
-
-        :return: the searialized graph in the format passed in out_fomat
-        """
-        return self.to_graph().serialize(format=out_format)
 
     def __str__(self):
         return self.web()
@@ -203,38 +130,6 @@ class AgentStaging(Base):
             "type": self.type,
             "mbox": self.mbox
         }
-
-    def to_graph(self):
-        """
-
-        @return: Agent object in RDFlib graph format
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSAS)
-
-        # Create a foaf:Agent instance
-        agent = VSAS[str(self.agent_id)]
-
-        # Add properties to the agent
-        g.add((agent, RDF.type, FOAF.Agent))
-        g.add((agent, FOAF.name, Literal(self.name)))
-        if self.type:
-            g.add((agent, DCTERMS.type, Literal(self.type)))
-        if self.type:
-            g.add((agent, DCAT.mbox, Literal(self.mbox)))
-        return g
-
-    def rdf_serialize(self, out_format="json-ld"):
-        f"""
-        Runs the serialize function of RDFlib
-
-        :param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
-
-        :return: the searialized graph in the format passed in out_fomat
-        """
-        return self.to_graph().serialize(format=out_format)
 
     def __str__(self):
         return self.web()
@@ -362,54 +257,6 @@ class Catalog(Base):
 
         return data
 
-    def to_graph(self):
-        """
-
-        @return: Agent object in RDFlib graph format
-        """
-
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("dcatap", DCATAP_NS)
-        g.bind("vs_agent", VSA)
-        g.bind("vs_catalog", VSC)
-
-        catalog = VSC[str(self.catalog_id)]
-
-        # Add properties to the agent
-        g.add((catalog, RDF.type, DCAT.Catalog))
-        if self.applicable_legislation:
-            g.add((catalog, DCATAP_NS.applicableLegislation, Literal(self.name)))
-        if self.contact_point:
-            g.add((catalog, DCAT.contactPoint, Literal(self.contact_point)))
-        if self.title:
-            g.add((catalog, DCTERMS.title, Literal(self.title)))
-        if self.description:
-            g.add((catalog, DCTERMS.description, Literal(self.description)))
-        if self.homepage:
-            g.add((catalog, FOAF.homepage, Literal(self.description)))
-        if self.creator:
-            g.add((catalog, DCTERMS.creator, self.creator.to_graph()))
-        if self.publisher:
-            g.add((catalog, DCTERMS.publisher, self.publisher.to_graph()))
-        if self.license:
-            g.add((catalog, DCTERMS.license, self.license.to_graph()))
-        for dataset in self.datasets_in_catalogue:
-            g.add((catalog, DCAT.dataset, dataset.to_graph()))
-        for theme in self.themes:
-            g.add((catalog, DCAT.themeTaxonomy, theme.to_graph()))
-        return g
-
-    def rdf_serialize(self, out_format="json-ld"):
-        f"""
-        Runs the serialize function of RDFlib
-
-        @param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
-
-        @return:
-        """
-        return self.to_graph().serialize(format=out_format)
-
     def __str__(self):
         return self.title
     
@@ -497,54 +344,6 @@ class CatalogStaging(Base):
             data["license"] = self.license.to_dict(seen)
 
         return data
-
-    def to_graph(self):
-        """
-
-        @return: Agent object in RDFlib graph format
-        """
-
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("dcatap", DCATAP_NS)
-        g.bind("vs_agent", VSAS)
-        g.bind("vs_catalog", VSCS)
-
-        catalog = VSCS[str(self.catalog_id)]
-
-        # Add properties to the agent
-        g.add((catalog, RDF.type, DCAT.Catalog))
-        if self.applicable_legislation:
-            g.add((catalog, DCATAP_NS.applicableLegislation, Literal(self.name)))
-        if self.contact_point:
-            g.add((catalog, DCAT.contactPoint, Literal(self.contact_point)))
-        if self.title:
-            g.add((catalog, DCTERMS.title, Literal(self.title)))
-        if self.description:
-            g.add((catalog, DCTERMS.description, Literal(self.description)))
-        if self.homepage:
-            g.add((catalog, FOAF.homepage, Literal(self.description)))
-        if self.creator:
-            g.add((catalog, DCTERMS.creator, self.creator.to_graph()))
-        if self.publisher:
-            g.add((catalog, DCTERMS.publisher, self.publisher.to_graph()))
-        if self.license:
-            g.add((catalog, DCTERMS.license, self.license.to_graph()))
-        for dataset in self.datasets_in_catalogue:
-            g.add((catalog, DCAT.dataset, dataset.to_graph()))
-        for theme in self.themes:
-            g.add((catalog, DCAT.themeTaxonomy, theme.to_graph()))
-        return g
-
-    def rdf_serialize(self, out_format="json-ld"):
-        f"""
-        Runs the serialize function of RDFlib
-
-        @param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
-
-        @return:
-        """
-        return self.to_graph().serialize(format=out_format)
 
     def __str__(self):
         return self.title
@@ -653,93 +452,6 @@ class Dataset(Base):
             data["dataset_themes"] = [theme.name for theme in self.dataset_themes]  # Or theme.to_dict()
 
         return data
-    
-
-    
-
-    def to_graph(self):
-        """
-
-        @return: Agent object in RDFlib graph format
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("dcat", DCAT)
-        g.bind("eml_cov", EML_COV_NS)
-        g.bind("dcterms", DCTERMS)
-        g.bind("vp_agent", VSA)
-        g.bind("vp_catalog", VSC)
-        g.bind("vp_license", VSLD)
-        g.bind("vp_dataset", VSDS)
-        g.bind("vp_data_theme", VSDT)
-
-        # Create a dcat:Dataset instance
-        dataset = VSDS[str(self.dataset_id)]
-
-        # Add properties to the agent
-        g.add((dataset, RDF.type, DCAT.Dataset))
-
-        if self.release_date:
-            g.add((dataset, DCTERMS.issued, Literal(self.release_date)))
-        if self.language:
-            g.add((dataset, DCTERMS.language, Literal(self.language)))
-        if self.creator:
-            g.add((dataset, DCTERMS.creator, VSA[str(self.creator.agent_id)]))
-        if self.title:
-            g.add((dataset, DCTERMS.title, Literal(self.title)))
-        if self.description:
-            g.add((dataset, DCTERMS.description, Literal(self.description)))
-        if self.resource_type:
-            g.add((dataset, DCTERMS.type, Literal(self.resource_type)))
-        if self.dataset_contact_point:
-            g.add((dataset, DCAT.contactPoint, self.dataset_contact_point.to_graph()))
-        if self.dataset_publisher:
-            g.add((dataset, DCTERMS.publisher, self.dataset_publisher.to_graph()))
-        if self.dataset_metadata_provider:
-            g.add((dataset, SCHEMA_ORG_NS.provider, self.dataset_metadata_provider.to_graph()))
-        if self.dataset_keywords:
-            for keyword in self.dataset_keywords:
-                g.add((dataset, DCAT.keyword, Literal(keyword.name)))
-        if self.temporal_coverage_start and self.temporal_coverage_end:
-            g.add((dataset, DCTERMS.temporal, Literal(f"{self.temporal_coverage_start.isoformat()}/"
-                                                      f"{self.temporal_coverage_end.isoformat()}")))
-        if self.temporal_resolution:
-            # TODO: temporal resolution should be a xsd:duration
-            g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution)))
-        if self.dataset_spatial_coverage:
-            g.add((dataset, DCTERMS.spatial, VSL[str(self.dataset_spatial_coverage.location_id)]))
-        if self.spatial_resolution:
-            g.add((dataset, DCAT.spatialResolutionInMeters, Literal(self.spatial_resolution)))
-        if self.dataset_license:
-            g.add((dataset, DCTERMS.license, VSLD[str(self.dataset_license.dataset)]))
-        if self.access_rights:
-            # TODO: accessRights should be dcterms:RightsStatement
-            g.add((dataset, DCTERMS.accessRights, Literal(self.access_rights)))
-        if self.dataset_catalog:
-            g.add((dataset, DCAT.catalog, self.dataset_catalog.to_graph()))
-        if self.dataset_themes:
-            for theme in self.dataset_themes:
-                g.add((dataset, DCAT.theme, VSDT[str(theme.data_theme_id)]))
-        if self.modified:
-            g.add((dataset, DCTERMS.modified, Literal(self.modified)))
-        if self.taxonomic_coverage:
-            g.add((dataset, EML_COV_NS.taxonomicCoverage, Literal(self.taxonomic_coverage)))
-        if self.landing_page:
-            g.add((dataset, DCAT.landingPage, Literal(self.landing_page)))
-        if self.public_id:
-            g.add((dataset, DCTERMS.identifier, Literal(self.public_id)))
-        return g
-
-    def rdf_serialize(self, out_format="json-ld"):
-        f"""
-        Runs the serialize function of RDFlib
-
-        @param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
-
-        @return:
-        """
-        return self.to_graph().serialize(format=out_format)
 
     def __str__(self):
         return self.title
@@ -861,90 +573,6 @@ class DatasetStaging(Base):
 
         return data
 
-    def to_graph(self):
-        """
-
-        @return: Agent object in RDFlib graph format
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("dcat", DCAT)
-        g.bind("eml_cov", EML_COV_NS)
-        g.bind("dcterms", DCTERMS)
-        g.bind("vp_agent", VSAS)
-        g.bind("vp_catalog", VSCS)
-        g.bind("vp_license", VSLDS)
-        g.bind("vp_dataset", VSDSS)
-        g.bind("vp_data_theme", VSDTS)
-
-        # Create a dcat:Dataset instance
-        dataset = VSDSS[str(self.dataset_id)]
-
-        # Add properties to the agent
-        g.add((dataset, RDF.type, DCAT.Dataset))
-
-        if self.release_date:
-            g.add((dataset, DCTERMS.issued, Literal(self.release_date)))
-        if self.language:
-            g.add((dataset, DCTERMS.language, Literal(self.language)))
-        if self.creator:
-            g.add((dataset, DCTERMS.creator, VSAS[str(self.creator.agent_id)]))
-        if self.title:
-            g.add((dataset, DCTERMS.title, Literal(self.title)))
-        if self.description:
-            g.add((dataset, DCTERMS.description, Literal(self.description)))
-        if self.resource_type:
-            g.add((dataset, DCTERMS.type, Literal(self.resource_type)))
-        if self.dataset_contact_point:
-            g.add((dataset, DCAT.contactPoint, self.dataset_contact_point.to_graph()))
-        if self.dataset_publisher:
-            g.add((dataset, DCTERMS.publisher, self.dataset_publisher.to_graph()))
-        if self.dataset_metadata_provider:
-            g.add((dataset, SCHEMA_ORG_NS.provider, self.dataset_metadata_provider.to_graph()))
-        if self.dataset_keywords:
-            for keyword in self.dataset_keywords:
-                g.add((dataset, DCAT.keyword, Literal(keyword.name)))
-        if self.temporal_coverage_start and self.temporal_coverage_end:
-            g.add((dataset, DCTERMS.temporal, Literal(f"{self.temporal_coverage_start.isoformat()}/"
-                                                      f"{self.temporal_coverage_end.isoformat()}")))
-        if self.temporal_resolution:
-            # TODO: temporal resolution should be a xsd:duration
-            g.add((dataset, DCAT.temporalResolution, Literal(self.temporal_resolution)))
-        if self.dataset_spatial_coverage:
-            g.add((dataset, DCTERMS.spatial, VSLS[str(self.dataset_spatial_coverage.location_id)]))
-        if self.spatial_resolution:
-            g.add((dataset, DCAT.spatialResolutionInMeters, Literal(self.spatial_resolution)))
-        if self.dataset_license:
-            g.add((dataset, DCTERMS.license, VSLDS[str(self.dataset_license.dataset)]))
-        if self.access_rights:
-            # TODO: accessRights should be dcterms:RightsStatement
-            g.add((dataset, DCTERMS.accessRights, Literal(self.access_rights)))
-        if self.dataset_catalog:
-            g.add((dataset, DCAT.catalog, self.dataset_catalog.to_graph()))
-        if self.dataset_themes:
-            for theme in self.dataset_themes:
-                g.add((dataset, DCAT.theme, VSDTS[str(theme.data_theme_id)]))
-        if self.modified:
-            g.add((dataset, DCTERMS.modified, Literal(self.modified)))
-        if self.taxonomic_coverage:
-            g.add((dataset, EML_COV_NS.taxonomicCoverage, Literal(self.taxonomic_coverage)))
-        if self.landing_page:
-            g.add((dataset, DCAT.landingPage, Literal(self.landing_page)))
-        if self.public_id:
-            g.add((dataset, DCTERMS.identifier, Literal(self.public_id)))
-        return g
-
-    def rdf_serialize(self, out_format="json-ld"):
-        f"""
-        Runs the serialize function of RDFlib
-
-        @param out_format: default output is json-ld other possibilities are: {GRAPH_PERSIST_HELP_TEXT}
-
-        @return:
-        """
-        return self.to_graph().serialize(format=out_format)
-
     def __str__(self):
         return self.title
 
@@ -1011,39 +639,6 @@ class Distribution(Base):
             distribution_dict["distribution_checksum"] = self.distribution_license.to_dict(seen)
 
         return distribution_dict
-
-
-
-    def to_graph(self):
-        """
-
-        @return: Agent object in RDFlib graph format
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSA)
-
-        # Create a foaf:Agent instance
-        distribution = VSD[str(self.distribution_id)]
-
-        # Add properties to the agent
-        g.add((distribution, RDF.type, DCAT.Distribution))
-        g.add((distribution, DCTERMS.title, Literal(self.title)))
-        if self.description:
-            g.add((distribution, DCTERMS.description, Literal(self.description)))
-        if self.download_url:
-            g.add((distribution, DCAT.downloadURL, Literal(self.download_url)))
-        if self.access_url:
-            g.add((distribution, DCAT.accessURL, Literal(self.access_url)))
-        if self.distribution_format:
-            g.add((distribution, DCTERMS.format, self.distribution_format.to_graph()))
-        if self.distribution_license:
-            g.add((distribution, DCTERMS.license, self.distribution_license.to_graph()))
-        if self.distribution_checksum:
-            g.add((distribution, SPDX.Checksup, self.distribution_checksum.to_graph()))
-
-        return g
 
     def __str__(self):
         return self.title
@@ -1112,39 +707,6 @@ class DistributionStaging(Base):
 
         return distribution_dict
 
-
-
-    def to_graph(self):
-        """
-
-        @return: Agent object in RDFlib graph format
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSAS)
-
-        # Create a foaf:Agent instance
-        distribution = VSDS[str(self.distribution_id)]
-
-        # Add properties to the agent
-        g.add((distribution, RDF.type, DCAT.Distribution))
-        g.add((distribution, DCTERMS.title, Literal(self.title)))
-        if self.description:
-            g.add((distribution, DCTERMS.description, Literal(self.description)))
-        if self.download_url:
-            g.add((distribution, DCAT.downloadURL, Literal(self.download_url)))
-        if self.access_url:
-            g.add((distribution, DCAT.accessURL, Literal(self.access_url)))
-        if self.distribution_format:
-            g.add((distribution, DCTERMS.format, self.distribution_format.to_graph()))
-        if self.distribution_license:
-            g.add((distribution, DCTERMS.license, self.distribution_license.to_graph()))
-        if self.distribution_checksum:
-            g.add((distribution, SPDX.Checksup, self.distribution_checksum.to_graph()))
-
-        return g
-
     def __str__(self):
         return self.title
 
@@ -1203,36 +765,7 @@ class DataService(Base):
             data_service_dict["format"] = self.format.to_dict(seen)
         return data_service_dict
 
-    def to_graph(self):
-        """
 
-        @return: Agent object in RDFlib graph format
-        :return:
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSA)
-
-        # Create a foaf:Agent instance
-        data_service = VSDS[str(self.dataservice_id)]
-
-        # Add properties to the agent
-        g.add((data_service, RDF.type, DCAT.DataService))
-        g.add((data_service, DCTERMS.title, Literal(self.title)))
-        if self.description:
-            g.add((data_service, DCTERMS.description, Literal(self.description)))
-        if self.endpoint_url:
-            g.add((data_service, DCAT.endpointURL, Literal(self.endpoint_url)))
-        if self.access_url:
-            g.add((data_service, DCAT.Catalog, self.catalog.to_graph()))
-        if self.distribution_format:
-            g.add((data_service, DCTERMS.LicenseDocument, self.license.to_graph()))
-        if self.distribution_license:
-            g.add((data_service, DCTERMS.format, self.format.to_graph()))
-
-        return g
-    
 class DataServiceStaging(Base):
     """Operations that provides access to datasets or data processing functions.
 
@@ -1287,36 +820,6 @@ class DataServiceStaging(Base):
             data_service_dict["format"] = self.format.to_dict(seen)
         return data_service_dict
 
-    def to_graph(self):
-        """
-
-        @return: Agent object in RDFlib graph format
-        :return:
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSAS)
-
-        # Create a foaf:Agent instance
-        data_service = VSDSS[str(self.dataservice_id)]
-
-        # Add properties to the agent
-        g.add((data_service, RDF.type, DCAT.DataService))
-        g.add((data_service, DCTERMS.title, Literal(self.title)))
-        if self.description:
-            g.add((data_service, DCTERMS.description, Literal(self.description)))
-        if self.endpoint_url:
-            g.add((data_service, DCAT.endpointURL, Literal(self.endpoint_url)))
-        if self.access_url:
-            g.add((data_service, DCAT.Catalog, self.catalog.to_graph()))
-        if self.distribution_format:
-            g.add((data_service, DCTERMS.LicenseDocument, self.license.to_graph()))
-        if self.distribution_license:
-            g.add((data_service, DCTERMS.format, self.format.to_graph()))
-
-        return g
-
 
 class MediaType(Base):
     """A set of media types from the DCAT-AP vocabulary."""
@@ -1344,33 +847,6 @@ class MediaType(Base):
             'media_type': self.media_type,
             'description': self.description
         }
-
-    def to_graph(self):
-        """
-        TODO: some are a bit guessed
-        @return: MediaType object in RDFlib graph format
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSA)
-
-        # Create a foaf:Agent instance
-        media_type = VSMT[str(self.mediatype_id)]
-
-        # Add properties to the agent
-        g.add((media_type, RDF.type, DCTERMS.MediaType))
-
-        if self.description:
-            g.add((media_type, DCTERMS.description, Literal(self.description)))
-        if self.extension:
-            g.add((media_type, DCTERMS.extent, Literal(self.extension)))
-        if self.code:
-            g.add((media_type, DCTERMS.format, self.catalog.to_graph()))
-        if self.media_type:
-            g.add((media_type, DCTERMS.type, self.license.to_graph()))
-
-        return g
 
     def __str__(self):
         return self.extension
@@ -1401,33 +877,6 @@ class MediaTypeStaging(Base):
             'media_type': self.media_type,
             'description': self.description
         }
-
-    def to_graph(self):
-        """
-        TODO: some are a bit guessed
-        @return: MediaType object in RDFlib graph format
-        """
-        g = Graph()
-        # Add namespaces to the graph
-        g.bind("foaf", FOAF)
-        g.bind("vp_agent", VSAS)
-
-        # Create a foaf:Agent instance
-        media_type = VSMTS[str(self.mediatype_id)]
-
-        # Add properties to the agent
-        g.add((media_type, RDF.type, DCTERMS.MediaType))
-
-        if self.description:
-            g.add((media_type, DCTERMS.description, Literal(self.description)))
-        if self.extension:
-            g.add((media_type, DCTERMS.extent, Literal(self.extension)))
-        if self.code:
-            g.add((media_type, DCTERMS.format, self.catalog.to_graph()))
-        if self.media_type:
-            g.add((media_type, DCTERMS.type, self.license.to_graph()))
-
-        return g
 
     def __str__(self):
         return self.extension
