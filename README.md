@@ -66,7 +66,13 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) fo
     * updates the version in `pyproject.toml`
 3. Tag this commit with a new version: `git tag -a <version> -m "<description>" <commit-hash>`
 4. Create a new GitHub release, point to relevant section in the changelog
-5. Deploy release on production
+5. Deploy release. First deploy release on acceptance. After confirmation by product owner, deploy release on production. Follow this procedure:
+    * shut down access to the site temporarily: `docker compose down app`
+    * create database backup: `docker compose run --rm backup`
+    * pull latest version of app: `git fetch --tags` and `git checkout tags/<tag-name>`
+    * Shut down Docker: `docker compose down`
+    * Install new version of app: `docker compose up --build -d`
+    * Show logs: `docker compose logs -f`
 6. Close milestone and move any remaining issues to next milestone
 
 ## 📄 License
