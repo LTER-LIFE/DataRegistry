@@ -73,7 +73,6 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) fo
     * Shut down Docker: `docker compose down`
     * Install new version of app: `docker compose up --build -d`
     * Show logs: `docker compose logs -f`
-6. Close milestone and move any remaining issues to next milestone
 
 ## 📄 License
 
