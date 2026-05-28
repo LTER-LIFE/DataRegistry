@@ -56,10 +56,23 @@ By default:
 
 ## 🤝 Contributing
 
-Pull requests are welcome!  
-Please open an issue first to discuss major changes.
+Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
 
----
+## Making a release
+
+1. Determine a new version by looking at the changelog
+2. Create a commit, which
+    * moves the contents from the "[Unreleased]" section in the [CHANGELOG.md](CHANGELOG.md) to a new versioned section
+    * updates the version in `pyproject.toml`
+3. Tag this commit with a new version: `git tag -a <version> -m "<description>" <commit-hash>`
+4. Create a new GitHub release, point to relevant section in the changelog
+5. Deploy release. First deploy release on acceptance. After confirmation by product owner, deploy release on production. Follow this procedure:
+    * shut down access to the site temporarily: `docker compose down app`
+    * create database backup: `docker compose run --rm backup`
+    * pull latest version of app: `git fetch --tags` and `git checkout tags/<tag-name>`
+    * Shut down Docker: `docker compose down`
+    * Install new version of app: `docker compose up --build -d`
+    * Show logs: `docker compose logs -f`
 
 ## 📄 License
 
