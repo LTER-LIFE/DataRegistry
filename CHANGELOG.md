@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Create a changelog following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Create CONTRIBUTING.md, a document with guidelines for contributing to this project
 - Show confirmation modal when an item is added to the download list
+- Add `area` URL parameter to Dataset Page, e.g. `/datasets?area=veluwe`
 
 ### Changed
 
 - Show "remove from download list" when an item is already in the download list
+- Change Area filter on Datasets page to a select field
 
 ### Fixed
 
