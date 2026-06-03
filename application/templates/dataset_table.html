@@ -8,7 +8,12 @@
         <form id="index_search_form">
            <div class="mb-4">
                <label for="free" class="form-label">Free text</label>
-               <input type="text" class="form-control" id="free" name="free">
+               <input
+                   type="text"
+                   class="form-control js-input"
+                   id="free"
+                   name="free"
+               >
            </div>
 
            <div class="mb-4">
@@ -21,14 +26,60 @@
                        <small class="slider-handle-label"></small>
                    </div>
                </div>
-               <input type="hidden" id="min_year_input" name="min_year">
-               <input type="hidden" id="max_year_input" name="max_year">
+
+               <input
+                   type="hidden"
+                   class="js-input"
+                   id="min_year_input"
+                   name="min_year"
+               >
+
+               <input
+                   type="hidden"
+                   class="js-input"
+                   id="max_year_input"
+                   name="max_year"
+               >
            </div>
 
-           <div class="mb-3">
-               <label for="spatial_coverage" class="form-label">Area</label>
-               <input class="form-control" id="spatial_coverage" name="spatial_coverage" type="text" value=""/>
-               <div class="visually-hidden map--small mt-3" id="select-geo-loc"></div>
+           <div class="mb-4">
+               <label class="form-label" for="area">Area</label>
+
+               <select class="form-select" name="area" aria-label="Select an area">
+                   <option id="area-none" value="">
+                       None
+                   </option>
+
+                   <option
+                     id="area-veluwe"
+                     value="{% include "boundaries/veluwe.txt" %}"
+                   >
+                       Veluwe
+                   </option>
+
+                   <option
+                     id="area-ijsselmeergebied"
+                     value="{% include "boundaries/ijsselmeergebied.txt" %}"
+                   >
+                       IJsselmeergebied
+                   </option>
+
+                   <option id="area-custom" value="">
+                       Custom
+                   </option>
+               </select>
+
+               <div id="input-map" class="visually-hidden">
+                   <input
+                        class="form-control js-input visually-hidden"
+                        id="spatial_coverage"
+                        name="spatial_coverage"
+                        type="text"
+                        value=""
+                   />
+
+                   <div class="map--small mt-3" id="select-geo-loc"></div>
+               </div>
            </div>
        </form>
     </div>
@@ -45,24 +96,62 @@
 
 {% block app_js %}
 <script type="application/javascript">
-
+const areas = ['veluwe', 'ijsselmeergebied']
 const downloadList = {{ download_list | tojson }};
 
-function serializeObject($form) {
-    var o = {};
-    var a = $form.serializeArray();
-    $.each(a, function() {
-        if (o[this.name]) {
-            if (!o[this.name].push) {
-                o[this.name] = [o[this.name]];
-            }
-            o[this.name].push(this.value || '');
+function parseUrlParams() {
+    const queryString = window.location.search
+
+    if (queryString) {
+        const params = new URLSearchParams(queryString)
+        const area = params.get('area').toLowerCase()
+
+        if (areas.includes(area)) {
+            $(`select[name="area"] option[id=area-${area}]`)
+                .prop("selected", true)
+
+            $('select[name="area"]').trigger('change')
         } else {
-            o[this.name] = this.value || '';
+            alert('An invalid area was requested. Reverting to a previously saved area filter or no area filter.')
         }
-    });
-    return o;
-};
+    }
+}
+
+function getFormData() {
+    // only a subset of form fields should be sent to the search index,
+    // which are defined below. E.g. the leaflet and area input are excluded.
+    const formKeys = ['free', 'min_year', 'max_year', 'spatial_coverage']
+    const form = document.getElementById('index_search_form')
+    const formData = new FormData(form)
+    const query = {}
+
+    for (const [key, value] of formData) {
+        if (formKeys.includes(key)) {
+            query[key] = value
+        }
+    }
+
+    return query
+}
+
+// Set spatial coverage or show the map when selecting an Area option
+function setSpatialCoverageFilter(areaId = null, spatialCoverageWkt = "") {
+    const selectedId = areaId || $('select[name="area"] option:selected').attr('id')
+
+    if (selectedId === 'area-custom') {
+        $('#input-map').removeClass('visually-hidden');
+
+        $('#spatial_coverage').val(spatialCoverageWkt)
+
+        initInputByMap()
+    } else {
+        $('#input-map').addClass('visually-hidden');
+
+        $('#spatial_coverage')
+            .val($(`#${selectedId}`).val())
+            .trigger('change')
+    }
+}
 
 function debounce(func, wait) {
   let timeout;
@@ -76,10 +165,34 @@ function debounce(func, wait) {
   };
 }
 
-function fetchData(query) {
-    // Sla het volledige query-object op in localStorage
-    localStorage.setItem('last_search_filters', JSON.stringify(query));
+function applyFiltersFromLocalStorage() {
+    const savedFilters = localStorage.getItem('last_search_filters');
 
+    if (savedFilters) {
+        const filters = JSON.parse(savedFilters);
+
+        // reflect saved filters in the UI
+        $('#free').val(filters.free);
+        $('#min_year_input').val(filters.min_year);
+        $('#max_year_input').val(filters.max_year);
+
+        $(`select[name="area"] option[id=${filters.areaId}]`)
+                .prop("selected", true)
+
+        setSpatialCoverageFilter(filters.areaId, filters.spatial_coverage)
+
+        // refresh search results
+        fetchData(filters);
+    }
+}
+
+function saveFiltersToLocalStorage(formData) {
+    formData['areaId'] = $('select[name="area"] option:selected').attr('id')
+
+    localStorage.setItem('last_search_filters', JSON.stringify(formData))
+}
+
+function fetchData(query) {
     $.ajax({
             url: '{{ url_for('main_bp.query_index') }}', // The endpoint to send the data to
             type: 'POST',  // Use POST for sending the data in the body
@@ -187,33 +300,23 @@ $(function () {
 });
 
 $(document).ready(function() {
-    const savedFilters = localStorage.getItem('last_search_filters');
-
-    if (savedFilters) {
-        const filters = JSON.parse(savedFilters);
-
-        // Vul de formuliervelden met de opgeslagen waarden
-        $('#min_year_input').val(filters.min_year);
-        $('#max_year_input').val(filters.max_year);
-        $('#keywords').val(filters.keywords);
-        $('#free').val(filters.free);
-
-
-        // Voer de zoekopdracht uit met de opgeslagen filters
-        fetchData(filters);
-        };
-
+    applyFiltersFromLocalStorage()
 
     const debouncedFetchData = debounce(fetchData, 100);
 
-    $('#index_search_form').on('change input', 'input, select, textarea', function() {
-    // This will fire for both change and input events.
-    // It's a good way to catch all user interactions.
+    $('#index_search_form').on('change input', '.js-input', function() {
+        const formData = getFormData()
 
-    formData =  serializeObject($('#index_search_form'))
+        saveFiltersToLocalStorage(formData)
 
-    debouncedFetchData(formData);
+        debouncedFetchData(formData);
     });
+
+    $('select[name="area"]').change(function() {
+        setSpatialCoverageFilter()
+    });
+
+    parseUrlParams()
 });
 
 

@@ -3,33 +3,22 @@ let mapInstance = null;
 let editableLayers = null;
 let osmGeocoder = null;
 
-$(document).ready(function() {
-    /**
-     * Handles the click event on the 'spatial_coverage' button.
-     * Initializes the map on the first click and shows/hides it on subsequent clicks.
-     */
-    $('#spatial_coverage').click(function() {
-        const selectGeoLoc = $('#select-geo-loc');
-        selectGeoLoc.toggleClass('visually-hidden');
+function initInputByMap() {
+    if (mapInstance === null) {
+        const mapAndLayers = initializeMap();
+        mapInstance = mapAndLayers.map;
+        editableLayers = mapAndLayers.editableLayers;
 
-        if (!selectGeoLoc.hasClass('visually-hidden')) {
-            if (mapInstance === null) {
-                const mapAndLayers = initializeMap();
-                mapInstance = mapAndLayers.map;
-                editableLayers = mapAndLayers.editableLayers;
+        // Attach event listeners for the Leaflet.draw controls.
+        mapEvents();
+    }
 
-                // Attach event listeners for the Leaflet.draw controls.
-                mapEvents();
-            }
+    // Always call invalidateSize() when the container is made visible
+    mapInstance.invalidateSize();
 
-            // Always call invalidateSize() when the container is made visible
-            mapInstance.invalidateSize();
-            
-            // Reload the dynamic map data and features
-            loadMapContent(mapInstance, editableLayers);
-        }
-    });
-});
+    // Reload the dynamic map data and features
+    loadMapContent(mapInstance, editableLayers);
+}
 
 // --- Core Functions ---
 
@@ -143,7 +132,7 @@ function loadMapContent(map, editableLayers) {
             const bounds = geoJsonLayer.getBounds();
             
             if (boundsValid(bounds)) {
-                map.fitBounds(bounds, { padding: [10] });
+                map.fitBounds(bounds, { padding: [10, 10] });
             }
         }
     }
