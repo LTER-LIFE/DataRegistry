@@ -361,5 +361,20 @@
                 .catch(err => showError(err.message));
         });
     });
+
+    $(document).ready(function() {
+        /**
+         * Handles the click event on the 'spatial_coverage' button.
+         * Initializes the map on the first click and shows/hides it on subsequent clicks.
+         */
+        $('#spatial_coverage').click(function() {
+            const selectGeoLoc = $('#select-geo-loc');
+            selectGeoLoc.toggleClass('visually-hidden');
+
+            if (!selectGeoLoc.hasClass('visually-hidden')) {
+                initInputByMap()
+            }
+        });
+    });
 </script>
 {% endblock %}

@@ -12,6 +12,7 @@ from flask import render_template, Blueprint, flash, request, abort, redirect, s
 
 from flask import current_app as app
 import jwt
+import markupsafe
 import shapely
 
 from application import search_index
@@ -64,7 +65,7 @@ def add_dataset(dataset_id=None):
 
         # Delete the dataset or edit
         if request.url_rule.rule.find("delete") > -1 or request.url_rule.rule.find("edit") > -1:
-            dataset = Dataset.query.get(dataset_id)
+            dataset = db_session.get(Dataset, dataset_id)
 
             if not dataset:
                 flash(f"{dataset_id} does not exist.", "error")
@@ -126,7 +127,7 @@ def stage_dataset(dataset_id=None):
 
         # Delete the dataset or edit
         if request.url_rule.rule.find("delete") > -1 or request.url_rule.rule.find("edit") > -1:
-            dataset = DatasetStaging.query.get(dataset_id)
+            dataset = db_session.get(DatasetStaging, dataset_id)
 
             if not dataset:
                 flash(f"{dataset_id} does not exist.", "error")
@@ -237,7 +238,12 @@ def datasets():
 
     :return: rendered flask template from templates/dataset_table.html
     """
-    return render_template('dataset_table.html', title='Datasets')
+    download_list = session.get('download_list', [])
+    return render_template(
+        'dataset_table.html',
+        title='Datasets',
+        download_list=download_list,
+    )
 
 
 @main_bp.route('/Dataset/<int:dataset_id>')
@@ -258,10 +264,12 @@ def datasets_detail(dataset_id):
     if not dataset:
         abort(404)
 
+    download_list = session.get('download_list', [])
     return render_template(
         'dataset_detail.html',
         dataset=dataset.to_dict(),
-        title=dataset.title
+        title=dataset.title,
+        is_dataset_in_download_list=dataset.dataset_id in download_list
     )
 
 
@@ -277,7 +285,7 @@ def stageddatasets(dataset_id=None):
     """
     try:
         if dataset_id:
-            datasets_table = [DatasetStaging.query.get(dataset_id)]
+            datasets_table = [db_session.get(DatasetStaging, dataset_id)]
         else:
             datasets_table = db_session.query(DatasetStaging).all()
         page = render_template('dataset_table.html', datasets=datasets_table, title="Staged datasets")
@@ -290,27 +298,43 @@ def stageddatasets(dataset_id=None):
 @main_bp.route('/download-list')
 def download_list():
     dataset_ids = session.get('download_list', [])
-    download_list = [Dataset.query.get(dataset_id) for dataset_id in dataset_ids]
+    download_list = [db_session.get(Dataset, dataset_id) for dataset_id in dataset_ids]
     return render_template('download-list.html', download_list=download_list, title='Your download list')
 
 
-@main_bp.route('/download-list/add/<dataset_id>')
+@main_bp.route('/download-list/add/<int:dataset_id>')
 def add_to_download_list(dataset_id):
     if 'download_list' not in session:
         session['download_list'] = []
     if dataset_id not in session['download_list']:
         session['download_list'].append(dataset_id)
         session.modified = True
+    dataset = db_session.get(Dataset, dataset_id)
+    flash(
+        markupsafe.Markup(
+            f'Dataset "{dataset.title}" added to the '
+            f'<a href="{url_for("main_bp.download_list")}">Download list</a>'
+        ),
+        'success'
+    )
     return redirect(request.referrer)
 
 
-@main_bp.route('/download-list/remove/<dataset_id>')
+@main_bp.route('/download-list/remove/<int:dataset_id>')
 def remove_from_download_list(dataset_id):
     download_list = session.get('download_list', [])
     if dataset_id in download_list:
         download_list.remove(dataset_id)
         session['download_list'] = download_list
         session.modified = True
+    dataset = db_session.get(Dataset, dataset_id)
+    flash(
+        markupsafe.Markup(
+            f'Dataset "{dataset.title}" removed from the '
+            f'<a href="{url_for("main_bp.download_list")}">Download list</a>'
+        ),
+        'success'
+    )
     return redirect(request.referrer)
 
 
@@ -330,7 +354,7 @@ def export_download_list():
         with zipfile.ZipFile(stream, 'w') as zf:
             toc_entries = []
             for dataset_id in dataset_ids:
-                dataset = Dataset.query.get(dataset_id)
+                dataset = db_session.get(Dataset, dataset_id)
                 dataset_geojson = _geojson_dump(dataset.to_dict())
                 dataset_encoded = dataset_geojson.encode()
                 dataset_hash = hashlib.md5(dataset_encoded).hexdigest()
