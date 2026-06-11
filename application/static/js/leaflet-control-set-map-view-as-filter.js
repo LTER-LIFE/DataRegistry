@@ -43,13 +43,19 @@ L.Control.SetMapViewAsFilter = L.Control.extend({
 
     _updateAreaFilter: function (map) {
         const areaFilter = $('#spatial_coverage')
+        const inputMap = $('#input-map')
         const wkt = this._boundsToWkt(map.getBounds())
 
         areaFilter.val(wkt)
 
         // show popover map if it is not visible
-        if ($('#select-geo-loc').hasClass("visually-hidden")) {
-            areaFilter.trigger('click')
+        if (inputMap.hasClass("visually-hidden")) {
+            $('select[name="area"] option[id=area-custom]')
+                .prop("selected", true)
+
+            inputMap.removeClass('visually-hidden')
+
+            initInputByMap()
         } else {
             // otherwise redraw the wkt on the popover map
             loadMapContent(mapInstance, editableLayers)
