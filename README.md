@@ -56,7 +56,7 @@ By default:
 
 ## 🤝 Contributing
 
-Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for how to contribute.
+Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md) for how to contribute.
 
 ## Making a release
 
