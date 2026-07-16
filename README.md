@@ -1,11 +1,16 @@
 
 # 🌿 LTER-NL Data Registry
 
-A portal to manage and visualize ecological metadata.
+The LTER-NL Data Registry is a lightweight registry of offline and online ecological datasets collected in the Netherlands.
 
-**Authors:**  
-- **Sander Vlugter** – Internship project at NIOO-KNAW, part of the WUR MSc Bioinformatics programme, 2024  
-- **Eric Kuijt** – Maintainer and developer
+## Contributors
+- **Sander Vlugter** (@sander-vlugter) – creator
+- **Sidney Gijzen** (@sidneygijzen) - developer
+- **Meiert Grootes** (@meiertgrootes) - developer
+- **Francesco Nattino** (@fnattino) - developer
+- **Eric Kuijt** (@kuytje) – maintainer
+- **Geerten Hengeveld** (@GeertenHengeveld) - contributor
+- **Stefan Vriend** (@StefanVriend) - product owner
 
 ---
 
