@@ -5,3 +5,22 @@ services:
   database:
     volumes:
       - /path/to/the/local/folder:/opt/data
+
+  # (optional) Automatic database backups via kartoza/pg-backup,
+  # add BACKUP_DIR and CRON_SCHEDULE to your .env (see the README).
+  # backup:
+  #   image: kartoza/pg-backup:16-3.4
+  #   container_name: ${COMPOSE_PROJECT_NAME}-backup
+  #   env_file: .env
+  #   environment:
+  #     - POSTGRES_HOST=${DB_HOST}
+  #     - POSTGRES_PORT=5432
+  #     - POSTGRES_USER=${DB_USER}
+  #     - POSTGRES_PASS=${DB_PWD}
+  #     - DBLIST=${DB_NAME}
+  #     - DUMP_ARGS=-Fc --data-only   # data only (no schema); restore into a DB migrated to the matching version
+  #   volumes:
+  #     - ${BACKUP_DIR}:/backups
+  #   depends_on:
+  #     database:
+  #       condition: service_healthy

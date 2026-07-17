@@ -49,6 +49,27 @@ By default:
 
 ---
 
+## Database backup
+
+Automatic database backups are handled by [`kartoza/pg-backup`](https://github.com/kartoza/docker-pg-backup), the backup companion to the `kartoza/postgis` 
+`database` image (so `pg_dump` always matches the server version). It is **disabled by default**.
+
+To enable it:
+- copy `docker-compose.override.yml.example` to `docker-compose.override.yml` (if you haven't already) and uncomment the `backup` service.
+- add the backup variables to your `.env`:
+  - `BACKUP_DIR` — the host folder where dumps are written
+  - `CRON_SCHEDULE` — when backups run, in cron syntax (default: nightly at midnight)
+- validate your config with `docker compose config`
+- (re)start the stack: `docker compose up --detach`
+
+Backups are written to `BACKUP_DIR` as compressed archives using `pg_dump -Fc --data-only`, i.e. 
+**data only, without the schema**.
+
+> **Restoring:** because the dump contains no schema, restore it into a database whose schema **matches the version the 
+> backup was taken at**. Recover by checking out the matching app version, running the 
+> migrations (`alembic upgrade head`) to recreate that schema, and then restoring the data-only dump into it. 
+> Restoring an old data dump into a newer schema may fail or load inconsistent data.
+
 ## Running tests
 - make sure the Docker Compose environment is running
 - log into the app container: `docker compose exec app bash`
