@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Represent registry datasets as a DCAT RDF graph via a declarative [YARRRML](https://rml.io/yarrrml/) mapping (`rdf/`), materialized with morph-kgc
+- Map NIOO dataportal JSON exports to DCAT-AP, publishing datasets under their research group as a unit of NIOO-KNAW's [ROR record](https://ror.org/01g25jp36)
+
 ### Changed
 
 - Move Code of Conduct to a separate document [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
