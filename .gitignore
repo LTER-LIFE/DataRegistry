@@ -1,6 +1,8 @@
 .env
 /.idea
 /budburst_EML.xml
+# NIOO dataportal export with real user data - never commit
+/dataportal.json
 *.pyc
 __pycache__
 flask_session/*
