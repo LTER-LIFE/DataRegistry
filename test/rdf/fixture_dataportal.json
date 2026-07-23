@@ -1,0 +1,51 @@
+{
+  "dataset_depositor": {
+    "projects_owner": {},
+    "datasets_as_contact": [77],
+    "datasets_as_depositor": [77],
+    "user_id": 9001,
+    "user_access_token": "SECRET-TOKEN-MUST-NOT-LEAK",
+    "user_name": "Depositor, Test",
+    "user_email": "t.depositor@example.org",
+    "user_orcid": null,
+    "user_last_login": "2026-05-28T12:38:00.828504",
+    "is_authenticated": true,
+    "is_active": true,
+    "is_anonymous": false
+  },
+  "dataset_contact": {
+    "projects_owner": {},
+    "datasets_as_contact": [77],
+    "datasets_as_depositor": [],
+    "user_id": 9002,
+    "user_access_token": "OTHER-SECRET-TOKEN",
+    "user_name": "Contact, Test",
+    "user_email": "t.contact@example.org",
+    "user_orcid": null,
+    "user_last_login": "2026-05-28T12:38:00.828504",
+    "is_authenticated": true,
+    "is_active": true,
+    "is_anonymous": false
+  },
+  "keywords": [
+    {"keyword_id": 1, "keyword_name": "methane", "keyword_validated": true},
+    {"keyword_id": 2, "keyword_name": "compost", "keyword_validated": false}
+  ],
+  "project": 166,
+  "data_type": 2,
+  "dataset_id": 77,
+  "name": "Fixture GC analysis dataset",
+  "department": "ME",
+  "research_group": "Fixture group",
+  "upload_date": "2026-06-10T14:37:01.794194",
+  "description": "A synthetic dataportal record used by the mapping tests.",
+  "contributors": "a.alpha@example.org,b.beta@example.org",
+  "start_date": "2019-01-01T00:00:00",
+  "end_date": "2024-01-31T00:00:00",
+  "geographic_origin": "POINT(6.10573 51.39140)",
+  "folder_path": "N:\\Fixture\\Path",
+  "doi": "",
+  "dataset_access_rights": "NIOO Readable",
+  "environmental_factor": null,
+  "related_materials": ""
+}

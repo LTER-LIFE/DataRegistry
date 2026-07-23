@@ -1,0 +1,247 @@
+# YARRRML mapping: NIOO dataportal JSON export -> DCAT-AP RDF.
+#
+# The dataportal metadata is Dublin Core-based, so the core fields translate
+# directly to the same DCAT/DCT predicates used by mapping-dcat.yml. The JSON
+# export is flattened into the abstract sources below by rdf/dataportal.py and
+# passed to morph-kgc as `python_source` (same pattern as rdf/build.py).
+#
+# Subject IRIs reuse the portal's public view URL, so every dataset subject
+# dereferences to its own portal page and cannot collide with registry IRIs.
+#
+# Open mapping decisions are marked TODO(flimsy). Portal fields deliberately
+# NOT mapped (no DCAT home yet, or PII/security):
+#   project                        -> candidate: dcat:inSeries (DCAT 3)
+#   data_type                      -> numeric FK into a portal lookup table
+#   folder_path                    -> internal N:\ path, not a resolvable URL
+#   environmental_factor, related_materials, keyword_validated
+#   user_access_token, user_last_login, is_* -> never map these
+
+prefixes:
+  dcat: "http://www.w3.org/ns/dcat#"
+  dct: "http://purl.org/dc/terms/"
+  foaf: "http://xmlns.com/foaf/0.1/"
+  rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xsd: "http://www.w3.org/2001/XMLSchema#"
+  # Named sdo (not schema): yatter appends its own built-in
+  # `schema: http://schema.org/` prefix after ours, which silently rewrites
+  # every schema: term to the http:// namespace.
+  sdo: "https://schema.org/"
+  geosparql: "http://www.opengis.net/ont/geosparql#"
+  ql: "http://semweb.mmlab.be/ns/ql#"
+  # sd/kg4di are not used by our terms; yatter emits them for dataframe
+  # sources and fails its own validation if they are not bound (same
+  # declaration as in mapping-dcat.yml).
+  sd: "https://w3id.org/okn/o/sd#"
+  kg4di: "https://w3id.org/kg4di/definedBy#"
+  org: "http://www.w3.org/ns/org#"
+  dpd: "https://dataportal.nioo.knaw.nl/view_dataset/"
+  dpa: "https://dataportal.nioo.knaw.nl/user/"
+  dpc: "https://dataportal.nioo.knaw.nl/contributor/"
+  dpo: "https://dataportal.nioo.knaw.nl/org/"
+
+sources:
+  portal_datasets: &portal_datasets
+    access: portal_datasets
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  portal_agents: &portal_agents
+    access: portal_agents
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  portal_keywords: &portal_keywords
+    access: portal_keywords
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  portal_locations: &portal_locations
+    access: portal_locations
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  portal_contributors: &portal_contributors
+    access: portal_contributors
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  portal_orgs: &portal_orgs
+    access: portal_orgs
+    structureDefiner: dataframe
+    referenceFormulation: csv
+
+mappings:
+
+  PortalDataset:
+    sources: [*portal_datasets]
+    s: "dpd:$(dataset_id)"
+    po:
+      - p: "a"
+        o: "dcat:Dataset"
+      - p: "dct:title"
+        o: "$(name)"
+      - p: "dct:description"
+        o: "$(description)"
+      # upload_date is the metadata submission date; the registry maps its
+      # release_date to dct:issued with the same caveat (see the mapping CSV
+      # in docs/), so we stay consistent with that choice.
+      - p: "dct:issued"
+        o:
+          value: "$(upload_date)"
+          datatype: "xsd:dateTime"
+      # Empty-string DOIs are dropped by config.ini na_values.
+      - p: "dct:identifier"
+        o: "$(doi)"
+      # Portal-local values are translated by ACCESS_RIGHTS in rdf/dataportal.py
+      # ("NIOO Readable" -> RESTRICTED, "Restricted" -> NON_PUBLIC).
+      - p: "dct:accessRights"
+        o: "$(access_rights)"
+      - p: "dcat:landingPage"
+        o:
+          value: "https://dataportal.nioo.knaw.nl/view_dataset/$(dataset_id)"
+          type: iri
+      - p: "dct:temporal"
+        o:
+          mapping: PortalTemporalCoverage
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(dataset_id)"]
+              - ["str2", "$(dataset_id)"]
+      - p: "dcat:contactPoint"
+        o:
+          mapping: PortalAgent
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(contact_user_id)"]
+              - ["str2", "$(user_id)"]
+      # Depositor -> schema.org provider, mirroring how mapping-dcat.yml maps
+      # the registry's metadata provider.
+      - p: "sdo:provider"
+        o:
+          mapping: PortalAgent
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(depositor_user_id)"]
+              - ["str2", "$(user_id)"]
+      - p: "dct:spatial"
+        o:
+          mapping: PortalLocation
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(dataset_id)"]
+              - ["str2", "$(dataset_id)"]
+      # department + research_group -> the responsible NIOO research group as
+      # publisher; the group is an org:unitOf the institute (see PortalOrg).
+      - p: "dct:publisher"
+        o:
+          mapping: PortalOrg
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(org_key)"]
+              - ["str2", "$(org_key)"]
+
+  PortalTemporalCoverage:
+    sources: [*portal_datasets]
+    s: "dpd:$(dataset_id)/temporal"
+    po:
+      - p: "a"
+        o: "dct:PeriodOfTime"
+      - p: "dcat:startDate"
+        o:
+          value: "$(start_date)"
+          datatype: "xsd:dateTime"
+      - p: "dcat:endDate"
+        o:
+          value: "$(end_date)"
+          datatype: "xsd:dateTime"
+
+  # TODO(flimsy): keyword_validated is dropped by the loader; decide whether
+  # unvalidated keywords should be published at all.
+  PortalKeyword:
+    sources: [*portal_keywords]
+    s: "dpd:$(dataset_id)"
+    po:
+      - p: "dcat:keyword"
+        o: "$(keyword_name)"
+
+  # geographic_origin is a WKT POINT, so it becomes dcat:centroid rather than
+  # the dcat:bbox used for the registry's polygon coverages.
+  PortalLocation:
+    sources: [*portal_locations]
+    s: "dpd:$(dataset_id)/location"
+    po:
+      - p: "a"
+        o: "dct:Location"
+      - p: "dcat:centroid"
+        o:
+          value: "$(wkt)"
+          datatype: "geosparql:wktLiteral"
+
+  # Contributors come as a comma-separated list of bare emails; the loader
+  # splits them and derives a display name from the email local part
+  # ("p.bodelier@..." -> "P. Bodelier"). IRIs are minted from the local part.
+  # TODO(flimsy): a contributor who is also a portal user gets two IRIs
+  # (dpa:<user_id> and dpc:<local part>) until we can look users up by email.
+  PortalContributorLink:
+    sources: [*portal_contributors]
+    s: "dpd:$(dataset_id)"
+    po:
+      - p: "dct:contributor"
+        o:
+          value: "dpc:$(contributor_key)"
+          type: iri
+
+  PortalContributorAgent:
+    sources: [*portal_contributors]
+    s: "dpc:$(contributor_key)"
+    po:
+      - p: "a"
+        o: "foaf:Agent"
+      - p: "foaf:name"
+        o: "$(name)"
+      - p: "foaf:mbox"
+        o: "$(email)"
+
+  # Research groups are portal-local IRIs (dpo:), deliberately NOT RORs — we
+  # do not mint identifiers in anyone else's namespace. Only the institute
+  # itself carries its real ROR IRI. The display name is composed by the
+  # loader as "<research_group> (<department>), Netherlands Institute of
+  # Ecology", expanding portal department codes via rdf/dataportal.py.
+  # TODO(later): if NIOO sub-organisations ever get persistent identifiers
+  # (ROR does not register research groups today), swap dpo: for those.
+  PortalOrg:
+    sources: [*portal_orgs]
+    s: "dpo:$(org_key)"
+    po:
+      - p: "a"
+        o: "foaf:Organization"
+      - p: "foaf:name"
+        o: "$(org_name)"
+      - p: "org:unitOf"
+        o:
+          value: "https://ror.org/01g25jp36"
+          type: iri
+
+  # NIOO-KNAW itself, identified by its ROR IRI (dereferences to the ROR
+  # record, which also links the parent org KNAW).
+  NIOOInstitute:
+    sources: [*portal_orgs]
+    s: "https://ror.org/01g25jp36"
+    po:
+      - p: "a"
+        o: "foaf:Organization"
+      - p: "foaf:name"
+        o: "Netherlands Institute of Ecology (NIOO-KNAW)"
+
+  # TODO(flimsy): publishing colleague names/emails in RDF is a PII decision;
+  # mbox is included here for parity with the registry's Agent mapping.
+  PortalAgent:
+    sources: [*portal_agents]
+    s: "dpa:$(user_id)"
+    po:
+      - p: "a"
+        o: "foaf:Agent"
+      - p: "foaf:name"
+        o: "$(user_name)"
+      - p: "foaf:mbox"
+        o: "$(user_email)"
