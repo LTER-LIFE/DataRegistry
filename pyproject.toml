@@ -45,5 +45,7 @@ dev = [
     "mkdocs-material",
     "mkdocstrings",
     "mkdocstrings-python",
+    "morph-kgc",
     "pymdown-extensions",
+    "yatter",
 ]
