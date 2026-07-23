@@ -1,0 +1,309 @@
+# YARRRML mapping: LTER-NL Data Registry -> DCAT-AP RDF.
+#
+# Sources are abstract names (datasets, agents, ...). The actual rows are loaded
+# from SQLAlchemy in rdf/build.py and passed to morph-kgc as `python_source`.
+# This keeps the mapping declarative and free of database connection details.
+
+prefixes:
+  dcat: "http://www.w3.org/ns/dcat#"
+  dct: "http://purl.org/dc/terms/"
+  foaf: "http://xmlns.com/foaf/0.1/"
+  rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xsd: "http://www.w3.org/2001/XMLSchema#"
+  eml: "https://eml.ecoinformatics.org/coverage-2.2.0/"
+  schema: "https://schema.org/"
+  geosparql: "http://www.opengis.net/ont/geosparql#"
+  sd: "https://w3id.org/okn/o/sd#"
+  kg4di: "https://w3id.org/kg4di/definedBy#"
+  ql: "http://semweb.mmlab.be/ns/ql#"
+  vsa: "https://lter-life-experience.org/veluwesearch/Agent/"
+  vsc: "https://lter-life-experience.org/veluwesearch/Catalog/"
+  vsd: "https://lter-life-experience.org/veluwesearch/Dataset/"
+  vsdist: "https://lter-life-experience.org/veluwesearch/Distribution/"
+  vsl: "https://lter-life-experience.org/veluwesearch/Location/"
+  vsld: "https://lter-life-experience.org/veluwesearch/LicenseDocument/"
+  vsmt: "https://lter-life-experience.org/veluwesearch/MediaType/"
+
+sources:
+  datasets: &datasets
+    access: datasets
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  agents: &agents
+    access: agents
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  catalogs: &catalogs
+    access: catalogs
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  licenses: &licenses
+    access: licenses
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  locations: &locations
+    access: locations
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  media_types: &media_types
+    access: media_types
+    structureDefiner: dataframe
+    referenceFormulation: csv
+  distributions: &distributions
+    access: distributions
+    structureDefiner: dataframe
+    referenceFormulation: csv
+
+mappings:
+
+  Dataset:
+    sources: [*datasets]
+    s: "vsd:$(dataset_id)"
+    po:
+      - p: "a"
+        o: "dcat:Dataset"
+      - p: "dct:identifier"
+        o: "$(public_id)"
+      - p: "dct:title"
+        o: "$(title)"
+      - p: "dct:description"
+        o: "$(description)"
+      - p: "dct:type"
+        o: "$(resource_type)"
+      - p: "dct:language"
+        o: "$(language)"
+      - p: "dct:issued"
+        o:
+          value: "$(release_date)"
+          datatype: "xsd:dateTime"
+      - p: "dct:modified"
+        o:
+          value: "$(modified)"
+          datatype: "xsd:dateTime"
+      - p: "dcat:temporalResolution"
+        o: "$(temporal_resolution)"
+      - p: "dcat:spatialResolutionInMeters"
+        o: "$(spatial_resolution)"
+      - p: "dct:accessRights"
+        o: "$(access_rights)"
+      - p: "dcat:landingPage"
+        o:
+          value: "$(landing_page)"
+          type: iri
+      - p: "eml:taxonomicCoverage"
+        o: "$(taxonomic_coverage)"
+      - p: "dct:temporal"
+        o:
+          mapping: TemporalCoverage
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(dataset_id)"]
+              - ["str2", "$(dataset_id)"]
+      - p: "dct:creator"
+        o:
+          mapping: Agent
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(creator_id)"]
+              - ["str2", "$(agent_id)"]
+      - p: "dct:publisher"
+        o:
+          mapping: Agent
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(dataset_publisher_id)"]
+              - ["str2", "$(agent_id)"]
+      - p: "dcat:contactPoint"
+        o:
+          mapping: Agent
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(dataset_contact_point_id)"]
+              - ["str2", "$(agent_id)"]
+      - p: "schema:provider"
+        o:
+          mapping: Agent
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(dataset_metadata_provider_id)"]
+              - ["str2", "$(agent_id)"]
+      - p: "dct:license"
+        o:
+          mapping: LicenseDocument
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(dataset_license_id)"]
+              - ["str2", "$(license_document_id)"]
+      - p: "dct:spatial"
+        o:
+          mapping: Location
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(dataset_spatial_coverage_id)"]
+              - ["str2", "$(location_id)"]
+      - p: "dcat:catalog"
+        o:
+          mapping: Catalog
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(dataset_catalog_id)"]
+              - ["str2", "$(catalog_id)"]
+
+  TemporalCoverage:
+    sources: [*datasets]
+    s: "vsd:$(dataset_id)/temporal"
+    po:
+      - p: "a"
+        o: "dct:PeriodOfTime"
+      - p: "dcat:startDate"
+        o:
+          value: "$(temporal_coverage_start)"
+          datatype: "xsd:dateTime"
+      - p: "dcat:endDate"
+        o:
+          value: "$(temporal_coverage_end)"
+          datatype: "xsd:dateTime"
+
+  Agent:
+    sources: [*agents]
+    s: "vsa:$(agent_id)"
+    po:
+      - p: "a"
+        o: "foaf:Agent"
+      - p: "foaf:name"
+        o: "$(name)"
+      - p: "dct:type"
+        o: "$(type)"
+      - p: "foaf:mbox"
+        o: "$(mbox)"
+
+  Catalog:
+    sources: [*catalogs]
+    s: "vsc:$(catalog_id)"
+    po:
+      - p: "a"
+        o: "dcat:Catalog"
+      - p: "dct:title"
+        o: "$(title)"
+      - p: "dct:description"
+        o: "$(description)"
+      - p: "foaf:homepage"
+        o:
+          value: "$(homepage)"
+          type: iri
+      - p: "dcat:contactPoint"
+        o: "$(contact_point)"
+      - p: "dct:relation"
+        o: "$(applicable_legislation)"
+      - p: "dct:creator"
+        o:
+          mapping: Agent
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(catalog_creator_id)"]
+              - ["str2", "$(agent_id)"]
+      - p: "dct:publisher"
+        o:
+          mapping: Agent
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(catalog_publisher_id)"]
+              - ["str2", "$(agent_id)"]
+      - p: "dct:license"
+        o:
+          mapping: LicenseDocument
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(catalog_license_id)"]
+              - ["str2", "$(license_document_id)"]
+
+  LicenseDocument:
+    sources: [*licenses]
+    s: "vsld:$(license_document_id)"
+    po:
+      - p: "a"
+        o: "dct:LicenseDocument"
+      - p: "dct:title"
+        o: "$(label)"
+      - p: "dct:identifier"
+        o: "$(code)"
+      - p: "dcat:landingPage"
+        o:
+          value: "$(url_general)"
+          type: iri
+      - p: "foaf:page"
+        o:
+          value: "$(url_document)"
+          type: iri
+
+  Location:
+    sources: [*locations]
+    s: "vsl:$(location_id)"
+    po:
+      - p: "a"
+        o: "dct:Location"
+      - p: "dcat:bbox"
+        o:
+          value: "$(wkt)"
+          datatype: "geosparql:wktLiteral"
+
+  MediaType:
+    sources: [*media_types]
+    s: "vsmt:$(mediatype_id)"
+    po:
+      - p: "a"
+        o: "dct:MediaType"
+      - p: "dct:title"
+        o: "$(media_type)"
+      - p: "dct:identifier"
+        o: "$(code)"
+      - p: "dct:extent"
+        o: "$(extension)"
+      - p: "dct:description"
+        o: "$(description)"
+
+  Distribution:
+    sources: [*distributions]
+    s: "vsdist:$(distribution_id)"
+    po:
+      - p: "a"
+        o: "dcat:Distribution"
+      - p: "dct:title"
+        o: "$(title)"
+      - p: "dct:description"
+        o: "$(description)"
+      - p: "dcat:downloadURL"
+        o:
+          value: "$(download_url)"
+          type: iri
+      - p: "dcat:accessURL"
+        o:
+          value: "$(access_url)"
+          type: iri
+      - p: "dcat:mediaType"
+        o:
+          mapping: MediaType
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(distribution_mediatype_id)"]
+              - ["str2", "$(mediatype_id)"]
+      - p: "dct:license"
+        o:
+          mapping: LicenseDocument
+          condition:
+            function: equal
+            parameters:
+              - ["str1", "$(distribution_license_id)"]
+              - ["str2", "$(license_document_id)"]
