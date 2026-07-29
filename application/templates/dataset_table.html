@@ -356,7 +356,9 @@ function initMap() {
     })
 
     const esri = new L.TileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        minZoom: 2, maxZoom: 19, attribution: 'Tiles &copy; Esri...'
+        minZoom: 2,
+        maxZoom: 19,
+        attribution: 'Sources: Esri, Maxar, Earthstar Geographics, and the GIS User Community | Powered by Esri'
     })
 
     appState.datasets.map.mapInstance = new L.Map('datasets-map', {
