@@ -604,13 +604,6 @@ def is_logged_in():
         return valid_token(token_extract)
 
 
-def _json_safe_string(string):
-    """
-    Some fields can contain breaking code for json, this function can be used to clean this fields
-    """
-    return string.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
-
-
 def _geojson_dump(dataset):
     """
     Encode dataset into GeoJSON, sorting keys
