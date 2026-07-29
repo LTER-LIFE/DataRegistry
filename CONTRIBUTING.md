@@ -1,7 +1,7 @@
 # Contributing
 
 Thank you for taking the time to contribute. 
-This document is a set of guidelines for contributing to the LTER-NL Data Registry. By contributing to this project, you agree to abide by the [code of conduct](#code-of-conduct).
+This document is a set of guidelines for contributing to the LTER-NL Data Registry. By contributing to this project, you agree to abide by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Getting started
 
@@ -26,15 +26,3 @@ Follow these guidelines when contributing content:
 - Consider opening a draft PR to indicate to other developers that you are working on an issue
 - Add a line to the "[Unreleased]" section of the [CHANGELOG.md](CHANGELOG.md). Follow the guiding principles by [Keep a Changelog](https://keepachangelog.com/en/1.1.0/#how). Use imperative mood and avoid generic messages
 - Assign a reviewer when finished
-
-## Code of conduct
-
-- Use welcoming and inclusive language
-- Be respectful of differing viewpoints and experiences
-- When submitting a PR
-  - Be patient, your PR might not be accepted directly
-  - Be open to feedback
-- When reviewing a PR
-  - Be constructive; focus on the code, not the coder
-  - Provide specific, actionable feedback
-  - Handle disagreements constructively; consider asking a third developer for their perspective
