@@ -396,10 +396,7 @@ function updateMap() {
         const bounds = geoJsonLayer.getBounds()
 
         if (boundsValid(bounds)) {
-            appState.datasets.map.mapInstance.fitBounds(
-                bounds,
-                { padding: [20, 20] }
-            )
+            appState.datasets.map.mapInstance.fitBounds(bounds)
         }
     } else {
         appState.datasets.map.mapInstance.setView([52.450988, 5.543826], 9)
