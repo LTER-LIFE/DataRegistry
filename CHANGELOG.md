@@ -7,9 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add List and Map tab on the Datasets page
+
 ### Changed
 
 - Move Code of Conduct to a separate document [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Rename the 'Table' page to 'Datasets'
+- Redirect the site root `/` to the Datasets page
+
+### Fixed
+
+- Loading a previously drawn polygon on the popover map
+
+### Removed
+
+- Remove the 'Map' page
+
 
 ## [0.7.0] - 2026-07-08
 
