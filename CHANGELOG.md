@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Move Code of Conduct to a separate document [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Update list of contributors
 
 ## [0.7.0] - 2026-07-08
 
