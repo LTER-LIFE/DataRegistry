@@ -27,19 +27,10 @@
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
             <li class="nav-item">
               <a
-                class="nav-link {% if request.path == url_for('main_bp.home') %} active{% endif %}"
-                href="{{ url_for('main_bp.home') }}"
-              >
-                  Map
-              </a>
-            </li>
-
-            <li class="nav-item">
-              <a
                 class="nav-link {% if request.path == url_for('main_bp.datasets') %}active{% endif %}"
                 href="{{ url_for('main_bp.datasets') }}"
               >
-                  Table
+                  Datasets
               </a>
             </li>
 
