@@ -1,67 +1,87 @@
-"""
-Custom admin views for flask admin to be used in approval
+"""Maintainer review of canonical dataset records."""
 
-"""
-from flask import Flask, redirect, url_for, flash
+from flask import flash, redirect, request, session, url_for
 from flask import current_app as app
-from flask_admin import Admin, expose
-from flask_admin.contrib.sqla import ModelView
+from flask_admin import Admin
 from flask_admin.actions import action
-from markupsafe import Markup
-from datetime import datetime
+from flask_admin.contrib.sqla import ModelView
+from flask_admin.form import SecureForm
 
-from application.database import Base, db_session
-from application.approval import approve_staged_dataset
- 
-from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
-    LicenseDocument, MediaType, Location
-from application.models import AgentStaging, KeywordStaging, CatalogStaging, ChecksumStaging, DataServiceStaging, DatasetStaging, DataThemeStaging, DistributionStaging, \
-    LicenseDocumentStaging, MediaTypeStaging, LocationStaging
+from application.authentication import in_editor_group
+from application.database import db_session
+from application.models import (
+    DATASET_STATUS_ACCEPTED,
+    DATASET_STATUS_REJECTED,
+    DATASET_STATUS_REVISION,
+    DATASET_STATUS_SUBMITTED,
+    Dataset,
+)
+from application.workflow import transition_dataset
 
-class DatasetStagingAdmin(ModelView):
-    can_create=False
-    can_edit=True
-    can_delete=True
 
-    column_list = ["dataset_id", "title", "creator_id","is_approved","description","actions"]
-    column_filters = ["is_approved", "creator_id"]
-    column_searchable_list = ["dataset_id","title","description"]
+class DatasetReviewAdmin(ModelView):
+    can_create = False
+    can_delete = True
+    can_edit = True
+    form_base_class = SecureForm
+    form_excluded_columns = (
+        "status",
+        "submitted_at",
+        "accepted_at",
+        "submitter_id",
+    )
+    column_list = (
+        "dataset_id",
+        "title",
+        "status",
+        "submitted_at",
+        "modified",
+        "review_comment",
+    )
+    column_filters = ("status", "submitted_at", "modified")
+    column_searchable_list = ("title", "description", "public_id")
 
-    def _actions_formatter(self, context, model, name):
-        buttons = []
-        if not model.is_approved:
-            approve_url = url_for(".approve_view", id=model.dataset_id)
-            buttons.append(f'<a class="btn btn-sm btn-success" href="{approve_url}">Approve</a>')
-        return Markup("&nbsp;".join(buttons))
+    def is_accessible(self):
+        return in_editor_group(session.get("access_token"))
 
-    column_formatters = {
-        "actions": _actions_formatter,
-    }
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for("main_bp.login", next=request.url))
 
-    
-    @expose("/approve/<int:id>")
-    def approve_view(self, id):
-        entry = self.session.get(DatasetStaging, id)
-        if not entry:
-            flash("Dataset not found.", "error")
-            return redirect(url_for(".index_view"))
+    def _transition_selected(self, ids, target_status):
+        try:
+            for dataset_id in ids:
+                dataset = self.session.get(Dataset, int(dataset_id))
+                if not dataset:
+                    raise ValueError(f"Dataset {dataset_id} does not exist.")
+                transition_dataset(
+                    dataset,
+                    target_status,
+                    review_comment=dataset.review_comment,
+                )
+            self.session.commit()
+        except ValueError as exc:
+            self.session.rollback()
+            flash(str(exc), "error")
+            return False
+        flash(f"Updated {len(ids)} dataset(s) to {target_status}.", "success")
+        return True
 
-        approve_staged_dataset(self.session, entry.dataset_id)
-        flash(f"Approved dataset '{entry.title}'.", "success")
-        return redirect(url_for(".index_view"))
-    """
+    @action("accept", "Accept", "Accept selected datasets?")
+    def action_accept(self, ids):
+        self._transition_selected(ids, DATASET_STATUS_ACCEPTED)
 
-    """
-    @action("approve","Approve Selected","Approve and ingest selected datasets?")
-    def action_approve(self,ids):
-        for id_ in ids:
-            approve_staged_dataset(self.session, id_)
-        flash(f"Approved {len(ids)} datasets.")
-    
+    @action("request_revision", "Request revision", "Request revisions?")
+    def action_request_revision(self, ids):
+        self._transition_selected(ids, DATASET_STATUS_REVISION)
 
-admin = Admin(app, name='Staged Dataset admin')
+    @action("reject", "Reject", "Reject selected datasets?")
+    def action_reject(self, ids):
+        self._transition_selected(ids, DATASET_STATUS_REJECTED)
 
-admin.add_view(ModelView(Dataset, db_session, category="Main database"))
+    @action("resubmit", "Resubmit", "Return selected revisions to review?")
+    def action_resubmit(self, ids):
+        self._transition_selected(ids, DATASET_STATUS_SUBMITTED)
 
-admin.add_view(DatasetStagingAdmin(DatasetStaging, db_session, category="Staging"))
 
+admin = Admin(app, name="Dataset review")
+admin.add_view(DatasetReviewAdmin(Dataset, db_session, category="Catalogue"))

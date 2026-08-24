@@ -40,9 +40,17 @@ def get_userinfo(access_token):
     :param access_token:
     :return: dictionary containing the userinfo
     """
-    if not access_token:
+    if not access_token or access_token.get("error"):
         return None
-    result = requests.post(url=Config.SURF_DOTWELLKNOWN_CONFIG['userinfo_endpoint'], data=access_token)
+    token_value = access_token.get("access_token")
+    endpoint = Config.SURF_DOTWELLKNOWN_CONFIG.get('userinfo_endpoint')
+    if not token_value or not endpoint:
+        return None
+    result = requests.get(
+        url=endpoint,
+        headers={"Authorization": f"Bearer {token_value}"},
+        timeout=10,
+    )
 
     if result.status_code != 200:
         return None
@@ -59,4 +67,7 @@ def in_editor_group(access_token):
     :return: boolean
     """
     user_info = get_userinfo(access_token)
-    return Config.SURF_EDITOR_GROUP in user_info.get('eduperson_entitlement', [])
+    return bool(
+        user_info
+        and Config.SURF_EDITOR_GROUP in user_info.get('eduperson_entitlement', [])
+    )

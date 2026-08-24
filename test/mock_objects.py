@@ -5,7 +5,16 @@ import shapely
 from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.polygon import Polygon
 
-from application.models import LicenseDocument, Location, Agent, Dataset, Keyword, Catalog, DataTheme
+from application.models import (
+    DATASET_STATUS_ACCEPTED,
+    LicenseDocument,
+    Location,
+    Agent,
+    Dataset,
+    Keyword,
+    Catalog,
+    DataTheme,
+)
 from faker import Faker # Used for generating realistic-looking data
 
 # Initialize Faker for generating mock data
@@ -28,6 +37,9 @@ class MockObjects:
         dataset = Dataset()
 
         dataset.modified = fake.date_time_between(start_date="-1y", end_date="now")
+        dataset.status = DATASET_STATUS_ACCEPTED
+        dataset.submitted_at = dataset.modified
+        dataset.accepted_at = dataset.modified
         dataset.release_date = fake.date_time_between(start_date="-2y", end_date="-1y")
         dataset.language = random.choice(["en", "nl", "fr", "de"])
         dataset.title = f"{fake.catch_phrase()} - {dataset_id_prefix}"
@@ -272,5 +284,4 @@ class DBSessionMock:
         In this mock, this method does nothing.
         """
         pass # No actual flush in mock
-
 

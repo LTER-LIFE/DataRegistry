@@ -46,6 +46,9 @@ class TestDataset(BaseTestCase):
         all_db_datasets = db_session.query(Dataset).all()
 
         assert len(all_db_datasets) == 1
+        assert all_db_datasets[0].status == "accepted"
+        assert all_db_datasets[0].submitted_at is not None
+        assert all_db_datasets[0].accepted_at is not None
 
     def test_create_dataset_box_wkt(self):
         instances = db_session.query(Dataset).all()
@@ -57,6 +60,24 @@ class TestDataset(BaseTestCase):
         all_db_datasets = db_session.query(Dataset).all()
 
         assert len(all_db_datasets) == 1
+
+    def test_catalog_serialization_excludes_non_accepted_siblings(self):
+        with self.app.app_context():
+            accepted = self.mock_objects.create_mock_dataset("accepted")
+            hidden = self.mock_objects.create_mock_dataset("hidden")
+            hidden.dataset_catalog = accepted.dataset_catalog
+            hidden.status = "revision"
+            hidden.review_comment = "Changes requested"
+            db_session.commit()
+
+            serialized = accepted.to_dict()
+
+            catalogued_ids = {
+                dataset["dataset_id"]
+                for dataset in serialized["dataset_catalog"]["datasets_in_catalogue"]
+            }
+            self.assertIn(accepted.dataset_id, catalogued_ids)
+            self.assertNotIn(hidden.dataset_id, catalogued_ids)
 
     def test_create_dataset_from_shapefile(self):
         dirname = os.path.dirname(__file__)
