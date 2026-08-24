@@ -1,5 +1,8 @@
 from datetime import datetime
+import json
 import os
+import subprocess
+import sys
 import unittest
 
 from alembic import command
@@ -49,6 +52,22 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
             self.alembic.attributes["connection"] = connection
             command.upgrade(self.alembic, revision)
         self.alembic.attributes.pop("connection", None)
+
+    def _run_preflight_cli(self):
+        return subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "scripts.catalogue_migration_preflight",
+                "--database-url",
+                self.url.render_as_string(hide_password=False),
+                "--json",
+            ],
+            cwd=os.getcwd(),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
     @staticmethod
     def dataset_values(title, public_id):
@@ -244,6 +263,33 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
             self.assertEqual(
                 rejected_workflow[3], "Insufficient spatial description"
             )
+
+    def test_preflight_cli_reports_ready_and_blocked_exit_codes(self):
+        ready = self._run_preflight_cli()
+
+        self.assertEqual(ready.returncode, 0, ready.stderr)
+        ready_report = json.loads(ready.stdout)
+        self.assertTrue(ready_report["ready"])
+        self.assertEqual(
+            ready_report["database"]["alembic_revision"], "251acb193b99"
+        )
+
+        with self.engine.begin() as connection:
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "CatalogStaging" (title) '
+                    "VALUES ('Unsupported catalogue')"
+                )
+            )
+
+        blocked = self._run_preflight_cli()
+
+        self.assertEqual(blocked.returncode, 1, blocked.stderr)
+        blocked_report = json.loads(blocked.stdout)
+        self.assertFalse(blocked_report["ready"])
+        self.assertTrue(
+            any("CatalogStaging contains 1" in item for item in blocked_report["blockers"])
+        )
 
     def test_unsupported_staging_data_blocks_upgrade_atomically(self):
         with self.engine.begin() as connection:

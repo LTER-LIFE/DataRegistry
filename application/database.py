@@ -57,7 +57,7 @@ def sync_datasets_after_commit(session):
 
     from application.models import DATASET_STATUS_ACCEPTED, Dataset
 
-    sync_session = sessionmaker(bind=engine)()
+    sync_session = sessionmaker(bind=session.get_bind())()
     try:
         for dataset_id in dataset_ids:
             try:
