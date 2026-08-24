@@ -16,8 +16,6 @@ if config.config_file_name is not None:
 # This loops through your models folder and imports everything automatically
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
     LicenseDocument, MediaType, Location
-from application.models import AgentStaging, KeywordStaging, CatalogStaging, ChecksumStaging, DataServiceStaging, DatasetStaging, DataThemeStaging, DistributionStaging, \
-    LicenseDocumentStaging, MediaTypeStaging, LocationStaging
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -62,11 +60,17 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    with engine.connect() as connection:
+    supplied_connection = config.attributes.get("connection")
+    if supplied_connection is not None:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=supplied_connection, target_metadata=target_metadata
         )
+        with context.begin_transaction():
+            context.run_migrations()
+        return
 
+    with engine.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
 
