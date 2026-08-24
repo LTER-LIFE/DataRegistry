@@ -25,11 +25,13 @@ sudo sysctl -p
 - Copy `.env.example`, rename it to `.env` and complete the missing variables.
 - Start the Docker Compose environment: `docker compose up --detach`
 - Run database migrations:
+  - before upgrading an existing installation to the single catalogue, run `python -m scripts.catalogue_migration_preflight` and resolve every blocker
   - log into the app container: `docker compose exec app bash`
   - and run the migrations: `alembic upgrade head`
 - Rebuild the Elasticsearch index:
   - check the status page by visiting `/dashboard`.
-  - if necessary rebuild the index by visiting `/rebuild`.
+  - if necessary rebuild the accepted-only index by visiting `/rebuild`.
+  - see [the catalogue migration runbook](docs/catalogue-migration.md) for the consolidation deployment procedure
 - Docker Compose Watch has been configured to watch for changes in the app source code. [Enable it](https://docs.docker.com/compose/how-tos/file-watch/#use-watch) to start watching for changes.
 - (optional) Restore a database backup
   - copy `docker-compose.override.yml.example` and rename it to `docker-compose.override.yml`.
@@ -64,7 +66,7 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) an
 4. Create a new GitHub release, point to relevant section in the changelog
 5. Deploy release. First deploy release on acceptance. After confirmation by product owner, deploy release on production. Follow this procedure:
     * shut down access to the site temporarily: `docker compose down app`
-    * create database backup: `docker compose run --rm backup`
+    * create and verify a full PostgreSQL schema-and-data backup using the backup tooling configured for the deployment; the repository does not currently define a Compose `backup` service
     * pull latest version of app: `git fetch --tags` and `git checkout tags/<tag-name>`
     * Shut down Docker: `docker compose down`
     * Install new version of app: `docker compose up --build -d`
