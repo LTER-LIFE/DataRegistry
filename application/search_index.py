@@ -27,7 +27,8 @@ MAPPING = {"properties": {"dataset_id": {"type": "integer"}, "release_date": {"t
     "access_rights": {"type": "keyword"},
     "dataset_catalog": {"type": "object", "properties": {"catalog_id": {"type": "integer"}}},
     "modified": {"type": "date"}, "taxonomic_coverage": {"type": "text"}, "landing_page": {"type": "keyword"},
-    "public_id": {"type": "keyword"}}}
+    "public_id": {"type": "keyword"}, "status": {"type": "keyword"},
+    "submitted_at": {"type": "date"}, "accepted_at": {"type": "date"}}}
 
 
 # 1. Define the blueprint for your filters and aggregations
@@ -120,7 +121,14 @@ def rebuild_index(datasets):
     # push all datasets to index
     results = []
     for dataset in datasets:
-        results.append(es.index(index=INDEX_NAME, body=dataset.to_dict()))
+        if dataset.status == "accepted":
+            results.append(
+                es.index(
+                    index=INDEX_NAME,
+                    id=dataset.dataset_id,
+                    document=dataset.to_dict(),
+                )
+            )
 
     return results
 
@@ -132,6 +140,10 @@ def index_document(object):
     """
     if not es:
         validate_index()
+
+    if object.status != "accepted":
+        delete_document_id(object.dataset_id)
+        return
 
     # Convert the database object to a dictionary
     doc = object.to_dict()
@@ -157,7 +169,22 @@ def index_document(object):
         doc.pop('temporal_coverage', None)
 
     # Index the modified document
-    es.index(index=INDEX_NAME, id=es_doc_id, document=doc)
+    index_document_data(es_doc_id, doc)
+
+
+def index_document_data(dataset_id, document):
+    """Index a document captured from a committed database transaction."""
+    global es
+    if not es:
+        validate_index()
+    temporal_coverage = {}
+    if document.get("temporal_coverage_start"):
+        temporal_coverage["gte"] = document["temporal_coverage_start"]
+    if document.get("temporal_coverage_end"):
+        temporal_coverage["lte"] = document["temporal_coverage_end"]
+    if temporal_coverage:
+        document["temporal_coverage"] = temporal_coverage
+    es.index(index=INDEX_NAME, id=dataset_id, document=document)
 
 
 def delete_document(object):
@@ -166,12 +193,22 @@ def delete_document(object):
     """
     if not es:
         validate_index()
-    es_doc_id = object.to_dict().get(object.__mapper__.primary_key[0].name)
-    es.delete(index=INDEX_NAME, id=es_doc_id, ignore=[404])
+    delete_document_id(getattr(object, object.__mapper__.primary_key[0].name))
+
+
+def delete_document_id(dataset_id):
+    """Remove a dataset document without requiring a database object."""
+    global es
+    if not es:
+        validate_index()
+    es.options(ignore_status=[404]).delete(index=INDEX_NAME, id=dataset_id)
 
 
 def fetch_all():
-    all_documents_query = {"query": {"match_all": {}}, "size": MAX_RESULTS}
+    all_documents_query = {
+        "query": {"term": {"status": "accepted"}},
+        "size": MAX_RESULTS,
+    }
     return es.search(index=INDEX_NAME, body=all_documents_query)
 
 def query(query):
@@ -248,7 +285,8 @@ def build_es_query(filters):
     query_body = {
         "query": {
             "bool": {
-                "must": must_clauses
+                "must": must_clauses,
+                "filter": [{"term": {"status": "accepted"}}],
             }
         },
         "size": MAX_RESULTS,
