@@ -49,6 +49,7 @@ class Config(object):
     SURF_SRAM_GROUP_PREFIX = environ.get("SURF_SRAM_GROUP_PREFIX")
     SURF_SRAM_GROUP_POSTFIX = environ.get("SURF_SRAM_GROUP_POSTFIX")
     SURF_EDITOR_GROUP = f"{SURF_SRAM_GROUP_PREFIX}{SURF_SRAM_GROUP_POSTFIX}"
+    LOCAL_EDITOR_BYPASS = environ.get("LOCAL_EDITOR_BYPASS", "false").lower() == "true"
 
     CODE_VERIFIER, CODE_CHALLENGE = get_code_challenge()
 

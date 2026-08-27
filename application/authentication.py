@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 import requests
+from flask import current_app
 from config import Config
 
 
@@ -71,3 +72,10 @@ def in_editor_group(access_token):
         user_info
         and Config.SURF_EDITOR_GROUP in user_info.get('eduperson_entitlement', [])
     )
+
+
+def has_editor_access(access_token):
+    """Apply the editor policy, including the explicit local-only bypass."""
+    if current_app.config.get("LOCAL_EDITOR_BYPASS", False):
+        return True
+    return in_editor_group(access_token)

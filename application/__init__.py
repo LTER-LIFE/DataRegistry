@@ -32,6 +32,11 @@ def create_app():
     # Configure the flask app instance
     app.config.from_object(Config)
 
+    if app.config.get("LOCAL_EDITOR_BYPASS"):
+        logger.warning(
+            "LOCAL_EDITOR_BYPASS is enabled; Flask-Admin does not require SRAM authentication"
+        )
+
     app.secret_key = app.config.get("SECRET_KEY")
     Session(app)
 
@@ -48,6 +53,7 @@ def create_app():
         from application import routes
         from application.admin import admin
 
+        admin.init_app(app)
         app.register_blueprint(blueprint=routes.main_bp, url_prefix=url_prefix)
         app.jwt = JWTManager(app)
 

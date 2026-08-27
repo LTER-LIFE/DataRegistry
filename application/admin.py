@@ -1,13 +1,12 @@
 """Maintainer review of canonical dataset records."""
 
 from flask import flash, redirect, request, session, url_for
-from flask import current_app as app
 from flask_admin import Admin
 from flask_admin.actions import action
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form import SecureForm
 
-from application.authentication import in_editor_group
+from application.authentication import has_editor_access
 from application.database import db_session
 from application.models import (
     DATASET_STATUS_ACCEPTED,
@@ -42,7 +41,7 @@ class DatasetReviewAdmin(ModelView):
     column_searchable_list = ("title", "description", "public_id")
 
     def is_accessible(self):
-        return in_editor_group(session.get("access_token"))
+        return has_editor_access(session.get("access_token"))
 
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for("main_bp.login", next=request.url))
@@ -83,5 +82,5 @@ class DatasetReviewAdmin(ModelView):
         self._transition_selected(ids, DATASET_STATUS_SUBMITTED)
 
 
-admin = Admin(app, name="Dataset review")
+admin = Admin(name="Dataset review")
 admin.add_view(DatasetReviewAdmin(Dataset, db_session, category="Catalogue"))

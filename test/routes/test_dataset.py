@@ -80,6 +80,18 @@ class TestDatasetRoutes(BaseTestCase):
 
             assert response.status_code == 404
 
+    def test_local_admin_bypass_does_not_enable_direct_edit(self):
+        with self.app.app_context():
+            dataset = self.mock_objects.create_mock_dataset("local-bypass")
+            self.app.config["LOCAL_EDITOR_BYPASS"] = True
+            try:
+                response = self.client.get(f"/datasets/edit/{dataset.dataset_id}")
+            finally:
+                self.app.config["LOCAL_EDITOR_BYPASS"] = False
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.location, url_for("main_bp.login", _external=False))
+
     def test_export_removes_dataset_that_is_no_longer_accepted(self):
         with self.app.app_context():
             dataset = self.mock_objects.create_mock_dataset("download")
