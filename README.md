@@ -25,9 +25,9 @@ sudo sysctl -p
 - Copy `.env.example`, rename it to `.env` and complete the missing variables.
 - Start the Docker Compose environment: `docker compose up --detach`
 - Run database migrations:
-  - before upgrading an existing installation to the single catalogue, run `python -m scripts.catalogue_migration_preflight` and resolve every blocker
-  - log into the app container: `docker compose exec app bash`
-  - and run the migrations: `alembic upgrade head`
+  - for a new installation, run `docker compose exec app alembic upgrade head`
+  - before upgrading an existing database to the single catalogue, run `docker compose exec app python -m scripts.catalogue_migration_preflight`
+  - resolve every reported blocker, then run `docker compose exec app alembic upgrade head`
 - Rebuild the Elasticsearch index:
   - check the status page by visiting `/dashboard`.
   - if necessary rebuild the accepted-only index by visiting `/rebuild`.
