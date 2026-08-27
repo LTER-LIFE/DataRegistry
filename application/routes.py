@@ -15,13 +15,15 @@ from flask import current_app as app
 import jwt
 import markupsafe
 import shapely
+from sqlalchemy import func
 
 from application import search_index
 from application.authentication import valid_token, in_editor_group
 from application.database import db_session
 from application.forms import DatasetForm, LlmForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
-    LicenseDocument, MediaType, Location, DATASET_STATUS_ACCEPTED, DATASET_STATUS_SUBMITTED
+    LicenseDocument, MediaType, Location, DATASET_STATUS_ACCEPTED, DATASET_STATUS_REJECTED, \
+    DATASET_STATUS_REVISION, DATASET_STATUS_SUBMITTED
 from application.services import LlmMetadataService
 
 # Blueprint Configuration
@@ -336,6 +338,28 @@ def export_download_list():
                      download_name='datasets.zip')
 
 
+def _database_dataset_stats():
+    start = time.time()
+    status_counts = dict(
+        db_session.query(Dataset.status, func.count(Dataset.dataset_id))
+        .group_by(Dataset.status)
+        .all()
+    )
+    return {
+        "total": sum(status_counts.values()),
+        "submitted": status_counts.get(DATASET_STATUS_SUBMITTED, 0),
+        "revision": status_counts.get(DATASET_STATUS_REVISION, 0),
+        "rejected": status_counts.get(DATASET_STATUS_REJECTED, 0),
+        "accepted": status_counts.get(DATASET_STATUS_ACCEPTED, 0),
+        "duration": "{:f}".format(time.time() - start),
+    }
+
+
+def _elasticsearch_result_count(search_result):
+    total = search_result.body["hits"]["total"]
+    return total["value"] if isinstance(total, dict) else total
+
+
 @main_bp.route('/rebuild')
 def rebuild_index():
     """
@@ -346,14 +370,8 @@ def rebuild_index():
 
     :return: rendered flask template from templates/dashboard.html
     """
-    # get all datasets from database
-    start = time.time()
-
+    database_datasets_stats = _database_dataset_stats()
     db_datasets = db_session.query(Dataset).filter_by(status=DATASET_STATUS_ACCEPTED).all()
-    db_duration = '{:f}'.format(time.time() - start)
-
-    database_datasets_stats =  {"total": len(db_datasets),
-                             "duration": f"Fetched all full datasets in {db_duration}"}
 
     start = time.time()
     indexed_datasets = search_index.rebuild_index(db_datasets)
@@ -364,7 +382,8 @@ def rebuild_index():
 
     return render_template('dashboard.html',
                            database_datasets_stats=database_datasets_stats,
-                           index_datasets_stats=index_datasets_stats)
+                           index_datasets_stats=index_datasets_stats,
+                           title='Dashboard')
 
 @main_bp.route('/query', methods=['POST'])
 def query_index():
@@ -431,19 +450,12 @@ def dashboard():
 
     :return: rendered flask template from templates/dashboard.html
     """
-    start = time.time()
-
-    db_datasets_count = db_session.query(Dataset.dataset_id).filter(
-        Dataset.status == DATASET_STATUS_ACCEPTED
-    ).count()
-    db_duration = '{:f}'.format(time.time() - start)
-
-    database_datasets_stats =  {"total": db_datasets_count,
-                             "duration": db_duration}
-
+    database_datasets_stats = _database_dataset_stats()
     index_datasets = search_index.fetch_all()
-    index_datasets_stats =  {"total": len(index_datasets.body["hits"]["total"]),
-                             "duration": index_datasets.meta.duration}
+    index_datasets_stats = {
+        "total": _elasticsearch_result_count(index_datasets),
+        "duration": index_datasets.meta.duration,
+    }
 
     return render_template('dashboard.html',
                            database_datasets_stats=database_datasets_stats,
