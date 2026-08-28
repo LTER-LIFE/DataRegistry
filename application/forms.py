@@ -7,6 +7,7 @@
 import re
 from datetime import datetime
 from flask import request
+from flask_babel import lazy_gettext as _l
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from dateutil import parser as date_parser
@@ -385,9 +386,14 @@ class DatasetForm(FlaskForm):
 
 
 class LlmForm(FlaskForm):
-    dataset_url = StringField("Dataset url", validators=[DataRequired()], description="The web page (URL) that can be "
-                                                                        "navigated to in a web browser to "
-                                                                        "gain access to the dataset.")
+    dataset_url = StringField(
+        "Dataset url",
+        validators=[DataRequired()],
+        description="The web page (URL) that can be "
+                    "navigated to in a web browser to "
+                    "gain access to the dataset.",
+        render_kw={"placeholder": _l("Paste dataset URL here...")}
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -465,51 +471,51 @@ class DatasetStagingForm(FlaskForm):
 
     """
     # Metadata provider
-    metadata_provider_name = StringField("Name", validators=[DataRequired()], description="Your first and last name.")
-    metadata_provider_organisation = StringField("Organisation name", validators=[],
-                                                 description="The name of the organisation you are affiliated with.")
-    metadata_provider_mbox = StringField("Email address", validators=[],
-                                         description="This email address may serve as a point of contact for "
+    metadata_provider_name = StringField(_l("Name"), validators=[DataRequired()], description=_l("Your first and last name."))
+    metadata_provider_organisation = StringField(_l("Organisation name"), validators=[],
+                                                 description=_l("The name of the organisation you are affiliated with."))
+    metadata_provider_mbox = StringField(_l("Email address"), validators=[],
+                                         description=_l("This email address may serve as a point of contact for "
                                                      "LTER-LIFE in case there are questions about the metadata form "
                                                      "you are currently submitting. NB: by providing this email "
                                                      "address, you give consent to LTER-LIFE to display the email "
-                                                     "address on the LTER-NL Data Registry.")
+                                                     "address on the LTER-NL Data Registry."))
 
     # Creator
-    creator_name = StringField("Name", validators=[],
-                               description="If the creator of the dataset is a person, please provide their first and "
-                                           "last name.")
-    creator_organisation = StringField("Organisation name", validators=[DataRequired()],
-                                       description="If the creator of the dataset is an "
+    creator_name = StringField(_l("Name"), validators=[],
+                               description=_l("If the creator of the dataset is a person, please provide their first and "
+                                           "last name."))
+    creator_organisation = StringField(_l("Organisation name"), validators=[DataRequired()],
+                                       description=_l("If the creator of the dataset is an "
                                                    "organisation, provide the name of the "
                                                    "organisation here. If the creator of the "
                                                    "dataset is a person, provide the name of the "
-                                                   "organisation they are affiliated with.")
-    creator_mbox = StringField("Email address", description="If the creator of the dataset is a person, please "
+                                                   "organisation they are affiliated with."))
+    creator_mbox = StringField(_l("Email address"), description=_l("If the creator of the dataset is a person, please "
                                                             "provide their email address. NB: by providing this email "
                                                             "address, you give consent to LTER-LIFE to display the "
-                                                            "email address on the LTER-NL Data Registry. ")
+                                                            "email address on the LTER-NL Data Registry."))
 
     # Contact point
-    dataset_contact_point_name = StringField("Name", validators=[DataRequired()],
-                                             description="If the contact point of the dataset is a person, please "
+    dataset_contact_point_name = StringField(_l("Name"), validators=[DataRequired()],
+                                             description=_l("If the contact point of the dataset is a person, please "
                                                          "provide their first and last name. If the contact point "
-                                                         "of the dataset is a position, please provide their role.")
-    dataset_contact_point_organisation = StringField("Organisation name", validators=[],
-                                                     description="The name of the organisation the contact point is "
-                                                                 "affiliated with.")
-    dataset_contact_point_mbox = StringField("Email address", validators=[DataRequired()],
-                                             description="This email address may serve as a point of contact for "
+                                                         "of the dataset is a position, please provide their role."))
+    dataset_contact_point_organisation = StringField(_l("Organisation name"), validators=[],
+                                                     description=_l("The name of the organisation the contact point is "
+                                                                 "affiliated with."))
+    dataset_contact_point_mbox = StringField(_l("Email address"), validators=[DataRequired()],
+                                             description=_l("This email address may serve as a point of contact for "
                                                          "users of the LTER-NL Data Registry in case they have "
                                                          "questions about the dataset. NB: by providing this email "
                                                          "address, you give consent to LTER-LIFE to display the email "
-                                                         "address on the LTER-NL Data Registry. ")
+                                                         "address on the LTER-NL Data Registry."))
 
-    title = StringField("Title", validators=[DataRequired()], description="A brief description of the dataset. "
+    title = StringField(_l("Title"), validators=[DataRequired()], description=_l("A brief description of the dataset. "
                                                                           "Recommended to include: subject, location,"
-                                                                          " time period. ")
-    description = TextAreaField("Description", validators=[DataRequired()],
-                                description="A description of the contents of the dataset. The description will be "
+                                                                          " time period."))
+    description = TextAreaField(_l("Description"), validators=[DataRequired()],
+                                description=_l("A description of the contents of the dataset. The description will be "
                                             "used by full-text searches, and it should be rich with descriptive text. "
                                             "Multiple paragraphs may be included. It should contain enough "
                                             "information to allow potential data users to understand the data and "
@@ -518,90 +524,90 @@ class DatasetStagingForm(FlaskForm):
                                             "and focus on the “what”, “when”, and “where” information, "
                                             "general taxonomic information, as well as whether the data package is "
                                             "ongoing or completed. Some general methods description is appropriate, "
-                                            "and broad classes of measured parameters should also be included.")
+                                            "and broad classes of measured parameters should also be included."))
 
-    keywords = StringField("Keywords", description="Commonly used words or "
+    keywords = StringField(_l("Keywords"), description=_l("Commonly used words or "
                                                    "phrases to describe the "
                                                    "dataset. Format: separate "
-                                                   "keywords by a comma.")
+                                                   "keywords by a comma."))
 
-    resource_type = StringField("Resource type", validators=[DataRequired()],
-                                description="The nature of the dataset. Examples include but are not limited to: "
+    resource_type = StringField(_l("Resource type"), validators=[DataRequired()],
+                                description=_l("The nature of the dataset. Examples include but are not limited to: "
                                             "observational data, experimental data, remotely sensed data, sounds, "
-                                            "images.")
+                                            "images."))
 
-    license = StringField("License", description="The license determines what rights may be available to "
+    license = StringField(_l("License"), description=_l("The license determines what rights may be available to "
                                                  "users when using the dataset. Recommend to choose one of "
                                                  "the Creative Commons licenses. Examples include but are not "
                                                  "limited to: CC0, CC-BY, CC-BY-NC. Please see "
                                                  "https://creativecommons.org/share-your-work/cclicenses/ for "
-                                                 "more Creative Commons licenses.")
-    access_rights = StringField("Access rights", validators=[DataRequired()],
-                                description="Information that indicates how the dataset can be accessed. Recommended "
+                                                 "more Creative Commons licenses."))
+    access_rights = StringField(_l("Access rights"), validators=[DataRequired()],
+                                description=_l("Information that indicates how the dataset can be accessed. Recommended "
                                             "to choose one of: embargoed access, metadata only access, "
                                             "open access, restricted access. For definitions of these terms, "
-                                            "check: https://vocabularies.coar-repositories.org/access_rights/.")
+                                            "check: https://vocabularies.coar-repositories.org/access_rights/."))
 
-    publisher = StringField("Publisher name", validators=[],
-                            description="The organisation that made a citable version of the dataset available "
+    publisher = StringField(_l("Publisher name"), validators=[],
+                            description=_l("The organisation that made a citable version of the dataset available "
                                         "online. Examples include but are not limited to: GBIF, Dataverse NL, Zenodo, "
-                                        "Dryad, Figshare.")
+                                        "Dryad, Figshare."))
 
-    public_id = StringField("Dataset ID", validators=[], description="DOI or other unique identifier "
+    public_id = StringField(_l("Dataset ID"), validators=[], description=_l("DOI or other unique identifier "
                                                                      "associated with the published "
-                                                                     "dataset.")
+                                                                     "dataset."))
 
-    landing_page = StringField("Landing page", validators=[], description="The web page (URL) that can be "
+    landing_page = StringField(_l("Landing page"), validators=[], description=_l("The web page (URL) that can be "
                                                                           "navigated to in a web browser to "
-                                                                          "gain access to the dataset.")
+                                                                          "gain access to the dataset."))
 
-    temporal_coverage_start = StringField("Start date", validators=[DataRequired()],
-                                          description="The period of time when the data collection started. Format: "
-                                                      "either YYYY or YYYY-MM-DD.")
-    temporal_coverage_end = StringField("End date", validators=[],
-                                        description="The period of time when the data collection ended. NB: If data "
+    temporal_coverage_start = StringField(_l("Start date"), validators=[DataRequired()],
+                                          description=_l("The period of time when the data collection started. Format: "
+                                                      "either YYYY or YYYY-MM-DD."))
+    temporal_coverage_end = StringField(_l("End date"), validators=[],
+                                        description=_l("The period of time when the data collection ended. NB: If data "
                                                     "collection is ongoing, leave empty or select the latest period of time "
                                                     "that is included in the current version of the dataset (format: "
-                                                    "either YYYY or YYYY-MM-DD).")
+                                                    "either YYYY or YYYY-MM-DD)."))
 
-    temporal_resolution = StringField("Temporal resolution", validators=[],
-                                      description="The temporal resolution of the dataset is the minimm temporal "
-                                                  "separation between records in the dataset.")
+    temporal_resolution = StringField(_l("Temporal resolution"), validators=[],
+                                      description=_l("The temporal resolution of the dataset is the minimum temporal "
+                                                  "separation between records in the dataset."))
 
-    spatial_coverage = StringField("Spatial coverage", validators=[RequiredOr("spatial_coverage_shapefile")],
-                                   description="The spatial extent that is covered by the dataset. Use the interactive "
-                                               "map to draw the study area of your dataset.")
+    spatial_coverage = StringField(_l("Spatial coverage"), validators=[RequiredOr("spatial_coverage_shapefile")],
+                                   description=_l("The spatial extent that is covered by the dataset. Use the interactive "
+                                               "map to draw the study area of your dataset."))
 
-    spatial_coverage_shapefile = FileField("Spatial coverage from file", validators=[RequiredOr("spatial_coverage")],
-                                           description="The spatial extent that is covered by the dataset. "
+    spatial_coverage_shapefile = FileField(_l("Spatial coverage from file"), validators=[RequiredOr("spatial_coverage")],
+                                           description=_l("The spatial extent that is covered by the dataset. "
                                                        "Upload a zip file containing the 4 files that make up a "
-                                                       "shapefile (i.e., .shp, .shx, .dbf, .prj).")
+                                                       "shapefile (i.e., .shp, .shx, .dbf, .prj)."))
 
-    spatial_resolution = StringField("Spatial resolution", description="If the dataset contains data acquired over a "
+    spatial_resolution = StringField(_l("Spatial resolution"), description=_l("If the dataset contains data acquired over a "
                                                                        "range of spatial locations during each "
                                                                        "collection period, document the minimum "
                                                                        "spatial separation between records "
-                                                                       "in the dataset.")
+                                                                       "in the dataset."))
 
-    taxonomic_coverage = StringField("Taxonomic coverage", description="If applicable, taxonomic coverage is "
+    taxonomic_coverage = StringField(_l("Taxonomic coverage"), description=_l("If applicable, taxonomic coverage is "
                                                                        "a description of the taxa represented "
                                                                        "in the dataset. May be as generic as "
                                                                        "'small passerines' or as specific as "
-                                                                       "listing taxon names.")
+                                                                       "listing taxon names."))
 
-    release_date = StringField("Metadata submission date", description="Date of registration of your dataset in the "
-                                                                       "LTER-NL Data Registry.",
+    release_date = StringField(_l("Metadata submission date"), description=_l("Date of registration of your dataset in the "
+                                                                       "LTER-NL Data Registry."),
                                validators=[DataRequired()])
-    language = SelectField("Language", choices=[('EN', 'English'), ('NL', 'Nederlands')], validators=[DataRequired()],
-                           description="Language used in this form")
+    language = SelectField(_l("Language"), choices=[('EN', 'English'), ('NL', 'Nederlands')], validators=[DataRequired()],
+                           description=_l("Language used in this form"))
 
-    consent = RadioField("Terms and conditions", choices=[('Y', 'Yes, I have read and agree to the terms and conditions.')],
-                         validators=[AnyOf(["Y"], message="Please answer Yes to proceed")])
+    consent = RadioField(_l("Terms and conditions"), choices=[('Y', _l('Yes, I have read and agree to the terms and conditions.'))],
+                         validators=[AnyOf(["Y"], message=_l("Please answer Yes to proceed"))])
 
     # User
 
     # submit field
-    submit_button = SubmitField('Submit dataset')
+    submit_button = SubmitField(_l('Submit dataset'))
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

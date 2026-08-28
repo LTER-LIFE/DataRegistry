@@ -54,6 +54,16 @@ By default:
 - log into the app container: `docker compose exec app bash`
 - run the tests with: `python -m unittest`
 
+## Translating the app
+The app uses Flask-Babel for managing translations. In order to add or modify translatable strings, first add or modify an English string in a template file (e.g. `about.html`) or Python file (e.g. `routes.py`). Then, navigate to the project's root folder and run the following commands:
+
+- Extract translatable English strings from the application: `uv run pybabel extract -F babel.cfg -k _l -o messages.pot .`. Note: the `messages.pot` file is not version-controlled, as this can be generated at any time.
+- Update the Dutch translation: `uv run pybabel update -i messages.pot -d application/translations`. This merges new and updated with the already translated strings. Add or update any missing Dutch strings in `application/translations/nl/LC_MESSAGES/messages.po`.
+- After translating to Dutch, re-run the previous update command to fix the formatting of the translated Dutch text. This helps with clean diffs, so when the next person updates the `messages.po` file they dont end up re-formatting large parts of the file which they didn't modify.
+- Compile the `messages.po` file for usage in app: `uv run pybabel compile -d application/translations`. This results in a `messages.mo` file, which is used when retrieving tranlations on runtime.
+
+Note: do not change English strings in the `messages.po` file as the English strings acts as keys when searching for translations. Modifying the key can results in losing the connection to the source file, and as a result the Dutch translation will not show at all or not show correctly.
+
 ## 🤝 Contributing
 
 Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md) for how to contribute.

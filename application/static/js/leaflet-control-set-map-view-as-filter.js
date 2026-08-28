@@ -5,6 +5,8 @@ export function setMapViewAsFilterControl(opts) {
 L.Control.SetMapViewAsFilter = L.Control.extend({
     onAdd: function(map) {
         const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
+        const mapContainer = document.querySelector('#datasets-map')
+        const buttonTitle = mapContainer.dataset.i18nMapViewAsFilterTitle
 
         this.button = L.DomUtil.create(
             'a',
@@ -12,7 +14,7 @@ L.Control.SetMapViewAsFilter = L.Control.extend({
             container
         )
 
-        this.button.innerHTML = 'Set map view as Area filter'
+        this.button.innerHTML = buttonTitle
         this.button.role = 'button'
 
         L.DomEvent.disableClickPropagation(this.button);
@@ -21,7 +23,7 @@ L.Control.SetMapViewAsFilter = L.Control.extend({
             this._updateAreaFilter(map)
         })
 
-        container.title = "Set the map view as an Area filter"
+        container.title = buttonTitle
 
         return container
     },

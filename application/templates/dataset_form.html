@@ -14,21 +14,21 @@
     data-bs-target="#collapse-ai-form"
     aria-expanded="false"
 >
-    Prefill with AI <i class="bi bi-stars ms-1"></i>
+    {{ _('Prefill with AI') }} <i class="bi bi-stars ms-1"></i>
 </button>
 
 <div class="collapse mb-paragraph pb-paragraph border-bottom" id="collapse-ai-form">
     <label class="form-label">
-        <i class="bi bi-robot"></i> Use LLM metadata harvester to prefill fields
+        <i class="bi bi-robot"></i> {{ _('Use LLM metadata harvester to prefill fields') }}
     </label>
 
     <form action="{{ url_for('main_bp.dataset_from_ai') }}" method="POST" id="llm-harvester-form">
         {{ llm_form.hidden_tag() }}
 
         <div class="input-group">
-            {{ llm_form.dataset_url(class="form-control", placeholder="Paste dataset URL here...") }}
+            {{ llm_form.dataset_url(class="form-control") }}
             <button class="btn btn-primary" type="submit" id="llm-submit-btn">
-                Extract
+                {{ _('Extract') }}
             </button>
         </div>
     </form>
@@ -41,19 +41,19 @@
             <div class="modal-header">
                 <i class="bi bi-exclamation-triangle text-warning"></i>
 
-                <h3 class="modal-title" id="staticBackdropLabel">&nbsp;Warning</h3>
+                <h3 class="modal-title" id="staticBackdropLabel">{{ _('Warning') }}</h3>
                 <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
             </div>
             <div class="modal-body">
-                Not all required fields are filled in correctly. Please check:
+                {{ _('Not all required fields are filled in correctly. Please check:') }}
                 <ul>
-                {% for error in form.errors %}
-                    <li> {{ error }} </li>
+                {% for field, error in form.errors.items() %}
+                    <li> {{ form[field].label.text }} </li>
                 {% endfor %}
                 </ul>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" data-bs-dismiss="modal" type="button">OK</button>
+                <button class="btn btn-primary" data-bs-dismiss="modal" type="button">{{ _('OK') }}</button>
             </div>
         </div>
     </div>
@@ -64,16 +64,16 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title"><i class="bi bi-robot me-2"></i>AI Harvester</h3>
+                <h3 class="modal-title"><i class="bi bi-robot me-2"></i>{{ _('AI Harvester') }}</h3>
             </div>
             <div class="modal-body text-center py-4">
                 <div class="spinner-border text-primary mb-3" id="llm-spinner" role="status">
-                    <span class="visually-hidden">Loading...</span>
+                    <span class="visually-hidden">{{ _('Loading...') }}</span>
                 </div>
-                <p class="mb-0" id="llm-status-message">Submitting job...</p>
+                <p class="mb-0" id="llm-status-message">{{ _('Submitting job...') }}</p>
             </div>
             <div class="modal-footer d-none" id="llm-modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">{{ _('Close') }}</button>
             </div>
         </div>
     </div>
@@ -85,8 +85,12 @@
 </form>
 
 <p>
-    Please follow these <a href="{{url_for('main_bp.instructions')}}" target="popup">instructions</a>
-    when registering your dataset in the LTER-NL Data Registry.
+    {% autoescape false %}
+        {{ _('Please follow these %(link_start)sinstructions%(link_end)s when
+            registering your dataset in the LTER-NL Data Registry.',
+            link_start='<a href="%s" target="_blank">' % url_for('main_bp.instructions'),
+            link_end='</a>') }}
+    {% endautoescape %}
 </p>
 
 <form action="" enctype="multipart/form-data" method="POST" novalidate>
@@ -100,9 +104,11 @@
         {{ render_field(form.language) }}
     </div>
 
-    <h2>Metadata provider</h2>
+    <h2>{{ _('Metadata provider') }}</h2>
     <p class="mb-3">
-        A metadata provider is the person who created and provided the documentation and other metadata for a dataset. In other words, who are you?
+        {{ _('A metadata provider is the person who created and provided
+            the documentation and other metadata for a dataset.
+            In other words, who are you?') }}
     </p>
 
     <div class="mb-3">
@@ -117,11 +123,11 @@
         {{ render_field(form.metadata_provider_mbox) }}
     </div>
 
-    <h2>Creator</h2>
+    <h2>{{ _('Creator') }}</h2>
     <p class="mb-3">
-        A creator is the author of the dataset, who is responsible for
-        intellectual input into its creation. The creator can be a person
-        or an organisation.
+        {{ _('A creator is the author of the dataset, who is responsible for
+            intellectual input into its creation. The creator can be a person
+            or an organisation.') }}
     </p>
 
     <div class="mb-3">
@@ -136,11 +142,11 @@
         {{ render_field(form.creator_mbox) }}
     </div>
 
-    <h2>Contact point</h2>
+    <h2>{{ _('Contact point') }}</h2>
     <p class="mb-3">
-        A contact point is a person or position at an organisation (e.g.
-        data steward, data manager) to contact with questions about the use
-        and/or interpretation of a dataset.
+        {{ _('A contact point is a person or position at an organisation
+            (e.g. data steward, data manager) to contact with questions
+            about the use and/or interpretation of a dataset.') }}
     </p>
 
     <div class="mb-3">
@@ -155,7 +161,7 @@
         {{ render_field(form.dataset_contact_point_mbox) }}
     </div>
 
-    <h2>Describe your dataset</h2>
+    <h2>{{ _('Describe your dataset') }}</h2>
 
     <div class="mb-3">
         {{ render_field(form.title) }}
@@ -182,8 +188,8 @@
     </div>
 
     <p class="fst-italic">
-        The following fields are only relevant when your dataset is
-        published/shared online.
+        {{ _('The following fields are only relevant when your dataset is
+            published/shared online.') }}
     </p>
 
     <div class="mb-3">
@@ -217,7 +223,7 @@
             <button aria-controls="spatial-map" aria-selected="true" class="nav-link active"
                     data-bs-target="#spatial-map"
                     data-bs-toggle="tab" id="spatial-map-tab" role="tab" type="button">
-                Map
+                {{ _('Map') }}
             </button>
         </li>
         <li class="nav-item d-flex lh-1" role="presentation">
@@ -226,7 +232,7 @@
             <button aria-controls="spatial-upload" aria-selected="false" class="nav-link"
                     data-bs-target="#spatial-upload"
                     data-bs-toggle="tab" id="spatial-upload-tab" role="tab" type="button">
-                Shapefile
+                {{ _('Shapefile') }}
             </button>
         </li>
     </ul>
@@ -269,23 +275,24 @@
         {{ form.consent.label(class="form-label") }} {% if form.consent.flags.required %}*{% endif %}
 
         <p class="mb-3">
-            Before you submit your metadata, please read the following terms and conditions.
-            By submitting this form, you
+            {{ _('Before you submit your metadata, please read the following
+                terms and conditions. By submitting this form, you') }}
         </p>
 
         <ul class="text-formatted">
             <li>
-                confirm that you have the rights and/or permissions to submit
-                the metadata provided above to the LTER-NL Data Registry;
+                {{ _('confirm that you have the rights and/or permissions
+                    to submit the metadata provided above to the
+                    LTER-NL Data Registry;') }}
             </li>
             <li>
-                consent that the metadata may be archived at NIOO-KNAW as part
-                of the LTER-NL Data Registry;
+                {{ _('consent that the metadata may be archived at
+                    NIOO-KNAW as part of the LTER-NL Data Registry;') }}
             </li>
             <li>
-                consent that the metadata, including names and email addresses
-                of yourselves and others, may be displayed online on the
-                LTER-NL Data Registry.
+                {{ _('consent that the metadata, including names and email
+                    addresses of yourselves and others, may be displayed
+                    online on the LTER-NL Data Registry.') }}
             </li>
         </ul>
 

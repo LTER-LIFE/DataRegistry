@@ -19,7 +19,7 @@
                 aria-controls="tab-description"
                 aria-selected="true"
             >
-                Description
+                {{ _('Description') }}
             </button>
         </li>
 
@@ -36,7 +36,7 @@
                 aria-controls="tab-contact"
                 aria-selected="true"
             >
-                Contact
+                {{ _('Contact') }}
             </button>
         </li>
     </ul>
@@ -46,14 +46,14 @@
             class="btn btn-primary btn-sm"
             href="{{ url_for('main_bp.remove_from_download_list', dataset_id=dataset.dataset_id) }}"
         >
-            remove from download list
+            {{ _('remove from download list') }}
         </a>
     {% else %}
         <a
             class="btn btn-primary btn-sm"
             href="{{ url_for('main_bp.add_to_download_list', dataset_id=dataset.dataset_id) }}"
         >
-            add to download list
+            {{ _('add to download list') }}
         </a>
     {% endif %}
 </div>
@@ -74,26 +74,26 @@
 
                 <dl>
                     {% if dataset.dataset_keywords|join(', ') %}
-                        <dt>Keywords</dt>
+                        <dt>{{ _('Keywords') }}</dt>
                         <dd>{{ dataset.dataset_keywords|join(', ') }}</dd>
                     {% endif %}
 
                     {% if dataset.resource_type %}
-                        <dt>Resource type</dt>
+                        <dt>{{ _('Resource type') }}</dt>
                         <dd>{{ dataset.resource_type }}</dd>
                     {% endif %}
 
                     {% if dataset.spatial_resolution %}
-                        <dt>Spatial resolution</dt>
+                        <dt>{{ _('Spatial resolution') }}</dt>
                         <dd>{{ dataset.spatial_resolution }}</dd>
                     {% endif %}
 
                     {% if dataset.taxonomic_coverage %}
-                        <dt>Taxonomic coverage</dt>
+                        <dt>{{ _('Taxonomic coverage') }}</dt>
                         <dd>{{ dataset.taxonomic_coverage }}</dd>
                     {% endif %}
 
-                    <dt>Temporal coverage</dt>
+                    <dt>{{ _('Temporal coverage') }}</dt>
                     <dd>
                         {{
                             dataset.temporal_coverage_start + ' - '
@@ -106,35 +106,35 @@
                     </dd>
 
                     {% if dataset.temporal_resolution %}
-                        <dt>Temporal resolution</dt>
+                        <dt>{{ _('Temporal resolution') }}</dt>
                         <dd>{{ dataset.temporal_resolution }}</dd>
                     {% endif %}
 
                     {% if dataset.dataset_license %}
-                        <dt>License</dt>
+                        <dt>{{ _('License') }}</dt>
                         <dd>{{ dataset.dataset_license.code }}</dd>
                     {% endif %}
 
                     {% if dataset.access_rights %}
-                        <dt>Access rights</dt>
+                        <dt>{{ _('Access rights') }}</dt>
                         <dd>{{ dataset.access_rights }}</dd>
                     {% endif %}
 
                     {% if dataset.dataset_publisher %}
-                        <dt>Publisher</dt>
+                        <dt>{{ _('Publisher') }}</dt>
                         <dd>{{ dataset.dataset_publisher.name }}</dd>
                     {% endif %}
 
                     {% if dataset.public_id %}
-                        <dt>Public ID</dt>
+                        <dt>{{ _('Public ID') }}</dt>
                         <dd>{{ dataset.public_id }}</dd>
                     {% endif %}
 
                     {% if dataset.landing_page %}
-                        <dt>Landing page</dt>
+                        <dt>{{ _('Landing page') }}</dt>
                         <dd>
                             <a href="{{ dataset.landing_page }}" target="_blank">
-                                Visit landing page
+                                {{ _('Visit landing page') }}
                             </a>
                         </dd>
                     {% endif %}
@@ -156,7 +156,7 @@
     >
         <dl>
             {% if dataset.dataset_contact_point %}
-                <dt>Contact point</dt>
+                <dt>{{ _('Contact point') }}</dt>
                 <dd>
                     {% if dataset.dataset_contact_point.mbox %}
                         <a href="mailto:{{ dataset.dataset_contact_point.mbox }}">
@@ -169,7 +169,7 @@
             {% endif %}
 
             {% if dataset.creator %}
-                <dt>Creator</dt>
+                <dt>{{ _('Creator') }}</dt>
                 <dd>
                     {% if dataset.creator.mbox %}
                         <a href="mailto:{{ dataset.creator.mbox }}">
@@ -182,7 +182,7 @@
             {% endif %}
 
             {% if dataset.dataset_metadata_provider %}
-                <dt>Metadata provider</dt>
+                <dt>{{ _('Metadata provider') }}</dt>
                 <dd>
                     {% if dataset.dataset_metadata_provider.mbox %}
                         <a href="mailto:{{ dataset.dataset_metadata_provider.mbox }}">
@@ -197,7 +197,7 @@
     </div>
 </div>
 
-<small class="fst-italic">Last updated on {{ dataset.modified }}</small>
+<small class="fst-italic">{{ _('Last updated on') }} {{ modified|datetimeformat('long') }}</small>
 {% endblock %}
 
 {% block app_js %}

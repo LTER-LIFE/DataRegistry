@@ -4,6 +4,8 @@ import io
 import json
 import logging
 import zipfile
+from datetime import date
+
 import requests
 import traceback
 import time
@@ -11,11 +13,12 @@ import time
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file, jsonify
 
 from flask import current_app as app
+from flask_babel import _, lazy_gettext as _l
 import jwt
 import markupsafe
 import shapely
 
-from application import search_index
+from application import search_index, get_locale
 from application.authentication import valid_token, in_editor_group
 from application.database import db_session
 from application.forms import DatasetForm, LlmForm
@@ -164,7 +167,7 @@ def stage_dataset(dataset_id=None):
             flash(f"Staged dataset with title {dataset.title}.", "success")
 
         page = render_template('dataset_form.html', form=dataset_form, name=name, llm_form=llm_form,
-                               title="Register your dataset")
+                               title=_('Register your dataset'))
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -179,7 +182,7 @@ async def dataset_from_ai_submit():
             service = LlmMetadataService()
             job_id = await service.submit_job(llm_form.dataset_url.data)
             return jsonify({"job_id": job_id})
-        return jsonify({"error": "Invalid form"}), 400
+        return jsonify({"error": _l("Invalid form")}), 400
     except Exception as e:
         logging.error(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
@@ -209,7 +212,7 @@ async def dataset_from_ai():
     llm_form = LlmForm()
     llm_metadata_service = LlmMetadataService()
 
-    name = "LLM Prefilled dataset"
+    name = _l("LLM Prefilled dataset")
     try:
         job_id = request.form.get("job_id")
         if job_id:
@@ -224,7 +227,7 @@ async def dataset_from_ai():
         dataset_form = DatasetForm()
         dataset_form.from_dataset(dataset)
 
-        page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title="Register your dataset")
+        page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title=_l("Register your dataset"))
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -268,6 +271,9 @@ def datasets_detail(dataset_id):
     return render_template(
         'dataset_detail.html',
         dataset=dataset.to_dict(),
+        # modified as separate Date object (the to_dict() already formats it as an
+        # ISO string), so it can be formatted according to the language
+        modified=dataset.modified,
         title=dataset.title,
         is_dataset_in_download_list=dataset.dataset_id in download_list
     )
@@ -299,7 +305,7 @@ def stageddatasets(dataset_id=None):
 def download_list():
     dataset_ids = session.get('download_list', [])
     download_list = [db_session.get(Dataset, dataset_id) for dataset_id in dataset_ids]
-    return render_template('download-list.html', download_list=download_list, title='Your download list')
+    return render_template('download-list.html', download_list=download_list, title=_('Your download list'))
 
 
 @main_bp.route('/download-list/add/<int:dataset_id>')
@@ -312,8 +318,12 @@ def add_to_download_list(dataset_id):
     dataset = db_session.get(Dataset, dataset_id)
     flash(
         markupsafe.Markup(
-            f'Dataset "{dataset.title}" added to the '
-            f'<a href="{url_for("main_bp.download_list")}">Download list</a>'
+            _('Dataset "%(title)s" added to the '
+                '%(link_start)sDownload list%(link_end)s',
+                title=dataset.title,
+                link_start='<a href="%s">' % url_for('main_bp.download_list'),
+                link_end='</a>'
+            )
         ),
         'success'
     )
@@ -330,8 +340,12 @@ def remove_from_download_list(dataset_id):
     dataset = db_session.get(Dataset, dataset_id)
     flash(
         markupsafe.Markup(
-            f'Dataset "{dataset.title}" removed from the '
-            f'<a href="{url_for("main_bp.download_list")}">Download list</a>'
+            _('Dataset "%(title)s" removed from the '
+              '%(link_start)sDownload list%(link_end)s',
+              title=dataset.title,
+              link_start='<a href="%s">' % url_for('main_bp.download_list'),
+              link_end='</a>'
+            )
         ),
         'success'
     )
@@ -374,6 +388,28 @@ def export_download_list():
                          mimetype='application/zip',
                          as_attachment=True,
                          download_name='datasets.zip')
+
+
+@app.context_processor
+def inject_languages():
+    """
+    Exposes languages and selected language to templates
+    """
+    return {
+        'active_language': get_locale(),
+        'languages': app.config['LANGUAGES'],
+    }
+
+
+@main_bp.route('/languages/set/<language_key>')
+def set_language(language_key):
+    if language_key not in app.config['LANGUAGES']:
+        session['language'] = app.config['BABEL_DEFAULT_LOCALE']
+        return redirect(request.referrer)
+
+    session['language'] = language_key
+
+    return redirect(request.referrer)
 
 
 @main_bp.route('/rebuild')
@@ -539,8 +575,9 @@ def about():
     """
     Renders a simple about page.
 
-    :return: rendered flask template from templates/about.html    """
-    return render_template('about.html', title='About the LTER-NL Data Registry')
+    :return: rendered flask template from templates/about.html
+    """
+    return render_template('about.html', title=_('About the LTER-NL Data Registry'))
 
 
 @main_bp.route('/instructions')
@@ -550,7 +587,10 @@ def instructions():
 
     :return: rendered flask template from templates/instructions.html
     """
-    return render_template('instructions.html')
+    published = date(2024, 12, 12)
+    modified = date(2026, 8, 14)
+
+    return render_template('instructions.html', published=published, modified=modified)
 
 
 @main_bp.route('/contact')

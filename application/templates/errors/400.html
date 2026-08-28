@@ -2,7 +2,11 @@
 
 {% block content %}
 <p>
-    The page you are looking for does not exist.
-    <a href="{{ url_for('main_bp.home') }}">Click here</a> to go back.
+    {{ _('The page you are looking for does not exist.') }}
+
+    {% autoescape false %}
+        {{ _('%(link_start)sClick here%(link_end)s to go back',
+            link_start='<a href="%s">' % url_for('main_bp.home'), link_end='</a>') }}
+    {% endautoescape %}
 </p>
 {% endblock %}
