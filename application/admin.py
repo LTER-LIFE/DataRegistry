@@ -28,6 +28,7 @@ class DatasetReviewAdmin(ModelView):
         "submitted_at",
         "accepted_at",
         "submitter_id",
+        "modified",
     )
     column_list = (
         "dataset_id",

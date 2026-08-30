@@ -84,3 +84,22 @@ class TestLocalEditorBypass(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Locally reviewable submission", response.data)
+
+    def test_admin_edit_updates_modified_timestamp(self):
+        app = self.app(local_bypass=True)
+        view = DatasetReviewAdmin(Dataset, db_session)
+        dataset = self.submitted_dataset()
+        db_session.add(dataset)
+        db_session.commit()
+        original_modified = dataset.modified
+
+        with app.test_request_context(method="POST"):
+            form = view.get_edit_form()(obj=dataset)
+            self.assertNotIn("modified", form._fields)
+            form.title.data = "Updated during local review"
+            form.populate_obj(dataset)
+
+        db_session.commit()
+
+        self.assertEqual(dataset.title, "Updated during local review")
+        self.assertGreater(dataset.modified, original_modified)
