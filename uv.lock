@@ -581,7 +581,7 @@ wheels = [
 
 [[package]]
 name = "lter-life-eco-search-engine"
-version = "0.1.0"
+version = "0.7.0"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },

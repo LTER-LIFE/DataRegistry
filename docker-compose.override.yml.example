@@ -5,9 +5,11 @@ services:
   database:
     volumes:
       - /path/to/the/local/folder:/opt/data
+      # read the backup dumps straight from the archive when restoring
+      - ${BACKUP_DIR}:/opt/backups:ro
 
   # (optional) Automatic database backups via kartoza/pg-backup,
-  # add BACKUP_DIR and CRON_SCHEDULE to your .env (see the README).
+  # add BACKUP_DIR, CRON_SCHEDULE and the retention variables to your .env (see the README).
   # backup:
   #   image: kartoza/pg-backup:16-3.4
   #   container_name: ${COMPOSE_PROJECT_NAME}-backup

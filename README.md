@@ -43,7 +43,7 @@ sudo sysctl -p
   - log into the database container to restore the backup.
 
 By default:
-- the app is available at http://localhost:8000
+- the app is available at http://localhost:8084 (the `PORT` from your `.env`)
 - the database is available at localhost, port 25432. Please see the `.env` file for the connection details.
 - Elasticsearch is available at https://localhost:9200.
 
@@ -54,21 +54,53 @@ By default:
 Automatic database backups are handled by [`kartoza/pg-backup`](https://github.com/kartoza/docker-pg-backup), the backup companion to the `kartoza/postgis` 
 `database` image (so `pg_dump` always matches the server version). It is **disabled by default**.
 
-To enable it:
+### Enable backup:
 - copy `docker-compose.override.yml.example` to `docker-compose.override.yml` (if you haven't already) and uncomment the `backup` service.
 - add the backup variables to your `.env`:
   - `BACKUP_DIR` — the host folder where dumps are written
-  - `CRON_SCHEDULE` — when backups run, in cron syntax (default: nightly at midnight)
+  - `CRON_SCHEDULE` — when backups run, in cron syntax (default: daily at midnight)
+  - `REMOVE_BEFORE` — delete dumps older than this many days
 - validate your config with `docker compose config`
 - (re)start the stack: `docker compose up --detach`
 
 Backups are written to `BACKUP_DIR` as compressed archives using `pg_dump -Fc --data-only`, i.e. 
 **data only, without the schema**.
 
-> **Restoring:** because the dump contains no schema, restore it into a database whose schema **matches the version the 
-> backup was taken at**. Recover by checking out the matching app version, running the 
-> migrations (`alembic upgrade head`) to recreate that schema, and then restoring the data-only dump into it. 
-> Restoring an old data dump into a newer schema may fail or load inconsistent data.
+### Retention:
+The image names each dump `PG_<database>.<dd-Month-yyyy>.dmp` and overwrites it on repeat runs on the same
+day, so a daily `CRON_SCHEDULE` leaves one dump per day. Retention is two tiers:
+
+- **a month of daily dumps**: set `REMOVE_BEFORE=30` in your `.env`. After every backup the container
+  deletes dumps older than that.
+- **one dump per month, kept indefinitely**: copy the first dump of each month out of `BACKUP_DIR`, in
+  `/etc/cron.d/ecometa-monthly-backup`:
+
+```cron
+0 4 1 * * root cp /var/backups/ecometa/$(date +\%Y)/$(date +\%B)/PG_ecosearchengine.*.dmp /var/backups/ecometa-monthly/
+```
+
+The monthly folder has to sit outside `BACKUP_DIR`, because the container's pruning walks that whole tree.
+Adjust the paths to match your `BACKUP_DIR` and database name.
+
+### Restoring:
+- log into the database container, where `BACKUP_DIR` is mounted at `/opt/backups`:
+  ```bash
+  docker compose exec database bash
+  ```
+- read the schema version the dump was taken at:
+  ```bash
+  pg_restore -a -t alembic_version -f - /opt/backups/<year>/<Month>/<dump>.dmp | grep "public.alembic_version" -A1
+  ```
+- check out that version of the app and run its migrations in the app container (see
+  [Getting started](#-getting-started)). The dump holds **data only**, so the schema has to be in place first.
+- empty the version table, or `alembic_version` ends up with two rows:
+  ```bash
+  PGPASSWORD=$POSTGRES_PASS psql -h 127.0.0.1 -U $POSTGRES_USER -d $POSTGRES_DBNAME -c 'TRUNCATE alembic_version'
+  ```
+- restore the data:
+  ```bash
+  PGPASSWORD=$POSTGRES_PASS pg_restore -h 127.0.0.1 -U $POSTGRES_USER -d $POSTGRES_DBNAME /opt/backups/<year>/<Month>/<dump>.dmp
+  ```
 
 ## Running tests
 - make sure the Docker Compose environment is running
@@ -85,6 +117,7 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) an
 2. Create a commit, which
     * moves the contents from the "[Unreleased]" section in the [CHANGELOG.md](CHANGELOG.md) to a new versioned section
     * updates the version in `pyproject.toml`
+    * runs `uv lock` so `uv.lock` records the new version
 3. Tag this commit with a new version: `git tag -a <version> -m "<description>" <commit-hash>`
 4. Create a new GitHub release, point to relevant section in the changelog
 5. Deploy release. First deploy release on acceptance. After confirmation by product owner, deploy release on production. Follow this procedure:
