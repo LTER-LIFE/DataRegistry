@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-28 14:09+0200\n"
+"POT-Creation-Date: 2026-09-17 17:48+0200\n"
 "PO-Revision-Date: 2026-07-18 17:44+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: nl\n"
@@ -36,7 +36,7 @@ msgstr "Jouw voornaam en achternaam."
 #: application/forms.py:475 application/forms.py:488 application/forms.py:504
 #: application/templates/instructions.html:3201
 #: application/templates/instructions.html:3259
-#: application/templates/instructions.html:3324
+#: application/templates/instructions.html:3325
 msgid "Organisation name"
 msgstr "Organisatie naam"
 
@@ -47,9 +47,9 @@ msgstr "De naam van de organisatie waaraan je verbonden bent."
 #: application/forms.py:477 application/forms.py:494 application/forms.py:507
 #: application/templates/instructions.html:3228
 #: application/templates/instructions.html:3272
-#: application/templates/instructions.html:3328
+#: application/templates/instructions.html:3329
 msgid "Email address"
-msgstr "Emailadres"
+msgstr "E-mailadres"
 
 #: application/forms.py:478
 msgid ""
@@ -58,9 +58,11 @@ msgid ""
 " NB: by providing this email address, you give consent to LTER-LIFE to "
 "display the email address on the LTER-NL Data Registry."
 msgstr ""
-"Dit emailadres kan worden gebruikt in het geval dat de administrators van"
-" de LTER-NL Data Registry vragen hebben over het formulier wat je op dit "
-"moment invult."
+"Dit e-mailadres kan worden gebruikt in het geval dat de administrators "
+"van de LTER-NL Data Registry vragen hebben over het formulier wat je op "
+"dit moment invult. NB: door dit emailadres in te vullen, geef je "
+"toestemming aan LTER-LIFE om het emailadres te tonen op de LTER-NL Data "
+"Registry."
 
 #: application/forms.py:486
 msgid ""
@@ -78,7 +80,7 @@ msgid ""
 msgstr ""
 "Als de vervaardiger van de dataset een organisatie is, vul dan hier de "
 "naam van de organisatie in. Als de vervaardiger van de dataset een "
-"persoon is, vul dan de naam van de organisatie in waarmee zij verbonden "
+"persoon is, vul dan de naam van de organisatie in waarmee die verbonden "
 "is."
 
 #: application/forms.py:494
@@ -88,8 +90,9 @@ msgid ""
 "LIFE to display the email address on the LTER-NL Data Registry."
 msgstr ""
 "Als de vervaardiger van de dataset een persoon is, vul dan a.u.b. hun "
-"emailadres in. NB: door dit emailadres in te vullen, geef je toestemming "
-"aan LTER-LIFE om het emailadres te tonen op de LTER-NL Data Registry."
+"e-mailadres in. NB: door dit e-mailadres in te vullen, geef je "
+"toestemming aan LTER-LIFE om het e-mailadres te tonen op de LTER-NL Data "
+"Registry."
 
 #: application/forms.py:501
 msgid ""
@@ -112,12 +115,12 @@ msgid ""
 "providing this email address, you give consent to LTER-LIFE to display "
 "the email address on the LTER-NL Data Registry."
 msgstr ""
-"Dit emailadres kan dienen als een contact voor gebruikers van de LTER-NL "
-"Data Registry voor het geval dat zij vragen hebben over de dataset. NB: "
-"door dit emailadres in te vullen, geef je toestemming aan LTER-LIFE om "
-"het emailadres te tonen op de LTER-NL Data Registry."
+"Dit e-mailadres kan dienen als een contact voor gebruikers van de LTER-NL"
+" Data Registry voor het geval dat zij vragen hebben over de dataset. NB: "
+"door dit e-mailadres in te vullen, geef je toestemming aan LTER-LIFE om "
+"het e-mailadres te tonen op de LTER-NL Data Registry."
 
-#: application/forms.py:514 application/templates/instructions.html:3333
+#: application/forms.py:514 application/templates/instructions.html:3334
 msgid "Title"
 msgstr "Titel"
 
@@ -130,7 +133,7 @@ msgstr ""
 "verzamelde data, de locatie en de tijdsperiode in de titel op te nemen."
 
 #: application/forms.py:517 application/templates/dataset_detail.html:22
-#: application/templates/instructions.html:3356
+#: application/templates/instructions.html:3357
 msgid "Description"
 msgstr "Beschrijving"
 
@@ -151,14 +154,14 @@ msgstr ""
 "beschrijving wordt gebruikt in de zoekfunctie van de LTER-NL Data "
 "Registry en dient daarom een rijke beschrijving te zijn. Het is "
 "toegestaan meerdere paragrafen op te nemen. De beschrijving moet "
-"voldoende informatie bevatten zodat gebruikers de dataset kunnen "
-"begrijpen en inschatten of de dataset in hun context bruikbaar is. "
+"voldoende informatie bevatten zodat mogelijke data gebruikers de data "
+"kunnen begrijpen en de geschiktheid van de dataset kunnen inschatten. "
 "Specifiek dient de beschrijving de aandacht te leggen op welke data is "
 "verzameld, waar en wanneer. Een algemene beschrijving van de methoden van"
 " dataverzameling en gemeten variabelen wordt aanbevolen."
 
 #: application/forms.py:529 application/templates/dataset_detail.html:77
-#: application/templates/instructions.html:3369
+#: application/templates/instructions.html:3370
 msgid "Keywords"
 msgstr "Trefwoorden"
 
@@ -171,7 +174,7 @@ msgstr ""
 "beschrijven. Format: scheid trefwoorden door een komma."
 
 #: application/forms.py:534 application/templates/dataset_detail.html:82
-#: application/templates/instructions.html:3412
+#: application/templates/instructions.html:3413
 msgid "Resource type"
 msgstr "Type"
 
@@ -186,7 +189,7 @@ msgstr ""
 "onderzoeksdata, afbeelding, geluid."
 
 #: application/forms.py:539 application/templates/dataset_detail.html:114
-#: application/templates/instructions.html:3439
+#: application/templates/instructions.html:3440
 msgid "License"
 msgstr "Licentie"
 
@@ -204,7 +207,7 @@ msgstr ""
 "/share-your-work/cclicenses/ voor meer Creative Commons licenties."
 
 #: application/forms.py:545 application/templates/dataset_detail.html:119
-#: application/templates/instructions.html:3468
+#: application/templates/instructions.html:3469
 msgid "Access rights"
 msgstr "Toegangsrechten"
 
@@ -221,7 +224,7 @@ msgstr ""
 " informatie zie: https://vocabularies.coar-"
 "repositories.org/access_rights/."
 
-#: application/forms.py:551 application/templates/instructions.html:3494
+#: application/forms.py:551 application/templates/instructions.html:3495
 msgid "Publisher name"
 msgstr "Uitgever"
 
@@ -235,7 +238,7 @@ msgstr ""
 "versie van de dataset beschikbaar heeft gemaakt. Bijvoorbeeld: GBIF, "
 "Dataverse NL, Zenodo, Dryad, Figshare."
 
-#: application/forms.py:556 application/templates/instructions.html:3522
+#: application/forms.py:556 application/templates/instructions.html:3523
 msgid "Dataset ID"
 msgstr "Dataset ID"
 
@@ -246,7 +249,7 @@ msgstr ""
 "een uitgever."
 
 #: application/forms.py:560 application/templates/dataset_detail.html:134
-#: application/templates/instructions.html:3543
+#: application/templates/instructions.html:3544
 msgid "Landing page"
 msgstr "Landingspagina"
 
@@ -258,7 +261,7 @@ msgstr ""
 "De landingspagina is de webpagina (URL) waar een gebruiker naartoe kan "
 "navigeren om toegang te krijgen tot een dataset."
 
-#: application/forms.py:564 application/templates/instructions.html:3568
+#: application/forms.py:564 application/templates/instructions.html:3569
 msgid "Start date"
 msgstr "Startdatum"
 
@@ -270,7 +273,7 @@ msgstr ""
 "De tijd wanneer de dataverzameling gestart is. Format: een viercijferig "
 "jaar (YYYY) of een volledige datum (YYYY-MM-DD)."
 
-#: application/forms.py:567 application/templates/instructions.html:3585
+#: application/forms.py:567 application/templates/instructions.html:3586
 msgid "End date"
 msgstr "Einddatum"
 
@@ -281,13 +284,13 @@ msgid ""
 "included in the current version of the dataset (format: either YYYY or "
 "YYYY-MM-DD)."
 msgstr ""
-"De tijd wanneer de dataverzameling geëindigd is. Als de dataverzameling "
-"nog gaande is, kun je de laatste datum in de huidige versie van de "
-"dataset als einddatum gebruiken of dit veld open laten. Format: een "
-"viercijferig jaar (YYYY) of een volledige datum (YYYY-MM-DD)."
+"Het moment wanneer de dataverzameling geëindigd is. Als de "
+"dataverzameling nog gaande is, kun je de laatste datum in de huidige "
+"versie van de dataset als einddatum gebruiken of dit veld open laten. "
+"Format: een viercijferig jaar (YYYY) of een volledige datum (YYYY-MM-DD)."
 
 #: application/forms.py:573 application/templates/dataset_detail.html:109
-#: application/templates/instructions.html:3606
+#: application/templates/instructions.html:3607
 msgid "Temporal resolution"
 msgstr "Tijdresolutie"
 
@@ -299,7 +302,7 @@ msgstr ""
 "De tijdresolutie is de minimale afstand in tijd tussen twee records in de"
 " dataset."
 
-#: application/forms.py:577 application/templates/instructions.html:3624
+#: application/forms.py:577 application/templates/instructions.html:3625
 msgid "Spatial coverage"
 msgstr "Ruimtelijke dekking"
 
@@ -326,7 +329,7 @@ msgstr ""
 "(d.w.z., .shp, .shx, .dbf, .prj)."
 
 #: application/forms.py:586 application/templates/dataset_detail.html:87
-#: application/templates/instructions.html:3665
+#: application/templates/instructions.html:3666
 msgid "Spatial resolution"
 msgstr "Ruimtelijke resolutie"
 
@@ -341,7 +344,7 @@ msgstr ""
 "dataset."
 
 #: application/forms.py:592 application/templates/dataset_detail.html:92
-#: application/templates/instructions.html:3695
+#: application/templates/instructions.html:3696
 msgid "Taxonomic coverage"
 msgstr "Taxonomische dekking"
 
@@ -372,9 +375,7 @@ msgstr "Taal"
 
 #: application/forms.py:602
 msgid "Language used in this form"
-msgstr ""
-"De taal waarin het formulier ingevuld wordt en de dataset beschreven "
-"wordt."
+msgstr "De taal waarin het formulier ingevuld wordt."
 
 #: application/forms.py:604
 msgid "Terms and conditions"
@@ -390,7 +391,7 @@ msgstr "Antwoord 'Ja' om door te gaan"
 
 #: application/forms.py:610
 msgid "Submit dataset"
-msgstr "Registreer dataset"
+msgstr "Dien dataset in"
 
 #: application/routes.py:170 application/routes.py:230
 msgid "Register your dataset"
@@ -451,7 +452,7 @@ msgstr ""
 "verschillende thema's (bijv. ecohydrologie, bodem, of koolstofcycli), "
 "habitats (bijv. graslanden, heide, of bossen), of taxa (bijv. insecten, "
 "herten, vogels, planten, schimmels, of andere levende natuur). Er is, "
-"echter, geen helder en omvangrijk overzicht over de <i>wie</i>, "
+"echter, geen helder en omvangrijk overzicht over het <i>wie</i>, "
 "<i>wat</i>, <i>waar</i>, <i>wanneer</i>, en <i>hoe</i> van deze datasets."
 " De <b>LTER-NL Data Registry</b> is gericht op het oplossen van precies "
 "dat probleem."
@@ -504,7 +505,8 @@ msgstr ""
 "stapsgewijs helpt bij het creëren van een minimale beschrijving van een "
 "dataset. Het formulier bevat in totaal 27 velden. 14 hiervan zijn "
 "verplicht en gemarkeerd met een *; andere velden zijn aanbevolen in te "
-"vullen mits ze relevant zijn voor de dataset die je wenst te registreren."
+"vullen, mits ze relevant zijn voor de dataset die je wenst te "
+"registreren."
 
 #: application/templates/about.html:44
 #: application/templates/dataset_form.html:89
@@ -527,10 +529,10 @@ msgstr ""
 "Het is mogelijk om zowel datasets die al ergens online zijn ondergebracht"
 " als datasets die alleen (nog) offline bestaan, te registreren. We willen"
 " immers bereiken dat ecologen een zo volledig mogelijk overzicht krijgen "
-"van de ecologische datasets verzameld in Nederland."
+"van de in Nederland verzamelde ecologische datasets."
 
 #: application/templates/about.html:57
-#: application/templates/instructions.html:3726
+#: application/templates/instructions.html:3727
 msgid "Questions or feedback"
 msgstr "Vragen of feedback"
 
@@ -727,8 +729,8 @@ msgid ""
 "consent that the metadata may be archived at\n"
 "                    NIOO-KNAW as part of the LTER-NL Data Registry;"
 msgstr ""
-"akkoord met dat de metadata kan worden gearchiveerd door de NIOO-KNAW als"
-" onderdeel van de LTER-NL Data Registry;"
+"akkoord met dat de metadata kan worden gearchiveerd door NIOO-KNAW als "
+"onderdeel van de LTER-NL Data Registry;"
 
 #: application/templates/dataset_form.html:293
 msgid ""
@@ -736,8 +738,8 @@ msgid ""
 "                    addresses of yourselves and others, may be displayed\n"
 "                    online on the LTER-NL Data Registry."
 msgstr ""
-"akkoord met dat de metadata, inclusief namen en emailadressen, kan worden"
-" getoond op de LTER-NL Data Registry;"
+"akkoord met dat de metadata, inclusief namen en e-mailadressen, kan "
+"worden getoond op de LTER-NL Data Registry;"
 
 #: application/templates/dataset_table.html:25
 msgid "List"
@@ -776,8 +778,8 @@ msgid ""
 "An invalid area was requested. Reverting to a previously saved area "
 "filter or no area filter."
 msgstr ""
-"Een ongeldig gebied was opgevraagd. Een voorheen opgeslagen gebied "
-"filterof geen gebied filter zal worden ingesteld."
+"Een ongeldig gebied was opgevraagd. Een eerder opgeslagen gebied filter "
+"of geen gebied filter zal worden ingesteld."
 
 #: application/templates/dataset_table.html:294
 msgid "No results found."
@@ -865,11 +867,11 @@ msgid ""
 "field at a time."
 msgstr ""
 "De %(link_start)sLTER-NL Data Registry%(link_end)s is een lichtgewicht "
-"register voor datasets - online en offline - verzameld in Nederland. Het "
-"registreren van jouw dataset in de Registry is vrij eenvoudig doordat je "
-"slechts een minimale beschrijving van je dataset hoeft aan te leveren. "
-"Deze instructie leidt je hier stap voor stap door een reeks "
-"metadatavelden die samen de beschrijving vormen."
+"register voor ecologische datasets - online en offline - verzameld in "
+"Nederland. Het registreren van jouw dataset in de Registry is vrij "
+"eenvoudig doordat je slechts een minimale beschrijving van je dataset "
+"hoeft aan te leveren. Deze instructie leidt je hier stap voor stap "
+"doorheen."
 
 #: application/templates/instructions.html:3117
 msgid "Metadata fields"
@@ -888,7 +890,7 @@ msgid ""
 "        questions:"
 msgstr ""
 "Metadata is een overkoepelende term voor een breed scala aan "
-"verschillende soorten informatie die samen een gronding inzicht geven in "
+"verschillende soorten informatie die samen een compleet inzicht geven in "
 "een dataset. De metadatavelden in het registratieformulier van de LTER-NL"
 " Data Registry zijn bedoeld als een minimale set dat de antwoorden op de "
 "volgende vragen biedt:"
@@ -909,7 +911,7 @@ msgstr "<em>Waar</em>, <em>wanneer</em>, en <em>hoe</em> zijn de data verzameld?
 
 #: application/templates/instructions.html:3129
 msgid "<em>How</em> can the data be used by others?"
-msgstr "<em>Hoe</em> kunnen de data door anderen gebruikt worden?"
+msgstr "<em>Hoe</em> kunnen anderen de data gebruiken?"
 
 #: application/templates/instructions.html:3137
 msgid "Caution"
@@ -943,7 +945,8 @@ msgid ""
 "         current date of your computer system."
 msgstr ""
 "De datum waarop de dataset in de LTER-NL Data Registry geregistreerd "
-"wordt."
+"wordt. De datum wordt automatisch gegenereerd vanuit de huidige datum van"
+" je computer."
 
 #: application/templates/instructions.html:3167
 msgid ""
@@ -951,8 +954,8 @@ msgid ""
 "dataset\n"
 "        through the form. Select one of: English, Dutch."
 msgstr ""
-"De taal waarin het formulier ingevuld wordt en de dataset beschreven "
-"wordt. Kies uit: Engels, Nederlands."
+"De taal waarin de dataset in dit formulier beschreven wordt. Kies uit: "
+"Engels, Nederlands."
 
 #: application/templates/instructions.html:3181
 msgid ""
@@ -986,16 +989,16 @@ msgstr "De naam van de organisatie waaraan de metadata-aanbieder verbonden is."
 #: application/templates/instructions.html:3236
 #: application/templates/instructions.html:3280
 #: application/templates/instructions.html:3311
-#: application/templates/instructions.html:3344
-#: application/templates/instructions.html:3394
-#: application/templates/instructions.html:3420
-#: application/templates/instructions.html:3447
-#: application/templates/instructions.html:3476
-#: application/templates/instructions.html:3506
-#: application/templates/instructions.html:3555
-#: application/templates/instructions.html:3653
-#: application/templates/instructions.html:3686
-#: application/templates/instructions.html:3716
+#: application/templates/instructions.html:3345
+#: application/templates/instructions.html:3395
+#: application/templates/instructions.html:3421
+#: application/templates/instructions.html:3448
+#: application/templates/instructions.html:3477
+#: application/templates/instructions.html:3507
+#: application/templates/instructions.html:3556
+#: application/templates/instructions.html:3654
+#: application/templates/instructions.html:3687
+#: application/templates/instructions.html:3717
 msgid "Tip"
 msgstr "Tip"
 
@@ -1019,7 +1022,7 @@ msgstr ""
 
 #: application/templates/instructions.html:3229
 msgid "The email address of the metadata provider."
-msgstr "Het emailadres van de metadata-aanbieder."
+msgstr "Het e-mailadres van de metadata-aanbieder."
 
 #: application/templates/instructions.html:3241
 msgid ""
@@ -1029,7 +1032,7 @@ msgid ""
 " in case of\n"
 "        questions about the registration of the dataset."
 msgstr ""
-"Het wordt aanbevolen een emailadres voor de metadata-aanbieder aan te "
+"Het wordt aanbevolen een e-mailadres voor de metadata-aanbieder aan te "
 "leveren zodat de administrators van de LTER-NL Data Registry contact "
 "kunnen opnemen bij vragen over de geregistreerde dataset."
 
@@ -1065,7 +1068,7 @@ msgstr "Als de vervaardiger een <em>persoon</em> is, diens voornaam en achternaa
 
 #: application/templates/instructions.html:3273
 msgid "If the creator is a <em>person</em>, their email address."
-msgstr "Als de vervaardiger een <em>persoon</em> is, diens emailadres."
+msgstr "Als de vervaardiger een <em>persoon</em> is, diens e-mailadres."
 
 #: application/templates/instructions.html:3285
 msgid ""
@@ -1074,7 +1077,7 @@ msgid ""
 "        general contact email address of that organisation."
 msgstr ""
 "Als de vervaardiger een <em>organisatie</em> is, wordt het aanbevolen om "
-"hier een algemeen emailadres te gebruiken."
+"hier een algemeen e-mailadres te gebruiken."
 
 #: application/templates/instructions.html:3295
 msgid ""
@@ -1103,22 +1106,24 @@ msgid ""
 "the\n"
 "        person that holds that role changes frequently, especially if "
 "they can be\n"
-"        contacted via a position-specific (non-personal) email address."
+"        contacted via a position-specific (non-personal) email address "
+"(e.g.\n"
+"        datamanager@organisation.nl)."
 msgstr ""
 "Het wordt aanbevolen om de rolbeschrijving te gebruiken (bijv., "
 "datasteward, datamanager) als de persoon die die rol vervult regelmatig "
-"wisselt en er een algemeen emailadres bestaat (bijv., "
+"wisselt en er een algemeen e-mailadres bestaat (bijv., "
 "datamanager@organisatie.nl)."
 
-#: application/templates/instructions.html:3325
+#: application/templates/instructions.html:3326
 msgid "The name of the organisation that the contact point is affiliated with."
 msgstr "De naam van de organisatie waaraan het contactpunt verbonden is."
 
-#: application/templates/instructions.html:3329
+#: application/templates/instructions.html:3330
 msgid "The email address of the contact point."
-msgstr "Het emailadres van het contactpunt."
+msgstr "Het e-mailadres van het contactpunt."
 
-#: application/templates/instructions.html:3335
+#: application/templates/instructions.html:3336
 msgid ""
 "A brief description of the dataset, providing enough details to "
 "differentiate\n"
@@ -1127,7 +1132,7 @@ msgstr ""
 "De naam van de dataset. Verschaf voldoende informatie om het onderscheid "
 "te kunnen maken met vergelijkbare datasets."
 
-#: application/templates/instructions.html:3349
+#: application/templates/instructions.html:3350
 msgid ""
 "It is recommended to include the type(s) of data collected, the location,"
 " and\n"
@@ -1136,7 +1141,7 @@ msgstr ""
 "Het wordt aanbevolen om het type verzamelde data, de locatie en de "
 "tijdsperiode in de titel op te nemen."
 
-#: application/templates/instructions.html:3358
+#: application/templates/instructions.html:3359
 msgid ""
 "A detailed description of the contents of the dataset. The description "
 "will\n"
@@ -1159,12 +1164,13 @@ msgstr ""
 "beschrijving wordt gebruikt in de zoekfunctie van de LTER-NL Data "
 "Registry en dient daarom een rijke beschrijving te zijn. Het is "
 "toegestaan meerdere paragrafen op te nemen. De beschrijving moet "
-"voldoende informatie bevatten zodat gebruikers de dataset kunnen "
-"hergebruiken. Specifiek dient de beschrijving de aandacht te leggen op "
-"welke data is verzameld, waar en wanneer. Een algemene beschrijving van "
-"de methoden van dataverzameling en gemeten variabelen wordt aanbevolen."
+"voldoende informatie bevatten zodat mogelijke data gebruikers de data "
+"kunnen begrijpen en de geschiktheid van de dataset kunnen inschatten. "
+"Specifiek dient de beschrijving de aandacht te leggen op welke data is "
+"verzameld, waar en wanneer. Een algemene beschrijving van de methoden van"
+" dataverzameling en gemeten variabelen wordt aanbevolen."
 
-#: application/templates/instructions.html:3371
+#: application/templates/instructions.html:3372
 msgid ""
 "Keywords are commonly used words or phrases to describe a dataset, "
 "similar to\n"
@@ -1177,7 +1183,7 @@ msgstr ""
 "artikel. Trefwoorden kunnen betrekking hebben op taxonomie, habitat, "
 "geografie of onderzoeksthema’s."
 
-#: application/templates/instructions.html:3382
+#: application/templates/instructions.html:3383
 msgid ""
 "Format: separate keywords by a comma, i.e., <code>&lt;keyword&gt;</code>,"
 "\n"
@@ -1187,7 +1193,7 @@ msgstr ""
 "<code>&lt;trefwoord&gt;</code>, <code>&lt;trefwoord&gt;</code>, "
 "<code>&lt;trefwoord&gt;</code>."
 
-#: application/templates/instructions.html:3400
+#: application/templates/instructions.html:3401
 #, python-format
 msgid ""
 "It is recommended to use keywords from a controlled vocabulary, which\n"
@@ -1203,11 +1209,11 @@ msgstr ""
 " betekenis en begrip van trefwoorden. Voor voorbeelden zie "
 "%(link_start)shier%(link_end)s."
 
-#: application/templates/instructions.html:3413
+#: application/templates/instructions.html:3414
 msgid "The resource type indicates the nature or genre of the dataset."
 msgstr "Het type of de soort data die verzameld zijn."
 
-#: application/templates/instructions.html:3426
+#: application/templates/instructions.html:3427
 #, python-format
 msgid ""
 "It is recommended to use resource types from a controlled vocabulary. One"
@@ -1224,7 +1230,7 @@ msgstr ""
 "data, genomische data, geospatiale data, observatiedata, simulatiedata, "
 "onderzoeksdata, afbeelding, geluid."
 
-#: application/templates/instructions.html:3440
+#: application/templates/instructions.html:3441
 msgid ""
 "The license determines what rights may be available to users when using "
 "the data."
@@ -1232,7 +1238,7 @@ msgstr ""
 "De licentie van een dataset bepaalt welke rechten een gebruiker heeft bij"
 " gebruik van een dataset."
 
-#: application/templates/instructions.html:3453
+#: application/templates/instructions.html:3454
 #, python-format
 msgid ""
 "It is recommended to license your dataset. When datasets are shared\n"
@@ -1254,11 +1260,11 @@ msgstr ""
 "%(link_2_start)sinteractieve licentiekiezer%(link_end)s kan je helpen bij"
 " het kiezen van een passende licentie."
 
-#: application/templates/instructions.html:3469
+#: application/templates/instructions.html:3470
 msgid "The access rights indicate how the dataset can be accessed."
 msgstr "De toegangsrechten geven de toegankelijkheid van de dataset aan."
 
-#: application/templates/instructions.html:3482
+#: application/templates/instructions.html:3483
 #, python-format
 msgid ""
 "It is recommended to use access rights from a controlled vocabulary.\n"
@@ -1272,7 +1278,7 @@ msgstr ""
 "Access Rights vocabulary%(link_end)s: onder embargo, toegang beperkt tot "
 "metadata, vrij toegankelijk, beperkt toegankelijk."
 
-#: application/templates/instructions.html:3496
+#: application/templates/instructions.html:3497
 msgid ""
 "<em>This field is only relevant for datasets shared online.</em> <br> The"
 "\n"
@@ -1284,16 +1290,16 @@ msgstr ""
 "van de uitgever of de naam van de organisatie die een citeerbare versie "
 "van de dataset beschikbaar heeft gemaakt."
 
-#: application/templates/instructions.html:3512
+#: application/templates/instructions.html:3513
 #, python-format
 msgid ""
 "If relevant, it is recommended to refer to the %(link_start)sResearch\n"
 "            Organization Registry (ROR)%(link_end)s ID."
 msgstr ""
 "Wanneer relevant wordt het aanbevolen om de %(link_start)sResearch "
-"Organization Registry (ROR)%(link_end)s IDs te gebruiken."
+"Organization Registry (ROR)%(link_end)s ID te gebruiken."
 
-#: application/templates/instructions.html:3524
+#: application/templates/instructions.html:3525
 msgid ""
 "<em>This field is only relevant for datasets shared online.</em> <br> The"
 "\n"
@@ -1306,7 +1312,7 @@ msgstr ""
 "uitgever. In de meeste gevallen is dit een <em>Digital Object "
 "Identifier</em> (DOI)."
 
-#: application/templates/instructions.html:3535
+#: application/templates/instructions.html:3536
 msgid ""
 "Format: if DOI, a URL, i.e., <code>https://doi.org/prefix/suffix</code>.\n"
 "        For example, https://doi.org/10.1000/182."
@@ -1315,7 +1321,7 @@ msgstr ""
 "<code>https://doi.org/prefix/suffix</code>. Bijvoorbeeld "
 "https://doi.org/10.1000/182."
 
-#: application/templates/instructions.html:3545
+#: application/templates/instructions.html:3546
 msgid ""
 "<em>This field is only relevant for datasets shared online.</em> <br> The"
 "\n"
@@ -1327,7 +1333,7 @@ msgstr ""
 "landingspagina is de webpagina (url) waar een gebruiker naartoe kan "
 "navigeren om toegang te krijgen tot een dataset."
 
-#: application/templates/instructions.html:3560
+#: application/templates/instructions.html:3561
 msgid ""
 "In case the dataset has a DOI, navigating to the DOI URL\n"
 "        (<code>https://doi.org/prefix/suffix</code>) will redirect you to"
@@ -1338,12 +1344,12 @@ msgstr ""
 "(<code>https://doi.org/prefix/suffix</code>) door naar een ander "
 "webadres. Dat webadres is de landingspagina."
 
-#: application/templates/instructions.html:3569
+#: application/templates/instructions.html:3570
 msgid "The start date is the period of time when the data collection started."
-msgstr "De startdatum is de tijd wanneer de dataverzameling gestart is."
+msgstr "De startdatum is het moment wanneer de dataverzameling gestart is."
 
-#: application/templates/instructions.html:3577
-#: application/templates/instructions.html:3598
+#: application/templates/instructions.html:3578
+#: application/templates/instructions.html:3599
 msgid ""
 "Format: either a four-digit year (<code>&lt;YYYY&gt;</code>) or a full "
 "calendar date\n"
@@ -1352,7 +1358,7 @@ msgstr ""
 "Format: een viercijferig jaar (<code>&lt;YYYY&gt;</code>) of een "
 "volledige datum (<code>&lt;YYYY-MM-DD&gt;</code>)."
 
-#: application/templates/instructions.html:3587
+#: application/templates/instructions.html:3588
 msgid ""
 "The end date is the period of time when the data collection ended. If "
 "data\n"
@@ -1360,11 +1366,11 @@ msgid ""
 "included in\n"
 "        the current version of the dataset or leave the field empty."
 msgstr ""
-"De einddatum is de tijd wanneer de dataverzameling geëindigd is. Als de "
-"dataverzameling nog gaande is, kun je de laatste datum in de huidige "
+"De einddatum is het moment wanneer de dataverzameling geëindigd is. Als "
+"de dataverzameling nog gaande is, kun je de laatste datum in de huidige "
 "versie van de dataset als einddatum gebruiken of dit veld open laten."
 
-#: application/templates/instructions.html:3608
+#: application/templates/instructions.html:3609
 msgid ""
 "The temporal resolution is the minimum temporal separation between "
 "records\n"
@@ -1374,13 +1380,13 @@ msgid ""
 msgstr ""
 "De tijdresolutie is de minimale afstand in tijd tussen twee records in de"
 " dataset. Het gaat hier <em>niet</em> om de frequentie waarmee de dataset"
-" geüpdatet wordt."
+" geüpdatet wordt als geheel."
 
-#: application/templates/instructions.html:3618
+#: application/templates/instructions.html:3619
 msgid "Format: <code>&lt;value&gt; &lt;unit&gt;</code>; e.g., 1 day."
 msgstr "Format: <code>&lt;waarde&gt; &lt;eenheid&gt;</code>; bijv., 1 dag."
 
-#: application/templates/instructions.html:3626
+#: application/templates/instructions.html:3627
 msgid ""
 "The spatial coverage is the geographic extent that is covered by the "
 "dataset."
@@ -1388,20 +1394,20 @@ msgstr ""
 "De ruimtelijke dekking is het geografische gebied waarop de dataset "
 "betrekking heeft."
 
-#: application/templates/instructions.html:3628
+#: application/templates/instructions.html:3629
 msgid "There are two ways in which you can provide the spatial coverage."
 msgstr "Er zijn twee manieren waarop je de ruimtelijke dekking kunt aanleveren."
 
-#: application/templates/instructions.html:3631
+#: application/templates/instructions.html:3632
 msgid ""
 "<em>Map</em>. Through the interactive map you can draw one or more "
 "bounding\n"
 "        boxes and/or polygons."
 msgstr ""
-"<em>Kaart</em>. Via een interactieve kaart kun je een of meerdere "
-"bounding box of polygonen intekenen."
+"<em>Kaart</em>. Via de interactieve kaart kun je een of meerdere bounding"
+" box of polygonen intekenen."
 
-#: application/templates/instructions.html:3635
+#: application/templates/instructions.html:3636
 msgid ""
 "<em>File</em>. You can upload a <strong>zip file</strong> of the 4 files "
 "that\n"
@@ -1410,27 +1416,27 @@ msgstr ""
 "<em>Bestand</em>. Je kunt ook een <strong>zipbestand</strong> uploaden "
 "van de 4 bestanden die samen een shapefile maken:"
 
-#: application/templates/instructions.html:3638
-msgid "<code>.shp</code>, the file containing the vector geometry;"
-msgstr "<code>.shp</code>, het bestand met de ligging van de objecten;"
-
 #: application/templates/instructions.html:3639
+msgid "<code>.shp</code>, the file containing the vector geometry;"
+msgstr "<code>.shp</code>, het bestand met de vector geometrie;"
+
+#: application/templates/instructions.html:3640
 msgid "<code>.shx</code>, the index file;"
 msgstr "<code>.shx</code>, het indexbestand;"
 
-#: application/templates/instructions.html:3641
+#: application/templates/instructions.html:3642
 msgid ""
-"<code>.dbf</code>, the file containing the attributes, i.e., vector\n"
-"        descriptions in table format;"
+"<code>.dbf</code>, the file containing the attributes of the objects\n"
+"        in table format;"
 msgstr ""
 "<code>.dbf</code>, het bestand met de attributen van de objecten in "
 "tabelformaat;"
 
-#: application/templates/instructions.html:3644
+#: application/templates/instructions.html:3645
 msgid "<code>.prj</code>, the file describing the projected coordinate system"
 msgstr "<code>.prj</code>, het bestand met het geprojecteerde coördinatensysteem"
 
-#: application/templates/instructions.html:3658
+#: application/templates/instructions.html:3659
 msgid ""
 "In case the dataset includes distinct spatial locations, it is "
 "recommended\n"
@@ -1439,7 +1445,7 @@ msgstr ""
 "Wanneer de dataset afzonderlijke locaties omvat, wordt het aanbevolen om "
 "voor elke locatie een aparte polygon aan te leveren."
 
-#: application/templates/instructions.html:3667
+#: application/templates/instructions.html:3668
 msgid ""
 "The spatial resolution is the minimum spatial separation between records "
 "in\n"
@@ -1448,15 +1454,15 @@ msgstr ""
 "De ruimtelijke resolutie is de minimale afstand in ruimte tussen twee "
 "records in de dataset."
 
-#: application/templates/instructions.html:3676
+#: application/templates/instructions.html:3677
 msgid "Format: <code>&lt;value&gt; &lt;unit&gt;</code>; e.g., 250 m."
 msgstr "Format: <code>&lt;waarde&gt; &lt;eenheid&gt;</code>; bijv., 250 m."
 
-#: application/templates/instructions.html:3690
+#: application/templates/instructions.html:3691
 msgid "It is recommended to indicate the spatial resolution in meters."
 msgstr "Het wordt aanbevolen om de ruimtelijke resolutie in meters weer te geven."
 
-#: application/templates/instructions.html:3696
+#: application/templates/instructions.html:3697
 msgid ""
 "The taxonomic coverage is a description of the taxa covered by the "
 "dataset."
@@ -1464,7 +1470,7 @@ msgstr ""
 "De taxonomische dekking is de beschrijving van de biologische taxa die de"
 " dataset omvat."
 
-#: application/templates/instructions.html:3704
+#: application/templates/instructions.html:3705
 msgid ""
 "Format: separate taxa by a comma; <code>&lt;taxon&gt;</code>, "
 "<code>&lt;taxon&gt;</code>,\n"
@@ -1473,7 +1479,7 @@ msgstr ""
 "Format: scheid taxa door een komma; <code>&lt;taxon&gt;</code>, "
 "<code>&lt;taxon&gt;</code>, <code>&lt;taxon&gt;</code>."
 
-#: application/templates/instructions.html:3720
+#: application/templates/instructions.html:3721
 msgid ""
 "It is recommended to use taxonomic names rather than English or Dutch "
 "common names."
@@ -1481,7 +1487,7 @@ msgstr ""
 "Het wordt aanbevolen om wetenschappelijke namen te gebruiken in plaats "
 "van Engelse of Nederlandse namen."
 
-#: application/templates/instructions.html:3729
+#: application/templates/instructions.html:3730
 #, python-format
 msgid ""
 "Do you wonder whether your dataset is suitable for the LTER-NL Data\n"
@@ -1495,7 +1501,7 @@ msgstr ""
 "het registreren van je dataset? Neem contact op met %(link_start)sStefan "
 "Vriend%(link_end)s."
 
-#: application/templates/instructions.html:3754
+#: application/templates/instructions.html:3755
 #, python-format
 msgid ""
 "The LTER-NL Data Registry is a product of %(link_start)sLTER-LIFE\n"
