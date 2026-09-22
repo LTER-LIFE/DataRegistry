@@ -15,7 +15,7 @@ if config.config_file_name is not None:
 # Make sure metadata is loaded
 # This loops through your models folder and imports everything automatically
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
-    LicenseDocument, MediaType, Location
+    LicenseDocument, MediaType, Location, ReviewLifecycle, ReviewTransition
 
 # add your model's MetaData object here
 # for 'autogenerate' support

@@ -197,7 +197,13 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
         with self.engine.connect() as connection:
             statuses = dict(
                 connection.execute(
-                    sa.text('SELECT public_id, status FROM "Dataset"')
+                    sa.text(
+                        'SELECT dataset.public_id, lifecycle.status '
+                        'FROM "Dataset" dataset '
+                        'JOIN "ReviewLifecycle" lifecycle '
+                        'ON lifecycle.review_lifecycle_id = '
+                        'dataset.review_lifecycle_id'
+                    )
                 ).all()
             )
             self.assertEqual(
@@ -209,6 +215,17 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
                     "resubmitted-id": "submitted",
                 },
             )
+            dataset_columns = {
+                row["name"]
+                for row in sa.inspect(connection).get_columns("Dataset")
+            }
+            self.assertNotIn("status", dataset_columns)
+            self.assertNotIn("submitted_at", dataset_columns)
+            self.assertNotIn("accepted_at", dataset_columns)
+            self.assertNotIn("review_comment", dataset_columns)
+            self.assertNotIn("submitter_id", dataset_columns)
+            self.assertIn("review_lifecycle_id", dataset_columns)
+            self.assertIn("review_owner_type", dataset_columns)
             self.assertEqual(
                 connection.execute(
                     sa.text('SELECT COUNT(*) FROM "DatasetStaging"')
@@ -253,8 +270,13 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
             )
             rejected_workflow = connection.execute(
                 sa.text(
-                    'SELECT submitted_at, accepted_at, modified, review_comment '
-                    'FROM "Dataset" WHERE public_id = \'rejected-id\''
+                    'SELECT lifecycle.submitted_at, lifecycle.accepted_at, '
+                    'dataset.modified, lifecycle.current_review_comment '
+                    'FROM "Dataset" dataset '
+                    'JOIN "ReviewLifecycle" lifecycle '
+                    'ON lifecycle.review_lifecycle_id = '
+                    'dataset.review_lifecycle_id '
+                    "WHERE dataset.public_id = 'rejected-id'"
                 )
             ).one()
             self.assertIsNotNone(rejected_workflow[0])
@@ -262,6 +284,239 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
             self.assertEqual(rejected_workflow[2], datetime(2025, 1, 3))
             self.assertEqual(
                 rejected_workflow[3], "Insufficient spatial description"
+            )
+            transitions = connection.execute(
+                sa.text(
+                    'SELECT dataset.public_id, transition.from_status, '
+                    'transition.to_status, transition.review_comment, '
+                    'transition.actor_id, transition.actor_mode '
+                    'FROM "Dataset" dataset '
+                    'JOIN "ReviewLifecycle" lifecycle '
+                    'ON lifecycle.review_lifecycle_id = '
+                    'dataset.review_lifecycle_id '
+                    'JOIN "ReviewTransition" transition '
+                    'ON transition.review_lifecycle_id = '
+                    'lifecycle.review_lifecycle_id '
+                    'ORDER BY dataset.public_id'
+                )
+            ).all()
+            self.assertEqual(len(transitions), 4)
+            for transition in transitions:
+                with self.subTest(public_id=transition[0]):
+                    self.assertIsNone(transition[1])
+                    self.assertIsNone(transition[4])
+                    self.assertEqual(transition[5], "migration")
+            transitions_by_public_id = {row[0]: row for row in transitions}
+            self.assertEqual(
+                transitions_by_public_id["rejected-id"][3],
+                "Insufficient spatial description",
+            )
+            self.assertEqual(
+                transitions_by_public_id["resubmitted-id"][3],
+                "Previous feedback",
+            )
+
+    def test_database_enforces_audit_ownership_and_aggregate_deletion(self):
+        canonical = self.dataset_values("Cascade dataset", "cascade-id")
+        with self.engine.begin() as connection:
+            dataset_id = self._insert_dataset(connection, "Dataset", canonical)
+            keyword_id = connection.execute(
+                sa.text(
+                    'INSERT INTO "Keyword" (name, slug) '
+                    "VALUES ('cascade', 'cascade') RETURNING keyword_id"
+                )
+            ).scalar_one()
+            theme_id = connection.execute(
+                sa.text(
+                    'INSERT INTO "DataTheme" (code, label) '
+                    "VALUES ('cascade', 'Cascade theme') RETURNING data_theme_id"
+                )
+            ).scalar_one()
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "datasetKeyword" (keyword_id, dataset_id) '
+                    "VALUES (:keyword_id, :dataset_id)"
+                ),
+                {"keyword_id": keyword_id, "dataset_id": dataset_id},
+            )
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "datasetDataTheme" '
+                    "(data_theme_id, dataset_id) "
+                    "VALUES (:theme_id, :dataset_id)"
+                ),
+                {"theme_id": theme_id, "dataset_id": dataset_id},
+            )
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "Distribution" '
+                    "(distribution_dataset_id, title) "
+                    "VALUES (:dataset_id, 'Cascade distribution')"
+                ),
+                {"dataset_id": dataset_id},
+            )
+
+        self._upgrade("head")
+
+        with self.engine.connect() as connection:
+            lifecycle_id, transition_id = connection.execute(
+                sa.text(
+                    'SELECT lifecycle.review_lifecycle_id, '
+                    'transition.review_transition_id '
+                    'FROM "Dataset" dataset '
+                    'JOIN "ReviewLifecycle" lifecycle '
+                    'ON lifecycle.review_lifecycle_id = '
+                    'dataset.review_lifecycle_id '
+                    'JOIN "ReviewTransition" transition '
+                    'ON transition.review_lifecycle_id = '
+                    'lifecycle.review_lifecycle_id '
+                    "WHERE dataset.public_id = 'cascade-id'"
+                )
+            ).one()
+
+        owner_first_lifecycle_id = 1_000_000
+        with self.engine.begin() as connection:
+            self._insert_dataset(
+                connection,
+                "Dataset",
+                self.dataset_values("Owner-first dataset", "owner-first-id"),
+                review_lifecycle_id=owner_first_lifecycle_id,
+                review_owner_type="dataset",
+            )
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "ReviewLifecycle" '
+                    "(review_lifecycle_id, owner_type, status, submitted_at) "
+                    "VALUES (:lifecycle_id, 'dataset', 'submitted', "
+                    "CURRENT_TIMESTAMP)"
+                ),
+                {"lifecycle_id": owner_first_lifecycle_id},
+            )
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "ReviewTransition" '
+                    "(review_lifecycle_id, from_status, to_status, changed_at, "
+                    "actor_mode) VALUES (:lifecycle_id, NULL, 'submitted', "
+                    "CURRENT_TIMESTAMP, 'system')"
+                ),
+                {"lifecycle_id": owner_first_lifecycle_id},
+            )
+            connection.execute(sa.text("SET CONSTRAINTS ALL IMMEDIATE"))
+
+        with self.assertRaises(sa.exc.IntegrityError) as orphan_error:
+            with self.engine.begin() as connection:
+                connection.execute(
+                    sa.text(
+                        'INSERT INTO "ReviewLifecycle" '
+                        "(owner_type, status, submitted_at) "
+                        "VALUES ('dataset', 'submitted', CURRENT_TIMESTAMP)"
+                    )
+                )
+                connection.execute(sa.text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertEqual(
+            orphan_error.exception.orig.diag.constraint_name,
+            "ck_ReviewLifecycle_exactly_one_owner",
+        )
+
+        with self.assertRaises(sa.exc.DBAPIError) as update_error:
+            with self.engine.begin() as connection:
+                connection.execute(
+                    sa.text(
+                        'UPDATE "ReviewTransition" '
+                        "SET changed_at = changed_at + INTERVAL '1 second' "
+                        "WHERE review_transition_id = :transition_id"
+                    ),
+                    {"transition_id": transition_id},
+                )
+        self.assertIn("Review transitions are immutable", str(update_error.exception.orig))
+
+        with self.assertRaises(sa.exc.DBAPIError) as delete_error:
+            with self.engine.begin() as connection:
+                connection.execute(
+                    sa.text(
+                        'DELETE FROM "ReviewTransition" '
+                        "WHERE review_transition_id = :transition_id"
+                    ),
+                    {"transition_id": transition_id},
+                )
+        self.assertIn(
+            "Review transitions cannot be deleted directly",
+            str(delete_error.exception.orig),
+        )
+
+        with self.assertRaises(sa.exc.IntegrityError) as owner_error:
+            with self.engine.begin() as connection:
+                connection.execute(
+                    sa.text(
+                        'DELETE FROM "Dataset" WHERE dataset_id = :dataset_id'
+                    ),
+                    {"dataset_id": dataset_id},
+                )
+                connection.execute(sa.text("SET CONSTRAINTS ALL IMMEDIATE"))
+        self.assertEqual(
+            owner_error.exception.orig.diag.constraint_name,
+            "ck_ReviewLifecycle_exactly_one_owner",
+        )
+
+        with self.engine.begin() as connection:
+            connection.execute(
+                sa.text(
+                    'DELETE FROM "ReviewLifecycle" '
+                    "WHERE review_lifecycle_id = :lifecycle_id"
+                ),
+                {"lifecycle_id": lifecycle_id},
+            )
+
+        with self.engine.connect() as connection:
+            self.assertEqual(
+                connection.execute(
+                    sa.text(
+                        'SELECT COUNT(*) FROM "Dataset" '
+                        "WHERE dataset_id = :dataset_id"
+                    ),
+                    {"dataset_id": dataset_id},
+                ).scalar_one(),
+                0,
+            )
+            self.assertEqual(
+                connection.execute(
+                    sa.text(
+                        'SELECT COUNT(*) FROM "datasetDataTheme" '
+                        "WHERE dataset_id = :dataset_id"
+                    ),
+                    {"dataset_id": dataset_id},
+                ).scalar_one(),
+                0,
+            )
+            self.assertEqual(
+                connection.execute(
+                    sa.text(
+                        'SELECT COUNT(*) FROM "ReviewTransition" '
+                        "WHERE review_lifecycle_id = :lifecycle_id"
+                    ),
+                    {"lifecycle_id": lifecycle_id},
+                ).scalar_one(),
+                0,
+            )
+            self.assertEqual(
+                connection.execute(
+                    sa.text(
+                        'SELECT COUNT(*) FROM "Distribution" '
+                        "WHERE distribution_dataset_id = :dataset_id"
+                    ),
+                    {"dataset_id": dataset_id},
+                ).scalar_one(),
+                0,
+            )
+            self.assertEqual(
+                connection.execute(
+                    sa.text(
+                        'SELECT COUNT(*) FROM "datasetKeyword" '
+                        "WHERE dataset_id = :dataset_id"
+                    ),
+                    {"dataset_id": dataset_id},
+                ).scalar_one(),
+                0,
             )
 
     def test_preflight_cli_reports_ready_and_blocked_exit_codes(self):
@@ -307,7 +562,8 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
                 row["name"]
                 for row in sa.inspect(connection).get_columns("Dataset")
             }
-            self.assertNotIn("status", columns)
+            self.assertNotIn("review_lifecycle_id", columns)
+            self.assertFalse(sa.inspect(connection).has_table("ReviewLifecycle"))
 
     def test_unmatched_approved_record_is_reported_and_blocks_upgrade(self):
         approved = self.dataset_values("Unmatched approved", "unmatched-id")

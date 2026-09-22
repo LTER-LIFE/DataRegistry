@@ -24,23 +24,58 @@ from geoalchemy2 import Geometry
 import shapely
 from shapely.geometry import box, shape
 from shapely.validation import explain_validity
-from sqlalchemy import CheckConstraint, Column, String, Integer, Text, DateTime, ForeignKey, or_, and_, Table
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+    and_,
+    or_,
+)
 from sqlalchemy.orm import relationship
 
 from application.database import Base, db_session
 
 metadata = Base.metadata
 
-DATASET_STATUS_SUBMITTED = "submitted"
-DATASET_STATUS_REVISION = "revision"
-DATASET_STATUS_REJECTED = "rejected"
-DATASET_STATUS_ACCEPTED = "accepted"
-DATASET_STATUSES = (
-    DATASET_STATUS_SUBMITTED,
-    DATASET_STATUS_REVISION,
-    DATASET_STATUS_REJECTED,
-    DATASET_STATUS_ACCEPTED,
+REVIEW_STATUS_SUBMITTED = "submitted"
+REVIEW_STATUS_REVISION = "revision"
+REVIEW_STATUS_REJECTED = "rejected"
+REVIEW_STATUS_ACCEPTED = "accepted"
+REVIEW_STATUSES = (
+    REVIEW_STATUS_SUBMITTED,
+    REVIEW_STATUS_REVISION,
+    REVIEW_STATUS_REJECTED,
+    REVIEW_STATUS_ACCEPTED,
 )
+
+REVIEW_OWNER_DATASET = "dataset"
+REVIEW_ACTOR_AUTHENTICATED = "authenticated"
+REVIEW_ACTOR_ANONYMOUS = "anonymous"
+REVIEW_ACTOR_LOCAL_BYPASS = "local_bypass"
+REVIEW_ACTOR_MIGRATION = "migration"
+REVIEW_ACTOR_SYSTEM = "system"
+REVIEW_ACTOR_MODES = (
+    REVIEW_ACTOR_AUTHENTICATED,
+    REVIEW_ACTOR_ANONYMOUS,
+    REVIEW_ACTOR_LOCAL_BYPASS,
+    REVIEW_ACTOR_MIGRATION,
+    REVIEW_ACTOR_SYSTEM,
+)
+
+# Existing application integrations are migrated to the shared names in later steps.
+DATASET_STATUS_SUBMITTED = REVIEW_STATUS_SUBMITTED
+DATASET_STATUS_REVISION = REVIEW_STATUS_REVISION
+DATASET_STATUS_REJECTED = REVIEW_STATUS_REJECTED
+DATASET_STATUS_ACCEPTED = REVIEW_STATUS_ACCEPTED
+DATASET_STATUSES = REVIEW_STATUSES
 
 class Agent(Base):
     """Any entity carrying out actions with respect to the (Core) entities.
@@ -195,7 +230,122 @@ class Catalog(Base):
 
     def __str__(self):
         return self.title
-    
+
+
+class ReviewLifecycle(Base):
+    """Current review state shared by one typed reviewable record."""
+
+    __tablename__ = "ReviewLifecycle"
+    __table_args__ = (
+        CheckConstraint(
+            "owner_type IN ('dataset')",
+            name="ck_ReviewLifecycle_owner_type",
+        ),
+        CheckConstraint(
+            "status IN ('submitted', 'revision', 'rejected', 'accepted')",
+            name="ck_ReviewLifecycle_status",
+        ),
+        CheckConstraint(
+            "status <> 'accepted' OR accepted_at IS NOT NULL",
+            name="ck_ReviewLifecycle_accepted_at",
+        ),
+        CheckConstraint(
+            "status NOT IN ('revision', 'rejected') "
+            "OR NULLIF(BTRIM(current_review_comment), '') IS NOT NULL",
+            name="ck_ReviewLifecycle_review_comment",
+        ),
+        UniqueConstraint(
+            "review_lifecycle_id",
+            "owner_type",
+            name="uq_ReviewLifecycle_id_owner_type",
+        ),
+        Index("ix_ReviewLifecycle_owner_type_status", "owner_type", "status"),
+    )
+
+    review_lifecycle_id = Column(Integer, primary_key=True, nullable=False)
+    owner_type = Column(String(32), nullable=False)
+    status = Column(String(16), nullable=False)
+    submitted_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    accepted_at = Column(DateTime, nullable=True)
+    current_review_comment = Column(Text, nullable=True)
+    submitter_id = Column(String(255), nullable=True, index=True)
+
+    dataset = relationship(
+        "Dataset",
+        back_populates="review_lifecycle",
+        uselist=False,
+        passive_deletes="all",
+    )
+    transitions = relationship(
+        "ReviewTransition",
+        back_populates="review_lifecycle",
+        order_by="ReviewTransition.changed_at, ReviewTransition.review_transition_id",
+        passive_deletes="all",
+    )
+
+
+class ReviewTransition(Base):
+    """Immutable audit event for a review lifecycle."""
+
+    __tablename__ = "ReviewTransition"
+    __table_args__ = (
+        CheckConstraint(
+            "from_status IS NULL "
+            "OR from_status IN ('submitted', 'revision', 'rejected', 'accepted')",
+            name="ck_ReviewTransition_from_status",
+        ),
+        CheckConstraint(
+            "to_status IN ('submitted', 'revision', 'rejected', 'accepted')",
+            name="ck_ReviewTransition_to_status",
+        ),
+        CheckConstraint(
+            "to_status NOT IN ('revision', 'rejected') "
+            "OR NULLIF(BTRIM(review_comment), '') IS NOT NULL",
+            name="ck_ReviewTransition_review_comment",
+        ),
+        CheckConstraint(
+            "actor_mode IN "
+            "('authenticated', 'anonymous', 'local_bypass', 'migration', 'system')",
+            name="ck_ReviewTransition_actor_mode",
+        ),
+        CheckConstraint(
+            "(actor_mode = 'authenticated' "
+            "AND NULLIF(BTRIM(actor_id), '') IS NOT NULL) "
+            "OR (actor_mode <> 'authenticated' AND actor_id IS NULL)",
+            name="ck_ReviewTransition_actor_identity",
+        ),
+        CheckConstraint(
+            "from_status IS NULL OR from_status <> to_status",
+            name="ck_ReviewTransition_state_change",
+        ),
+        Index(
+            "ix_ReviewTransition_lifecycle_changed_at",
+            "review_lifecycle_id",
+            "changed_at",
+        ),
+    )
+
+    review_transition_id = Column(Integer, primary_key=True, nullable=False)
+    review_lifecycle_id = Column(
+        Integer,
+        ForeignKey(
+            "ReviewLifecycle.review_lifecycle_id",
+            name="fk_ReviewTransition_lifecycle",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+    from_status = Column(String(16), nullable=True)
+    to_status = Column(String(16), nullable=False)
+    changed_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    review_comment = Column(Text, nullable=True)
+    actor_id = Column(String(255), nullable=True, index=True)
+    actor_mode = Column(String(32), nullable=False)
+
+    review_lifecycle = relationship(
+        "ReviewLifecycle",
+        back_populates="transitions",
+    )
 
 
 class Dataset(Base):
@@ -205,17 +355,23 @@ class Dataset(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "status IN ('submitted', 'revision', 'rejected', 'accepted')",
-            name="ck_Dataset_status",
+            "review_owner_type = 'dataset'",
+            name="ck_Dataset_review_owner_type",
         ),
-        CheckConstraint(
-            "status <> 'accepted' OR accepted_at IS NOT NULL",
-            name="ck_Dataset_accepted_at",
+        ForeignKeyConstraint(
+            ["review_lifecycle_id", "review_owner_type"],
+            [
+                "ReviewLifecycle.review_lifecycle_id",
+                "ReviewLifecycle.owner_type",
+            ],
+            name="fk_Dataset_review_lifecycle",
+            ondelete="CASCADE",
+            deferrable=True,
+            initially="DEFERRED",
         ),
-        CheckConstraint(
-            "status NOT IN ('revision', 'rejected') "
-            "OR NULLIF(BTRIM(review_comment), '') IS NOT NULL",
-            name="ck_Dataset_review_comment",
+        UniqueConstraint(
+            "review_lifecycle_id",
+            name="uq_Dataset_review_lifecycle_id",
         ),
     )
 
@@ -265,14 +421,18 @@ class Dataset(Base):
     landing_page = Column(String(255), nullable=True)
     public_id = Column(String(255), nullable=True)
 
-    status = Column(
-        String(16), nullable=False, default=DATASET_STATUS_SUBMITTED,
-        server_default=DATASET_STATUS_SUBMITTED, index=True,
+    review_lifecycle_id = Column(Integer, nullable=False)
+    review_owner_type = Column(
+        String(32),
+        nullable=False,
+        default=REVIEW_OWNER_DATASET,
+        server_default=REVIEW_OWNER_DATASET,
     )
-    submitted_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    accepted_at = Column(DateTime, nullable=True)
-    review_comment = Column(Text, nullable=True)
-    submitter_id = Column(String(255), nullable=True, index=True)
+    review_lifecycle = relationship(
+        "ReviewLifecycle",
+        back_populates="dataset",
+        foreign_keys=[review_lifecycle_id, review_owner_type],
+    )
 
     def to_dict(self, seen=None):
         """
@@ -348,7 +508,10 @@ class Distribution(Base):
     """
     dataset = models.ForeignKey("Dataset", on_delete=models.CASCADE)
     """
-    distribution_dataset_id = Column(Integer, ForeignKey('Dataset.dataset_id'))
+    distribution_dataset_id = Column(
+        Integer,
+        ForeignKey('Dataset.dataset_id', ondelete="CASCADE"),
+    )
     dataset = relationship("Dataset", foreign_keys=[distribution_dataset_id])
 
     title = Column(String(255), nullable=True)
@@ -865,11 +1028,13 @@ dataThemeCatalog = Table('dataThemeCatalog', Base.metadata,
 
 datasetDataTheme = Table('datasetDataTheme', Base.metadata,
                          Column('data_theme_id', Integer, ForeignKey('DataTheme.data_theme_id'), primary_key=True),
-                         Column('dataset_id', Integer, ForeignKey('Dataset.dataset_id'), primary_key=True))
+                         Column('dataset_id', Integer, ForeignKey('Dataset.dataset_id', ondelete="CASCADE"),
+                                primary_key=True))
 
 datasetKeyword = Table('datasetKeyword', Base.metadata,
                        Column('keyword_id', Integer, ForeignKey('Keyword.keyword_id'), primary_key=True),
-                       Column('dataset_id', Integer, ForeignKey('Dataset.dataset_id'), primary_key=True))
+                       Column('dataset_id', Integer, ForeignKey('Dataset.dataset_id', ondelete="CASCADE"),
+                              primary_key=True))
 
 dataserviceMediaType = Table('dataserviceMediaType', Base.metadata,
                              Column('mediatype_id', Integer, ForeignKey('MediaType.mediatype_id'), primary_key=True),
