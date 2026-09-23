@@ -18,13 +18,15 @@ import shapely
 from sqlalchemy import func
 
 from application import search_index
-from application.authentication import valid_token, in_editor_group
+from application.authentication import in_editor_group, oidc_subject, valid_token
 from application.database import db_session
 from application.forms import DatasetForm, LlmForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
     LicenseDocument, MediaType, Location, DATASET_STATUS_ACCEPTED, DATASET_STATUS_REJECTED, \
-    DATASET_STATUS_REVISION, DATASET_STATUS_SUBMITTED
+    DATASET_STATUS_REVISION, DATASET_STATUS_SUBMITTED, REVIEW_ACTOR_ANONYMOUS, \
+    REVIEW_ACTOR_AUTHENTICATED
 from application.services import LlmMetadataService
+from application.workflow import initialize_reviewable
 
 # Blueprint Configuration
 # Here the static folder and the templates folder are annotated
@@ -78,7 +80,7 @@ def add_dataset(dataset_id=None):
                 flash(f"Please ask for editor access to an admin.", "error")
                 return redirect(url_for("main_bp.home"))
             if request.url_rule.rule.find("delete") > -1:
-                db_session.delete(dataset)
+                db_session.delete(dataset.review_lifecycle)
                 db_session.commit()
                 db_session.flush()
                 flash(f"Deleted dataset {dataset_id}", "success")
@@ -98,6 +100,7 @@ def add_dataset(dataset_id=None):
         )
         return page
     except Exception as e:
+        db_session.rollback()
         logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
 
@@ -116,10 +119,19 @@ def stage_dataset():
         if dataset_form.validate_on_submit():
             dataset = dataset_form.to_dataset()
             now = datetime.utcnow()
-            dataset.status = DATASET_STATUS_SUBMITTED
-            dataset.submitted_at = now
-            dataset.modified = now
-            dataset.submitter_id = _current_submitter_id()
+            submitter_id = oidc_subject(session.get("access_token"))
+            actor_mode = (
+                REVIEW_ACTOR_AUTHENTICATED
+                if submitter_id
+                else REVIEW_ACTOR_ANONYMOUS
+            )
+            initialize_reviewable(
+                dataset,
+                submitter_id=submitter_id,
+                actor_id=submitter_id,
+                actor_mode=actor_mode,
+                changed_at=now,
+            )
             db_session.add(dataset)
             db_session.commit()
             flash(f"Submitted dataset with title {dataset.title} for review.", "success")
@@ -129,6 +141,7 @@ def stage_dataset():
                                form_action=url_for("main_bp.stage_dataset"), title="Register your dataset")
         return page
     except Exception as e:
+        db_session.rollback()
         logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
 
@@ -590,18 +603,6 @@ def is_logged_in():
                                    options={"verify_signature": False})
 
         return valid_token(token_extract)
-
-
-def _current_submitter_id():
-    """Return the optional OIDC subject for an authenticated submission."""
-    if not is_logged_in():
-        return None
-    token_extract = jwt.decode(
-        session["access_token"]["access_token"],
-        algorithms=["ES256"],
-        options={"verify_signature": False},
-    )
-    return token_extract.get("sub")
 
 
 def _geojson_dump(dataset):

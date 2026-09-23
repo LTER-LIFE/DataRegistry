@@ -79,3 +79,10 @@ def has_editor_access(access_token):
     if current_app.config.get("LOCAL_EDITOR_BYPASS", False):
         return True
     return in_editor_group(access_token)
+
+
+def oidc_subject(access_token):
+    """Return the subject asserted by the OIDC UserInfo endpoint, or None."""
+    user_info = get_userinfo(access_token)
+    subject = user_info.get("sub") if user_info else None
+    return subject.strip() if isinstance(subject, str) and subject.strip() else None

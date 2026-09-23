@@ -352,6 +352,7 @@ class Dataset(Base):
     """A conceptual entity that represents the information published."""
 
     __tablename__ = 'Dataset'
+    review_owner_kind = REVIEW_OWNER_DATASET
 
     __table_args__ = (
         CheckConstraint(

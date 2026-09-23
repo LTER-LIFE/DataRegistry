@@ -1,21 +1,25 @@
 """Maintainer review of canonical dataset records."""
 
-from flask import flash, redirect, request, session, url_for
+import logging
+
+from flask import current_app, flash, redirect, request, session, url_for
 from flask_admin import Admin
 from flask_admin.actions import action
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.form import SecureForm
 
-from application.authentication import has_editor_access
+from application.authentication import has_editor_access, oidc_subject
 from application.database import db_session
 from application.models import (
-    DATASET_STATUS_ACCEPTED,
-    DATASET_STATUS_REJECTED,
-    DATASET_STATUS_REVISION,
-    DATASET_STATUS_SUBMITTED,
     Dataset,
+    REVIEW_ACTOR_AUTHENTICATED,
+    REVIEW_ACTOR_LOCAL_BYPASS,
+    REVIEW_STATUS_ACCEPTED,
+    REVIEW_STATUS_REJECTED,
+    REVIEW_STATUS_REVISION,
+    REVIEW_STATUS_SUBMITTED,
 )
-from application.workflow import transition_dataset
+from application.workflow import transition_reviewable
 
 
 class DatasetReviewAdmin(ModelView):
@@ -24,21 +28,17 @@ class DatasetReviewAdmin(ModelView):
     can_edit = True
     form_base_class = SecureForm
     form_excluded_columns = (
-        "status",
-        "submitted_at",
-        "accepted_at",
-        "submitter_id",
+        "review_lifecycle",
+        "review_lifecycle_id",
+        "review_owner_type",
         "modified",
     )
     column_list = (
         "dataset_id",
         "title",
-        "status",
-        "submitted_at",
         "modified",
-        "review_comment",
     )
-    column_filters = ("status", "submitted_at", "modified")
+    column_filters = ("modified",)
     column_searchable_list = ("title", "description", "public_id")
 
     def is_accessible(self):
@@ -47,40 +47,70 @@ class DatasetReviewAdmin(ModelView):
     def inaccessible_callback(self, name, **kwargs):
         return redirect(url_for("main_bp.login", next=request.url))
 
-    def _transition_selected(self, ids, target_status):
+    @staticmethod
+    def _review_actor():
+        if current_app.config.get("LOCAL_EDITOR_BYPASS", False):
+            return None, REVIEW_ACTOR_LOCAL_BYPASS
+        actor_id = oidc_subject(session.get("access_token"))
+        if not actor_id:
+            raise ValueError("Authenticated review activity requires an actor identity.")
+        return actor_id, REVIEW_ACTOR_AUTHENTICATED
+
+    def _transition_selected(self, ids, target_status, review_comment=None):
         try:
-            for dataset_id in ids:
-                dataset = self.session.get(Dataset, int(dataset_id))
+            actor_id, actor_mode = self._review_actor()
+            for dataset_id in sorted(int(value) for value in ids):
+                dataset = self.session.get(Dataset, dataset_id)
                 if not dataset:
                     raise ValueError(f"Dataset {dataset_id} does not exist.")
-                transition_dataset(
+                transition_reviewable(
                     dataset,
                     target_status,
-                    review_comment=dataset.review_comment,
+                    review_comment=review_comment,
+                    actor_id=actor_id,
+                    actor_mode=actor_mode,
                 )
             self.session.commit()
-        except ValueError as exc:
+        except Exception as exc:
             self.session.rollback()
+            if not isinstance(exc, ValueError):
+                logging.exception("Failed to transition dataset lifecycle.")
             flash(str(exc), "error")
             return False
         flash(f"Updated {len(ids)} dataset(s) to {target_status}.", "success")
         return True
 
+    def delete_model(self, model):
+        """Delete the complete lifecycle aggregate rather than its owner row."""
+        try:
+            self.on_model_delete(model)
+            self.session.flush()
+            self.session.delete(model.review_lifecycle)
+            self.session.commit()
+        except Exception as exc:
+            if not self.handle_view_exception(exc):
+                flash(f"Failed to delete record. {exc}", "error")
+                logging.exception("Failed to delete dataset lifecycle.")
+            self.session.rollback()
+            return False
+        self.after_model_delete(model)
+        return True
+
     @action("accept", "Accept", "Accept selected datasets?")
     def action_accept(self, ids):
-        self._transition_selected(ids, DATASET_STATUS_ACCEPTED)
+        self._transition_selected(ids, REVIEW_STATUS_ACCEPTED)
 
     @action("request_revision", "Request revision", "Request revisions?")
     def action_request_revision(self, ids):
-        self._transition_selected(ids, DATASET_STATUS_REVISION)
+        self._transition_selected(ids, REVIEW_STATUS_REVISION)
 
     @action("reject", "Reject", "Reject selected datasets?")
     def action_reject(self, ids):
-        self._transition_selected(ids, DATASET_STATUS_REJECTED)
+        self._transition_selected(ids, REVIEW_STATUS_REJECTED)
 
     @action("resubmit", "Resubmit", "Return selected revisions to review?")
     def action_resubmit(self, ids):
-        self._transition_selected(ids, DATASET_STATUS_SUBMITTED)
+        self._transition_selected(ids, REVIEW_STATUS_SUBMITTED)
 
 
 admin = Admin(name="Dataset review")

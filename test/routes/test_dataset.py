@@ -1,6 +1,17 @@
+from datetime import datetime
+from unittest.mock import patch
+
 from flask import url_for
 
 from application.database import db_session
+from application.models import (
+    DataTheme,
+    Dataset,
+    Keyword,
+    ReviewLifecycle,
+    ReviewTransition,
+)
+from application.workflow import initialize_reviewable
 
 from test.base_test_case import BaseTestCase
 from test.db import engine
@@ -119,3 +130,41 @@ class TestDatasetRoutes(BaseTestCase):
             response = self.client.get(base_url + 'ab')
 
             assert response.status_code == 404
+
+    @patch("application.routes.in_editor_group", return_value=True)
+    @patch("application.routes.is_logged_in", return_value=True)
+    def test_direct_delete_removes_lifecycle_but_retains_shared_records(
+        self,
+        is_logged_in,
+        in_editor_group,
+    ):
+        timestamp = datetime(2026, 1, 1, 12, 0)
+        dataset = Dataset(
+            release_date=timestamp,
+            language="EN",
+            title="Dataset to delete",
+            description="Delete through the lifecycle aggregate.",
+            resource_type="dataset",
+            temporal_coverage_start=datetime(2020, 1, 1),
+            temporal_resolution="P1D",
+            access_rights="open access",
+            modified=timestamp,
+        )
+        initialize_reviewable(dataset, changed_at=timestamp)
+        dataset.dataset_keywords.append(Keyword(name="shared keyword"))
+        dataset.dataset_themes.append(
+            DataTheme(code="shared-theme", label="Shared theme")
+        )
+        db_session.add(dataset)
+        db_session.commit()
+
+        response = self.client.get(f"/datasets/delete/{dataset.dataset_id}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(db_session.query(Dataset).count(), 0)
+        self.assertEqual(db_session.query(ReviewLifecycle).count(), 0)
+        self.assertEqual(db_session.query(ReviewTransition).count(), 0)
+        self.assertEqual(db_session.query(Keyword).count(), 1)
+        self.assertEqual(db_session.query(DataTheme).count(), 1)
+        is_logged_in.assert_called_once()
+        in_editor_group.assert_called_once()
