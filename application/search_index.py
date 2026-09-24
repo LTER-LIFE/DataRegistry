@@ -141,7 +141,7 @@ def index_document(object):
     if not es:
         validate_index()
 
-    if object.status != "accepted":
+    if object.review_lifecycle.status != "accepted":
         delete_document_id(object.dataset_id)
         return
 
