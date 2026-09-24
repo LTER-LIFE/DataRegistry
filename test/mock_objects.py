@@ -6,7 +6,11 @@ from shapely.geometry.collection import GeometryCollection
 from shapely.geometry.polygon import Polygon
 
 from application.models import (
-    DATASET_STATUS_ACCEPTED,
+    REVIEW_ACTOR_SYSTEM,
+    REVIEW_STATUS_ACCEPTED,
+    REVIEW_STATUS_REJECTED,
+    REVIEW_STATUS_REVISION,
+    REVIEW_STATUS_SUBMITTED,
     LicenseDocument,
     Location,
     Agent,
@@ -15,6 +19,7 @@ from application.models import (
     Catalog,
     DataTheme,
 )
+from application.workflow import initialize_reviewable, transition_reviewable
 from faker import Faker # Used for generating realistic-looking data
 
 # Initialize Faker for generating mock data
@@ -28,7 +33,12 @@ class MockObjects:
             self.db_session = db_session
 
     # Function to create a single mock dataset
-    def create_mock_dataset(self, dataset_id_prefix="1"):
+    def create_mock_dataset(
+        self,
+        dataset_id_prefix="1",
+        status=REVIEW_STATUS_ACCEPTED,
+        review_comment=None,
+    ):
         """
         Creates a single mock Dataset object with dynamic data.
         :param dataset_id_prefix: A prefix for the dataset to make a dataset more recognisable
@@ -37,9 +47,6 @@ class MockObjects:
         dataset = Dataset()
 
         dataset.modified = fake.date_time_between(start_date="-1y", end_date="now")
-        dataset.status = DATASET_STATUS_ACCEPTED
-        dataset.submitted_at = dataset.modified
-        dataset.accepted_at = dataset.modified
         dataset.release_date = fake.date_time_between(start_date="-2y", end_date="-1y")
         dataset.language = random.choice(["en", "nl", "fr", "de"])
         dataset.title = f"{fake.catch_phrase()} - {dataset_id_prefix}"
@@ -100,6 +107,29 @@ class MockObjects:
 
         dataset.landing_page = fake.url()
         dataset.public_id = f"DS-{dataset_id_prefix}-{fake.uuid4()[:8].upper()}"
+
+        initialize_reviewable(
+            dataset,
+            actor_mode=REVIEW_ACTOR_SYSTEM,
+            changed_at=dataset.modified,
+        )
+        if status != REVIEW_STATUS_SUBMITTED:
+            if status not in {
+                REVIEW_STATUS_ACCEPTED,
+                REVIEW_STATUS_REVISION,
+                REVIEW_STATUS_REJECTED,
+            }:
+                raise ValueError(f"Unsupported fixture review status {status!r}.")
+            transition_comment = review_comment
+            if status in {REVIEW_STATUS_REVISION, REVIEW_STATUS_REJECTED}:
+                transition_comment = transition_comment or "Review feedback"
+            transition_reviewable(
+                dataset,
+                status,
+                review_comment=transition_comment,
+                actor_mode=REVIEW_ACTOR_SYSTEM,
+                changed_at=dataset.modified,
+            )
 
         self.db_session.add(dataset)
         self.db_session.commit()
@@ -284,4 +314,3 @@ class DBSessionMock:
         In this mock, this method does nothing.
         """
         pass # No actual flush in mock
-

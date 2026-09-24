@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 import unittest
 from unittest.mock import patch
 
@@ -35,7 +36,7 @@ class TestLocalEditorBypass(unittest.TestCase):
 
     @staticmethod
     def app(local_bypass):
-        app = Flask(__name__)
+        app = Flask(__name__, template_folder="../application/templates")
         app.config.update(
             SECRET_KEY="test-secret",
             LOCAL_EDITOR_BYPASS=local_bypass,
@@ -105,6 +106,8 @@ class TestLocalEditorBypass(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Locally reviewable submission", response.data)
+        self.assertIn(b"Submitted", response.data)
+        self.assertIn(b"Review", response.data)
 
     def test_admin_edit_updates_modified_timestamp(self):
         app = self.app(local_bypass=True)
@@ -117,6 +120,9 @@ class TestLocalEditorBypass(unittest.TestCase):
         with app.test_request_context(method="POST"):
             form = view.get_edit_form()(obj=dataset)
             self.assertNotIn("modified", form._fields)
+            self.assertNotIn("review_lifecycle", form._fields)
+            self.assertNotIn("review_lifecycle_id", form._fields)
+            self.assertNotIn("review_owner_type", form._fields)
             form.title.data = "Updated during local review"
             form.populate_obj(dataset)
 
@@ -184,3 +190,108 @@ class TestLocalEditorBypass(unittest.TestCase):
         self.assertEqual(db_session.query(ReviewTransition).count(), 0)
         self.assertEqual(db_session.query(Keyword).count(), 1)
         self.assertEqual(db_session.query(DataTheme).count(), 1)
+
+    def test_feedback_bulk_actions_are_not_available(self):
+        app = self.app(local_bypass=True)
+        view = DatasetReviewAdmin(Dataset, db_session)
+
+        with app.test_request_context():
+            actions = {action[0] for action in view._actions}
+
+        self.assertIn("accept", actions)
+        self.assertIn("resubmit", actions)
+        self.assertNotIn("request_revision", actions)
+        self.assertNotIn("reject", actions)
+
+    @staticmethod
+    def csrf_token(response):
+        match = re.search(
+            rb'name="csrf_token"[^>]*value="([^"]+)"',
+            response.data,
+        )
+        if match is None:
+            raise AssertionError("Review form did not contain a CSRF token")
+        return match.group(1).decode()
+
+    def test_review_page_displays_history_and_valid_targets(self):
+        app = self.app(local_bypass=True)
+        admin = Admin(app, name="Test review")
+        admin.add_view(DatasetReviewAdmin(Dataset, db_session))
+        dataset = self.submitted_dataset()
+        db_session.add(dataset)
+        db_session.commit()
+
+        response = app.test_client().get(
+            f"/admin/dataset/review/{dataset.dataset_id}/"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Transition history", response.data)
+        self.assertIn(b"anonymous", response.data)
+        self.assertIn(b'value="revision"', response.data)
+        self.assertIn(b'value="rejected"', response.data)
+        self.assertIn(b'value="accepted"', response.data)
+        self.assertNotIn(b'value="submitted"', response.data)
+
+    def test_review_page_requires_feedback_and_records_transition(self):
+        app = self.app(local_bypass=True)
+        admin = Admin(app, name="Test review")
+        admin.add_view(DatasetReviewAdmin(Dataset, db_session))
+        dataset = self.submitted_dataset()
+        db_session.add(dataset)
+        db_session.commit()
+        client = app.test_client()
+        review_url = f"/admin/dataset/review/{dataset.dataset_id}/"
+
+        get_response = client.get(review_url)
+        token = self.csrf_token(get_response)
+        invalid = client.post(
+            review_url,
+            data={"csrf_token": token, "target_status": "revision"},
+        )
+
+        self.assertEqual(invalid.status_code, 200)
+        self.assertIn(b"require review feedback", invalid.data)
+        self.assertEqual(dataset.review_lifecycle.status, "submitted")
+        self.assertEqual(len(dataset.review_lifecycle.transitions), 1)
+
+        token = self.csrf_token(invalid)
+        response = client.post(
+            review_url,
+            data={
+                "csrf_token": token,
+                "target_status": "revision",
+                "review_comment": "Clarify the sampling method.",
+            },
+            follow_redirects=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(dataset.review_lifecycle.status, "revision")
+        self.assertEqual(len(dataset.review_lifecycle.transitions), 2)
+        transition = dataset.review_lifecycle.transitions[-1]
+        self.assertEqual(transition.review_comment, "Clarify the sampling method.")
+        self.assertEqual(transition.actor_mode, "local_bypass")
+        self.assertIsNone(transition.actor_id)
+        self.assertIn(b"Clarify the sampling method.", response.data)
+
+    def test_review_page_rejects_missing_csrf_without_mutation(self):
+        app = self.app(local_bypass=True)
+        admin = Admin(app, name="Test review")
+        admin.add_view(DatasetReviewAdmin(Dataset, db_session))
+        dataset = self.submitted_dataset()
+        db_session.add(dataset)
+        db_session.commit()
+
+        response = app.test_client().post(
+            f"/admin/dataset/review/{dataset.dataset_id}/",
+            data={
+                "target_status": "accepted",
+                "review_comment": "Looks good.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"CSRF", response.data)
+        self.assertEqual(dataset.review_lifecycle.status, "submitted")
+        self.assertEqual(len(dataset.review_lifecycle.transitions), 1)

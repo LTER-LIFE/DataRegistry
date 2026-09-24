@@ -217,7 +217,7 @@ class Catalog(Base):
             data["datasets_in_catalogue"] = [
                 dataset.to_dict(seen)
                 for dataset in self.datasets_in_catalogue
-                if dataset.status == DATASET_STATUS_ACCEPTED
+                if dataset.review_lifecycle.status == REVIEW_STATUS_ACCEPTED
             ]
         if self.themes:
             data["themes"] = self.themes.to_dict(seen)
@@ -433,6 +433,7 @@ class Dataset(Base):
         "ReviewLifecycle",
         back_populates="dataset",
         foreign_keys=[review_lifecycle_id, review_owner_type],
+        lazy="selectin",
     )
 
     def to_dict(self, seen=None):
@@ -446,6 +447,7 @@ class Dataset(Base):
             return {"dataset_id": self.dataset_id, "title": self.title, "_is_recursive_ref": True} # Or just its ID
 
         seen.add(self)
+        lifecycle = self.review_lifecycle
 
         data = {
             "dataset_id": self.dataset_id,
@@ -463,9 +465,9 @@ class Dataset(Base):
             "taxonomic_coverage": self.taxonomic_coverage,
             "landing_page": self.landing_page,
             "public_id": self.public_id,
-            "status": self.status,
-            "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
-            "accepted_at": self.accepted_at.isoformat() if self.accepted_at else None,
+            "status": lifecycle.status,
+            "submitted_at": lifecycle.submitted_at.isoformat() if lifecycle.submitted_at else None,
+            "accepted_at": lifecycle.accepted_at.isoformat() if lifecycle.accepted_at else None,
             "url": url_for('main_bp.datasets_detail', dataset_id=self.dataset_id),
         }
 

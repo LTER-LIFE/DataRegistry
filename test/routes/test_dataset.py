@@ -1,4 +1,5 @@
 from datetime import datetime
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from flask import url_for
@@ -33,6 +34,8 @@ class TestDatasetRoutes(BaseTestCase):
         """
         Close database sessions and connections
         """
+        with self.client.session_transaction() as client_session:
+            client_session.clear()
         db_session.remove()
 
         # rollback - everything that happened with the session above
@@ -81,9 +84,10 @@ class TestDatasetRoutes(BaseTestCase):
 
     def test_non_accepted_dataset_is_not_public(self):
         with self.app.app_context():
-            dataset = self.mock_objects.create_mock_dataset("submitted")
-            dataset.status = "submitted"
-            db_session.commit()
+            dataset = self.mock_objects.create_mock_dataset(
+                "submitted",
+                status="submitted",
+            )
 
             response = self.client.get(
                 url_for('main_bp.datasets_detail', dataset_id=dataset.dataset_id)
@@ -105,10 +109,11 @@ class TestDatasetRoutes(BaseTestCase):
 
     def test_export_removes_dataset_that_is_no_longer_accepted(self):
         with self.app.app_context():
-            dataset = self.mock_objects.create_mock_dataset("download")
-            dataset.status = "revision"
-            dataset.review_comment = "Changes requested"
-            db_session.commit()
+            dataset = self.mock_objects.create_mock_dataset(
+                "download",
+                status="revision",
+                review_comment="Changes requested",
+            )
             with self.client.session_transaction() as client_session:
                 client_session["download_list"] = [dataset.dataset_id]
 
@@ -117,6 +122,100 @@ class TestDatasetRoutes(BaseTestCase):
             self.assertEqual(response.status_code, 302)
             with self.client.session_transaction() as client_session:
                 self.assertEqual(client_session["download_list"], [])
+
+    def test_download_list_keeps_only_accepted_datasets(self):
+        with self.app.app_context():
+            accepted = self.mock_objects.create_mock_dataset("accepted-download")
+            hidden = self.mock_objects.create_mock_dataset(
+                "hidden-download",
+                status="rejected",
+            )
+            with self.client.session_transaction() as client_session:
+                client_session["download_list"] = [
+                    accepted.dataset_id,
+                    hidden.dataset_id,
+                ]
+
+            response = self.client.get(url_for("main_bp.download_list"))
+
+            self.assertEqual(response.status_code, 200)
+            with self.client.session_transaction() as client_session:
+                self.assertEqual(
+                    client_session["download_list"],
+                    [accepted.dataset_id],
+                )
+
+    def test_non_accepted_dataset_cannot_be_added_to_download_list(self):
+        with self.app.app_context():
+            dataset = self.mock_objects.create_mock_dataset(
+                "hidden-add",
+                status="submitted",
+            )
+
+            response = self.client.get(
+                url_for(
+                    "main_bp.add_to_download_list",
+                    dataset_id=dataset.dataset_id,
+                )
+            )
+
+            self.assertEqual(response.status_code, 404)
+
+    @patch("application.routes.search_index.fetch_all")
+    def test_search_results_are_revalidated_against_lifecycle(self, fetch_all):
+        with self.app.app_context():
+            accepted = self.mock_objects.create_mock_dataset("accepted-search")
+            hidden = self.mock_objects.create_mock_dataset(
+                "hidden-search",
+                status="revision",
+            )
+            fetch_all.return_value = SimpleNamespace(
+                raw={
+                    "hits": {
+                        "hits": [
+                            {
+                                "_source": {
+                                    "dataset_id": accepted.dataset_id,
+                                    "title": accepted.title,
+                                }
+                            },
+                            {
+                                "_source": {
+                                    "dataset_id": hidden.dataset_id,
+                                    "title": hidden.title,
+                                }
+                            },
+                        ],
+                        "total": {"value": 2, "relation": "eq"},
+                    }
+                }
+            )
+
+            response = self.client.post("/query", json={})
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload["total"]["value"], 1)
+        self.assertEqual(
+            payload["hits"][0]["_source"]["dataset_id"],
+            accepted.dataset_id,
+        )
+
+    @patch("application.routes.search_index.rebuild_index")
+    def test_rebuild_selects_only_accepted_lifecycles(self, rebuild_index):
+        rebuild_index.return_value = []
+        with self.app.app_context():
+            accepted = self.mock_objects.create_mock_dataset("accepted-rebuild")
+            self.mock_objects.create_mock_dataset(
+                "hidden-rebuild",
+                status="submitted",
+            )
+
+            response = self.client.get("/rebuild")
+
+        self.assertEqual(response.status_code, 200)
+        rebuilt = rebuild_index.call_args.args[0]
+        self.assertEqual([dataset.dataset_id for dataset in rebuilt], [accepted.dataset_id])
 
     def test_dataset_detail_invalid_id(self):
         with self.app.app_context():

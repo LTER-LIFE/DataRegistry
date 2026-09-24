@@ -3,7 +3,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from application.database import db_session
-from application.models import Dataset
+from application.models import Dataset, REVIEW_ACTOR_SYSTEM
+from application.workflow import initialize_reviewable, transition_reviewable
 from test.base_test_case import BaseTestCase
 from test.capture_templates import captured_templates
 from test.db import engine
@@ -23,7 +24,7 @@ class TestDashboardRoutes(BaseTestCase):
     @staticmethod
     def dataset(status, title):
         timestamp = datetime(2026, 1, 1, 12, 0)
-        return Dataset(
+        dataset = Dataset(
             release_date=timestamp,
             language="EN",
             title=title,
@@ -34,11 +35,25 @@ class TestDashboardRoutes(BaseTestCase):
             temporal_resolution="P1D",
             access_rights="open access",
             modified=timestamp,
-            submitted_at=timestamp,
-            accepted_at=timestamp if status == "accepted" else None,
-            review_comment="Review feedback" if status in {"revision", "rejected"} else None,
-            status=status,
         )
+        initialize_reviewable(
+            dataset,
+            actor_mode=REVIEW_ACTOR_SYSTEM,
+            changed_at=timestamp,
+        )
+        if status != "submitted":
+            transition_reviewable(
+                dataset,
+                status,
+                review_comment=(
+                    "Review feedback"
+                    if status in {"revision", "rejected"}
+                    else None
+                ),
+                actor_mode=REVIEW_ACTOR_SYSTEM,
+                changed_at=timestamp,
+            )
+        return dataset
 
     @patch("application.routes.search_index.fetch_all")
     def test_dashboard_reports_lifecycle_and_actual_index_counts(self, fetch_all):

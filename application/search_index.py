@@ -121,7 +121,7 @@ def rebuild_index(datasets):
     # push all datasets to index
     results = []
     for dataset in datasets:
-        if dataset.status == "accepted":
+        if dataset.review_lifecycle.status == "accepted":
             results.append(
                 es.index(
                     index=INDEX_NAME,

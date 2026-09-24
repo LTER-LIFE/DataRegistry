@@ -16,15 +16,16 @@ import jwt
 import markupsafe
 import shapely
 from sqlalchemy import func
+from sqlalchemy.orm import contains_eager
 
 from application import search_index
 from application.authentication import in_editor_group, oidc_subject, valid_token
 from application.database import db_session
 from application.forms import DatasetForm, LlmForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
-    LicenseDocument, MediaType, Location, DATASET_STATUS_ACCEPTED, DATASET_STATUS_REJECTED, \
-    DATASET_STATUS_REVISION, DATASET_STATUS_SUBMITTED, REVIEW_ACTOR_ANONYMOUS, \
-    REVIEW_ACTOR_AUTHENTICATED
+    LicenseDocument, MediaType, Location, ReviewLifecycle, REVIEW_ACTOR_ANONYMOUS, \
+    REVIEW_ACTOR_AUTHENTICATED, REVIEW_STATUS_ACCEPTED, REVIEW_STATUS_REJECTED, \
+    REVIEW_STATUS_REVISION, REVIEW_STATUS_SUBMITTED
 from application.services import LlmMetadataService
 from application.workflow import initialize_reviewable
 
@@ -35,6 +36,16 @@ url_prefix = f"{proxy_prefix}/".replace("//", "/") if proxy_prefix else "/"
 
 # Blueprint Configuration
 main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_folder="static", url_prefix=url_prefix)
+
+
+def _accepted_dataset_query():
+    """Return datasets whose joined lifecycle is currently accepted."""
+    return (
+        db_session.query(Dataset)
+        .join(Dataset.review_lifecycle)
+        .options(contains_eager(Dataset.review_lifecycle))
+        .filter(ReviewLifecycle.status == REVIEW_STATUS_ACCEPTED)
+    )
 
 
 @main_bp.route('/')
@@ -234,8 +245,8 @@ def datasets_detail(dataset_id):
     :return: rendered flask template from templates/dataset_detail.html
     """
     try:
-        dataset = db_session.query(Dataset).filter_by(
-            dataset_id=dataset_id, status=DATASET_STATUS_ACCEPTED
+        dataset = _accepted_dataset_query().filter(
+            Dataset.dataset_id == dataset_id
         ).one_or_none()
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -256,8 +267,8 @@ def datasets_detail(dataset_id):
 @main_bp.route('/download-list')
 def download_list():
     dataset_ids = session.get('download_list', [])
-    download_list = db_session.query(Dataset).filter(
-        Dataset.dataset_id.in_(dataset_ids), Dataset.status == DATASET_STATUS_ACCEPTED
+    download_list = _accepted_dataset_query().filter(
+        Dataset.dataset_id.in_(dataset_ids)
     ).all() if dataset_ids else []
     session['download_list'] = [dataset.dataset_id for dataset in download_list]
     return render_template('download-list.html', download_list=download_list, title='Your download list')
@@ -265,8 +276,8 @@ def download_list():
 
 @main_bp.route('/download-list/add/<int:dataset_id>')
 def add_to_download_list(dataset_id):
-    dataset = db_session.query(Dataset).filter_by(
-        dataset_id=dataset_id, status=DATASET_STATUS_ACCEPTED
+    dataset = _accepted_dataset_query().filter(
+        Dataset.dataset_id == dataset_id
     ).one_or_none()
     if not dataset:
         abort(404)
@@ -292,8 +303,8 @@ def remove_from_download_list(dataset_id):
         download_list.remove(dataset_id)
         session['download_list'] = download_list
         session.modified = True
-    dataset = db_session.query(Dataset).filter_by(
-        dataset_id=dataset_id, status=DATASET_STATUS_ACCEPTED
+    dataset = _accepted_dataset_query().filter(
+        Dataset.dataset_id == dataset_id
     ).one_or_none()
     dataset_title = dataset.title if dataset else f"{dataset_id}"
     flash(
@@ -315,9 +326,8 @@ def empty_download_list():
 @main_bp.route('/download-list/export')
 def export_download_list():
     dataset_ids = session.get('download_list', [])
-    datasets = db_session.query(Dataset).filter(
-        Dataset.dataset_id.in_(dataset_ids),
-        Dataset.status == DATASET_STATUS_ACCEPTED,
+    datasets = _accepted_dataset_query().filter(
+        Dataset.dataset_id.in_(dataset_ids)
     ).all() if dataset_ids else []
     session['download_list'] = [dataset.dataset_id for dataset in datasets]
     if not datasets:
@@ -354,16 +364,20 @@ def export_download_list():
 def _database_dataset_stats():
     start = time.time()
     status_counts = dict(
-        db_session.query(Dataset.status, func.count(Dataset.dataset_id))
-        .group_by(Dataset.status)
+        db_session.query(
+            ReviewLifecycle.status,
+            func.count(Dataset.dataset_id),
+        )
+        .join(Dataset, Dataset.review_lifecycle_id == ReviewLifecycle.review_lifecycle_id)
+        .group_by(ReviewLifecycle.status)
         .all()
     )
     return {
         "total": sum(status_counts.values()),
-        "submitted": status_counts.get(DATASET_STATUS_SUBMITTED, 0),
-        "revision": status_counts.get(DATASET_STATUS_REVISION, 0),
-        "rejected": status_counts.get(DATASET_STATUS_REJECTED, 0),
-        "accepted": status_counts.get(DATASET_STATUS_ACCEPTED, 0),
+        "submitted": status_counts.get(REVIEW_STATUS_SUBMITTED, 0),
+        "revision": status_counts.get(REVIEW_STATUS_REVISION, 0),
+        "rejected": status_counts.get(REVIEW_STATUS_REJECTED, 0),
+        "accepted": status_counts.get(REVIEW_STATUS_ACCEPTED, 0),
         "duration": "{:f}".format(time.time() - start),
     }
 
@@ -384,7 +398,7 @@ def rebuild_index():
     :return: rendered flask template from templates/dashboard.html
     """
     database_datasets_stats = _database_dataset_stats()
-    db_datasets = db_session.query(Dataset).filter_by(status=DATASET_STATUS_ACCEPTED).all()
+    db_datasets = _accepted_dataset_query().all()
 
     start = time.time()
     indexed_datasets = search_index.rebuild_index(db_datasets)
@@ -419,9 +433,11 @@ def query_index():
 
 
         accepted_ids = {
-            dataset_id for dataset_id, in db_session.query(Dataset.dataset_id).filter(
-                Dataset.status == DATASET_STATUS_ACCEPTED
-            ).all()
+            dataset_id
+            for dataset_id, in db_session.query(Dataset.dataset_id)
+            .join(Dataset.review_lifecycle)
+            .filter(ReviewLifecycle.status == REVIEW_STATUS_ACCEPTED)
+            .all()
         }
         visible_hits = [
             hit for hit in es_datasets.raw["hits"]["hits"]

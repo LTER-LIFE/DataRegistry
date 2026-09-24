@@ -11,12 +11,12 @@ class TestSearchIndex(unittest.TestCase):
         es.indices.exists.return_value = True
         accepted = SimpleNamespace(
             dataset_id=4,
-            status="accepted",
+            review_lifecycle=SimpleNamespace(status="accepted"),
             to_dict=Mock(return_value={"dataset_id": 4, "status": "accepted"}),
         )
         submitted = SimpleNamespace(
             dataset_id=5,
-            status="submitted",
+            review_lifecycle=SimpleNamespace(status="submitted"),
             to_dict=Mock(return_value={"dataset_id": 5, "status": "submitted"}),
         )
 
