@@ -2,6 +2,7 @@ site_name: EcoSearchEngine
 repo_url: https://github.com/yourname/ecosearchengine
 repo_name: yourname/ecosearchengine
 edit_uri: ""
+docs_dir: .
 
 
 
@@ -17,6 +18,7 @@ theme:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Catalogue Migration: catalogue-migration.md
   - API Reference:
       - Database: api/database.md
       - Models: api/models.md

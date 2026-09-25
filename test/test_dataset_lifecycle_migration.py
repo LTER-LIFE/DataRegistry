@@ -14,6 +14,19 @@ from config import Config
 from scripts.catalogue_migration_preflight import inspect_catalogue
 
 
+EXPECTED_UNSUPPORTED_TABLES = (
+    "CatalogStaging",
+    "DataThemeStaging",
+    "DistributionStaging",
+    "ChecksumStaging",
+    "MediaTypeStaging",
+    "DataServiceStaging",
+    "datasetDataThemeStaging",
+    "dataThemeCatalogStaging",
+    "dataserviceMediaTypeStaging",
+)
+
+
 class TestDatasetLifecycleMigration(unittest.TestCase):
     database_name = "ecosearchengine_migration_test"
 
@@ -53,14 +66,14 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
             command.upgrade(self.alembic, revision)
         self.alembic.attributes.pop("connection", None)
 
-    def _run_preflight_cli(self):
+    def _run_preflight_cli(self, database_url=None):
         return subprocess.run(
             [
                 sys.executable,
                 "-m",
                 "scripts.catalogue_migration_preflight",
                 "--database-url",
-                self.url.render_as_string(hide_password=False),
+                database_url or self.url.render_as_string(hide_password=False),
                 "--json",
             ],
             cwd=os.getcwd(),
@@ -519,7 +532,275 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
                 0,
             )
 
-    def test_preflight_cli_reports_ready_and_blocked_exit_codes(self):
+    def test_preflight_and_migration_report_all_source_blockers(self):
+        duplicate = self.dataset_values("Duplicate approved", "duplicate-id")
+        contradictory = self.dataset_values("Contradictory", "contradictory-id")
+        approved_without_timestamp = self.dataset_values(
+            "Approved without timestamp",
+            "approved-without-timestamp-id",
+        )
+        invalid_timestamp = self.dataset_values(
+            "Invalid approval timestamp",
+            "invalid-timestamp-id",
+        )
+        missing_feedback = self.dataset_values(
+            "Missing rejection feedback",
+            "missing-feedback-id",
+        )
+        catalogued = self.dataset_values("Catalogued", "catalogued-id")
+        canonical_conflict = self.dataset_values(
+            "Canonical public ID",
+            "conflicting-id",
+        )
+        staging_conflict = self.dataset_values(
+            "Staging public ID",
+            "conflicting-id",
+        )
+        invalid_geometry = self.dataset_values(
+            "Invalid geometry",
+            "invalid-geometry-id",
+        )
+
+        with self.engine.begin() as connection:
+            self._insert_dataset(connection, "Dataset", duplicate)
+            self._insert_dataset(
+                connection,
+                "DatasetStaging",
+                duplicate,
+                is_approved=True,
+                approved_at=datetime(2025, 1, 2),
+                is_rejected=False,
+            )
+            self._insert_dataset(
+                connection,
+                "DatasetStaging",
+                duplicate,
+                is_approved=True,
+                approved_at=datetime(2025, 1, 2),
+                is_rejected=False,
+            )
+
+            self._insert_dataset(connection, "Dataset", contradictory)
+            self._insert_dataset(
+                connection,
+                "DatasetStaging",
+                contradictory,
+                is_approved=True,
+                approved_at=datetime(2025, 1, 2),
+                is_rejected=True,
+                rejection_reason="Contradictory legacy state",
+            )
+            self._insert_dataset(connection, "Dataset", approved_without_timestamp)
+            approved_without_timestamp_id = self._insert_dataset(
+                connection,
+                "DatasetStaging",
+                approved_without_timestamp,
+                is_approved=True,
+                is_rejected=False,
+            )
+            invalid_timestamp_id = self._insert_dataset(
+                connection,
+                "DatasetStaging",
+                invalid_timestamp,
+                is_approved=False,
+                approved_at=datetime(2025, 1, 2),
+                is_rejected=False,
+            )
+            self._insert_dataset(
+                connection,
+                "DatasetStaging",
+                missing_feedback,
+                is_approved=False,
+                is_rejected=True,
+                rejection_reason="   ",
+            )
+
+            catalog_id = connection.execute(
+                sa.text(
+                    'INSERT INTO "CatalogStaging" (title) '
+                    "VALUES ('Legacy catalogue') RETURNING catalog_id"
+                )
+            ).scalar_one()
+            catalogued_id = self._insert_dataset(
+                connection,
+                "DatasetStaging",
+                catalogued,
+                is_approved=False,
+                is_rejected=False,
+                dataset_catalog_id=catalog_id,
+            )
+
+            self._insert_dataset(connection, "Dataset", canonical_conflict)
+            self._insert_dataset(
+                connection,
+                "DatasetStaging",
+                staging_conflict,
+                is_approved=False,
+                is_rejected=False,
+            )
+
+            location_id = connection.execute(
+                sa.text(
+                    'INSERT INTO "LocationStaging" (geometry) VALUES ('
+                    "ST_GeomFromText('GEOMETRYCOLLECTION("
+                    "POLYGON((0 0, 1 1, 1 0, 0 1, 0 0)))')) "
+                    "RETURNING location_id"
+                )
+            ).scalar_one()
+            self._insert_dataset(
+                connection,
+                "DatasetStaging",
+                invalid_geometry,
+                is_approved=False,
+                is_rejected=False,
+                dataset_spatial_coverage_id=location_id,
+            )
+
+            theme_id = connection.execute(
+                sa.text(
+                    'INSERT INTO "DataThemeStaging" (code, label) '
+                    "VALUES ('legacy-theme', 'Legacy theme') RETURNING data_theme_id"
+                )
+            ).scalar_one()
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "ChecksumStaging" (checksum_value, algorithm) '
+                    "VALUES ('legacy-checksum', 'sha256')"
+                )
+            )
+            media_type_id = connection.execute(
+                sa.text(
+                    'INSERT INTO "MediaTypeStaging" (code, media_type) '
+                    "VALUES ('csv', 'text/csv') RETURNING mediatype_id"
+                )
+            ).scalar_one()
+            data_service_id = connection.execute(
+                sa.text(
+                    'INSERT INTO "DataServiceStaging" (title) '
+                    "VALUES ('Legacy service') RETURNING dataservice_id"
+                )
+            ).scalar_one()
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "DistributionStaging" (title) '
+                    "VALUES ('Legacy distribution')"
+                )
+            )
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "datasetDataThemeStaging" '
+                    "(data_theme_id, dataset_id) VALUES (:theme_id, :dataset_id)"
+                ),
+                {"theme_id": theme_id, "dataset_id": catalogued_id},
+            )
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "dataThemeCatalogStaging" '
+                    "(data_theme_id, catalog_id) VALUES (:theme_id, :catalog_id)"
+                ),
+                {"theme_id": theme_id, "catalog_id": catalog_id},
+            )
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "dataserviceMediaTypeStaging" '
+                    "(mediatype_id, dataservice_id) VALUES (:media_type_id, "
+                    ":data_service_id)"
+                ),
+                {
+                    "media_type_id": media_type_id,
+                    "data_service_id": data_service_id,
+                },
+            )
+
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            with connection.begin():
+                connection.exec_driver_sql("SET TRANSACTION READ ONLY")
+                report = inspect_catalogue(connection)
+
+        self.assertFalse(report["ready"])
+        for blocker in (
+            "approved_and_rejected",
+            "invalid_approval_timestamp",
+            "rejected_without_comment",
+            "catalogue_reference",
+            "public_id_conflict",
+            "invalid_geometry",
+        ):
+            with self.subTest(blocker=blocker):
+                self.assertTrue(report["lifecycle"][blocker])
+        self.assertEqual(
+            set(report["lifecycle"]["invalid_approval_timestamp"]),
+            {approved_without_timestamp_id, invalid_timestamp_id},
+        )
+        self.assertEqual(
+            set(report["unsupported_staging_tables"]),
+            set(EXPECTED_UNSUPPORTED_TABLES),
+        )
+        for table_name in EXPECTED_UNSUPPORTED_TABLES:
+            with self.subTest(table_name=table_name):
+                self.assertEqual(
+                    report["unsupported_staging_tables"][table_name],
+                    1,
+                )
+        self.assertTrue(
+            any(
+                "Multiple approved staging rows claim one canonical dataset" in item
+                for item in report["blockers"]
+            )
+        )
+
+        with self.assertRaises(Exception) as raised:
+            self._upgrade("head")
+        migration_error = str(raised.exception)
+        for message in (
+            "approved and rejected staging datasets",
+            "inconsistent approval timestamps",
+            "without review feedback",
+            "reference a staging catalogue",
+            "reuse a canonical public_id",
+            "contain invalid geometry",
+            "multiple approved staging rows claim one canonical dataset",
+        ):
+            with self.subTest(message=message):
+                self.assertIn(message, migration_error)
+        for table_name in EXPECTED_UNSUPPORTED_TABLES:
+            with self.subTest(table_name=table_name):
+                self.assertIn(
+                    f"{table_name} contains 1 unsupported row",
+                    migration_error,
+                )
+
+        with self.engine.connect() as connection:
+            self.assertFalse(sa.inspect(connection).has_table("ReviewLifecycle"))
+
+    def test_preflight_reports_orphaned_helper_rows_as_warnings(self):
+        with self.engine.begin() as connection:
+            connection.execute(
+                sa.text(
+                    'INSERT INTO "AgentStaging" (name, type) '
+                    "VALUES ('Unused agent', 'Organisation')"
+                )
+            )
+
+        with self.engine.connect().execution_options(
+            isolation_level="REPEATABLE READ"
+        ) as connection:
+            with connection.begin():
+                connection.exec_driver_sql("SET TRANSACTION READ ONLY")
+                report = inspect_catalogue(connection)
+
+        self.assertTrue(report["ready"], report["blockers"])
+        self.assertEqual(
+            report["supported_staging_entities"]["AgentStaging"],
+            {"total": 1, "referenced": 0, "orphaned": 1},
+        )
+        self.assertTrue(
+            any("AgentStaging has 1 unreferenced" in item for item in report["warnings"])
+        )
+
+    def test_preflight_cli_reports_ready_blocked_and_inspection_exit_codes(self):
         ready = self._run_preflight_cli()
 
         self.assertEqual(ready.returncode, 0, ready.stderr)
@@ -544,6 +825,14 @@ class TestDatasetLifecycleMigration(unittest.TestCase):
         self.assertFalse(blocked_report["ready"])
         self.assertTrue(
             any("CatalogStaging contains 1" in item for item in blocked_report["blockers"])
+        )
+
+        inspection_failure = self._run_preflight_cli("not-a-database-url")
+
+        self.assertEqual(inspection_failure.returncode, 2)
+        self.assertIn(
+            "Preflight could not inspect the database",
+            inspection_failure.stderr,
         )
 
     def test_unsupported_staging_data_blocks_upgrade_atomically(self):

@@ -23,15 +23,19 @@ sudo sysctl -p
 ## 🚀 Getting started
 
 - Copy `.env.example`, rename it to `.env` and complete the missing variables.
-- Start the Docker Compose environment: `docker compose up --detach`
+- Validate the configuration with `docker compose config`.
+- Start the database and Elasticsearch without exposing the application:
+  `docker compose up --detach database es01`
 - Run database migrations:
-  - for a new installation, run `docker compose exec app alembic upgrade head`
-  - before upgrading an existing database to the single catalogue, run `docker compose exec app python -m scripts.catalogue_migration_preflight`
-  - resolve every reported blocker, then run `docker compose exec app alembic upgrade head`
+  - for a new installation, run `docker compose run --rm --no-deps app alembic upgrade head`
+  - before upgrading an existing database from revision `251acb193b99`, follow the [catalogue migration runbook](docs/catalogue-migration.md)
+  - capture the read-only preflight report with `docker compose run --rm --no-deps app python -m scripts.catalogue_migration_preflight --json > catalogue-preflight.json`
+  - resolve every reported blocker before running `docker compose run --rm --no-deps app alembic upgrade head`
+- Start the application only after migrations complete: `docker compose up --detach app`.
 - Rebuild the Elasticsearch index:
   - check the status page by visiting `/dashboard`.
   - if necessary rebuild the accepted-only index by visiting `/rebuild`.
-  - see [the catalogue migration runbook](docs/catalogue-migration.md) for the consolidation deployment procedure
+  - retain the preflight report and follow the runbook's post-upgrade validation procedure
 - Docker Compose Watch has been configured to watch for changes in the app source code. [Enable it](https://docs.docker.com/compose/how-tos/file-watch/#use-watch) to start watching for changes.
 - (optional) Restore a database backup
   - copy `docker-compose.override.yml.example` and rename it to `docker-compose.override.yml`.
@@ -65,11 +69,12 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) an
 3. Tag this commit with a new version: `git tag -a <version> -m "<description>" <commit-hash>`
 4. Create a new GitHub release, point to relevant section in the changelog
 5. Deploy release. First deploy release on acceptance. After confirmation by product owner, deploy release on production. Follow this procedure:
-    * shut down access to the site temporarily: `docker compose down app`
+    * stop application writes and web access: `docker compose stop app`
     * create and verify a full PostgreSQL schema-and-data backup using the backup tooling configured for the deployment; the repository does not currently define a Compose `backup` service
     * pull latest version of app: `git fetch --tags` and `git checkout tags/<tag-name>`
-    * Shut down Docker: `docker compose down`
-    * Install new version of app: `docker compose up --build -d`
+    * build the release image without starting the web service: `docker compose build app`
+    * when the release includes the catalogue migration, complete the [catalogue migration runbook](docs/catalogue-migration.md) before starting the app
+    * start the release only after migration and database validation: `docker compose up --detach`
     * Show logs: `docker compose logs -f`
 
 ## 📄 License

@@ -70,13 +70,6 @@ REVIEW_ACTOR_MODES = (
     REVIEW_ACTOR_SYSTEM,
 )
 
-# Existing application integrations are migrated to the shared names in later steps.
-DATASET_STATUS_SUBMITTED = REVIEW_STATUS_SUBMITTED
-DATASET_STATUS_REVISION = REVIEW_STATUS_REVISION
-DATASET_STATUS_REJECTED = REVIEW_STATUS_REJECTED
-DATASET_STATUS_ACCEPTED = REVIEW_STATUS_ACCEPTED
-DATASET_STATUSES = REVIEW_STATUSES
-
 class Agent(Base):
     """Any entity carrying out actions with respect to the (Core) entities.
 
