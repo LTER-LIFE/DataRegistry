@@ -22,7 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Loading a previously drawn polygon on the popover map
-- Release procedure: the backup command kept running instead of taking one dump
 
 ### Removed
 
