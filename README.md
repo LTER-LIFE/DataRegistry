@@ -25,6 +25,7 @@ sudo sysctl -p
 - Copy `.env.example`, rename it to `.env` and complete the missing variables.
 - Start the Docker Compose environment: `docker compose up --detach`
 - Run database migrations:
+  - on an existing database, first make a [manual backup](#manual-backup)
   - log into the app container: `docker compose exec app bash`
   - and run the migrations: `alembic upgrade head`
 - Rebuild the Elasticsearch index:
@@ -78,15 +79,35 @@ day, so a daily `CRON_SCHEDULE` leaves one dump per day. Retention is two tiers:
 The monthly folder has to sit outside `BACKUP_DIR`, because the container's pruning walks that whole tree.
 Adjust the paths to match your `BACKUP_DIR` and database name.
 
+### Manual backup:
+Make one before anything that could damage the database: migrations, restores and releases.
+The `backup` service has to be enabled (see [Enable backup](#enable-backup)).
+
+```bash
+docker compose run --rm --no-deps -e RUN_ONCE=TRUE \
+  -e ARCHIVE_FILENAME=manual-$(date +%F_%H%M)-<reason> backup
+```
+
+- `RUN_ONCE=TRUE` takes one dump and exits. Without it the container starts its cron schedule and keeps running.
+- `ARCHIVE_FILENAME` writes `<name>.<database>.dmp` to the top of `BACKUP_DIR`, e.g.
+  `manual-2026-09-28_1221-release-v1.4.ecosearchengine.dmp`, so the scheduled dumps never overwrite it.
+
+> [!WARNING]
+> Manual backups are pruned like the scheduled ones: `REMOVE_BEFORE` deletes them after that many days
+> (30 with the retention above). Copy a dump out of `BACKUP_DIR` to keep it longer.
+
 ### Restoring:
-- log into the database container, where `BACKUP_DIR` is mounted at `/opt/backups`:
+- log into the database container, where `BACKUP_DIR` is mounted at `/backups`.
+  Scheduled dumps are in `/backups/<year>/<Month>/`, manual ones directly in `/backups/`
+  (use that path in place of `/backups/<year>/<Month>/<dump>.dmp` below):
   ```bash
   docker compose exec database bash
   ```
 - read the schema version the dump was taken at:
   ```bash
-  pg_restore -a -t alembic_version -f - /opt/backups/<year>/<Month>/<dump>.dmp | grep "public.alembic_version" -A1
+  pg_restore -a -t alembic_version -f - /backups/<year>/<Month>/<dump>.dmp | grep "public.alembic_version" -A1
   ```
+- if the database holds data you may still need, first make a [manual backup](#manual-backup) of it.
 - check out that version of the app and run its migrations in the app container (see
   [Getting started](#-getting-started)). The dump holds **data only**, so the schema has to be in place first.
 - empty the version table, or `alembic_version` ends up with two rows:
@@ -95,7 +116,7 @@ Adjust the paths to match your `BACKUP_DIR` and database name.
   ```
 - restore the data:
   ```bash
-  PGPASSWORD=$POSTGRES_PASS pg_restore -h 127.0.0.1 -U $POSTGRES_USER -d $POSTGRES_DBNAME /opt/backups/<year>/<Month>/<dump>.dmp
+  PGPASSWORD=$POSTGRES_PASS pg_restore -h 127.0.0.1 -U $POSTGRES_USER -d $POSTGRES_DBNAME /backups/<year>/<Month>/<dump>.dmp
   ```
 
 ## Running tests
@@ -118,7 +139,7 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) an
 4. Create a new GitHub release, point to relevant section in the changelog
 5. Deploy release. First deploy release on acceptance. After confirmation by product owner, deploy release on production. Follow this procedure:
     * shut down access to the site temporarily: `docker compose down app`
-    * create database backup: `docker compose run --rm backup`
+    * create a [manual backup](#manual-backup) with `<reason>` set to `release-<tag-name>`
     * pull latest version of app: `git fetch --tags` and `git checkout tags/<tag-name>`
     * Shut down Docker: `docker compose down`
     * Install new version of app: `docker compose up --build -d`
