@@ -6,7 +6,6 @@ import logging
 import zipfile
 import requests
 import traceback
-from collections import defaultdict
 import time
 
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file, jsonify
@@ -15,10 +14,9 @@ from flask import current_app as app
 import jwt
 import markupsafe
 import shapely
-from sqlalchemy import exc
 
 from application import search_index
-from application.authentication import get_userinfo, valid_token, in_editor_group
+from application.authentication import valid_token, in_editor_group
 from application.database import db_session
 from application.forms import DatasetForm, LlmForm
 from application.forms import DatasetForm, DatasetStagingForm
@@ -40,49 +38,11 @@ main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_fol
 @main_bp.route('/')
 def home():
     """
-    The home endpoint, it will show a map containing all datasets
+    Redirects to datasets page.
 
-    A python dictionary will be create containing the centroid, geometry and properties of all datasets
-    it will be shown as a json in the flask template.
-
-    :return: rendered flask template from templates/index.html
+    :return: A redirect response to the datasets page
     """
-    try:
-        es_datasets = search_index.fetch_all()
-
-        datasets_shapes = defaultdict(dict)
-        for es_dataset in es_datasets.body["hits"]["hits"]:
-            dataset_dict = {
-                "centroid": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("centroid", None),
-                "geometry": es_dataset.get("_source", {}).get("dataset_spatial_coverage", {}).get("geometry", None),
-                "properties": {"id": es_dataset.get("_source", {}).get("dataset_id", None),
-                               "title": _json_safe_string(es_dataset.get("_source", {}).get("title", None)),
-                               "description": _json_safe_string(es_dataset.get("_source", {}).get("description", None)),
-                               "creator": Agent(**es_dataset.get("_source", {}).get("creator", None)).web(),
-                               "temporal_coverage":
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_start", None)} / "
-                                   f"{es_dataset.get("_source", {}).get("temporal_coverage_end", None)}",
-                               "url": es_dataset.get("_source", {}).get("url")
-                               }
-            }
-
-            datasets_shapes[es_dataset.get("_source").get("dataset_id")] = dataset_dict
-
-        user_logged_in = is_logged_in()
-        if user_logged_in:
-            user_info = get_userinfo(session.get("access_token"))
-
-        page = render_template('index.html', list_o_geo=datasets_shapes, title='Map', user=user_logged_in)
-        return page
-    except exc.PendingRollbackError as pre:
-        db_session.rollback()
-        logging.error(traceback.format_exc())
-        abort(500, description="Database error rolled back last change, please refresh. (F5/Ctrl+r)",
-              original_exception=pre)
-
-    except Exception as e:
-        logging.error(traceback.format_exc())
-        abort(500, description="Failed to fetch datasets and render to map.", original_exception=e)
+    return redirect(url_for("main_bp.datasets"))
 
 
 @main_bp.route('/datasets/edit/<dataset_id>', methods=['GET', 'POST'])
@@ -642,13 +602,6 @@ def is_logged_in():
                                    options={"verify_signature": False})
 
         return valid_token(token_extract)
-
-
-def _json_safe_string(string):
-    """
-    Some fields can contain breaking code for json, this function can be used to clean this fields
-    """
-    return string.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
 
 
 def _geojson_dump(dataset):
