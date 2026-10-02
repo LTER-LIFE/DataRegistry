@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add List and Map tab on the Datasets page
+- Add optional automatic database backups with `kartoza/pg-backup`, including manual backup, retention and restore instructions in the README
 
 ### Changed
 
