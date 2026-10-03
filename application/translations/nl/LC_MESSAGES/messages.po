@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-09-19 16:16+0200\n"
+"POT-Creation-Date: 2026-10-03 14:36+0200\n"
 "PO-Revision-Date: 2026-07-18 17:44+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: nl\n"
@@ -602,6 +602,10 @@ msgstr "voeg toe aan download lijst"
 msgid "Temporal coverage"
 msgstr "Tijddekking"
 
+#: application/templates/dataset_detail.html:103
+msgid "now"
+msgstr "nu"
+
 #: application/templates/dataset_detail.html:124
 msgid "Publisher"
 msgstr "Uitgever"
@@ -667,10 +671,6 @@ msgstr "AI Harvester"
 #: application/templates/dataset_form.html:71
 msgid "Loading..."
 msgstr "Laden..."
-
-#: application/templates/dataset_form.html:73
-msgid "Submitting job..."
-msgstr "Taak wordt gestart..."
 
 #: application/templates/dataset_form.html:76
 msgid "Close"
