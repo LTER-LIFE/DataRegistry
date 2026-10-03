@@ -9,6 +9,7 @@ from datetime import date
 import requests
 import traceback
 import time
+from urllib.parse import urlparse, urljoin
 
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file, jsonify
 
@@ -327,7 +328,7 @@ def add_to_download_list(dataset_id):
         ),
         'success'
     )
-    return redirect(request.referrer)
+    return redirect(get_safe_redirect(request.referrer))
 
 
 @main_bp.route('/download-list/remove/<int:dataset_id>')
@@ -349,13 +350,13 @@ def remove_from_download_list(dataset_id):
         ),
         'success'
     )
-    return redirect(request.referrer)
+    return redirect(get_safe_redirect(request.referrer))
 
 
 @main_bp.route('/download-list/empty')
 def empty_download_list():
     session.pop('download_list', None)
-    return redirect(request.referrer)
+    return redirect(get_safe_redirect(request.referrer))
 
 
 @main_bp.route('/download-list/export')
@@ -405,11 +406,11 @@ def inject_languages():
 def set_language(language_key):
     if language_key not in app.config['LANGUAGES']:
         session['language'] = app.config['BABEL_DEFAULT_LOCALE']
-        return redirect(request.referrer)
+        return redirect(get_safe_redirect(request.referrer))
 
     session['language'] = language_key
 
-    return redirect(request.referrer)
+    return redirect(get_safe_redirect(request.referrer))
 
 
 @main_bp.route('/rebuild')
@@ -672,3 +673,18 @@ def _drop_geometry_collection(geometry):
             geom = geom.geoms[0]
             geometry = json.loads(shapely.to_geojson(geom))
     return geometry
+
+
+# source: https://security.openstack.org/guidelines/dg_avoid-unvalidated-redirects.html
+def _is_safe_redirect_url(target):
+    host_url = urlparse(request.host_url)
+    redirect_url = urlparse(urljoin(request.host_url, target))
+
+    return redirect_url.scheme in ('http', 'https') and host_url.netloc == redirect_url.netloc
+
+
+def get_safe_redirect(url):
+    if url and _is_safe_redirect_url(url):
+        return url
+
+    return url_for("main_bp.home")
