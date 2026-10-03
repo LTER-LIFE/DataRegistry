@@ -74,13 +74,18 @@ class RequiredOr(object):
         self.other_field_name = other_field_name
         self.field_name = None
         self.message = message
-        if not self.message:
-            self.message = f'One of the fields "{self.other_field_name}" or "{self.field_name}" should be filled in ' \
-                           f'form'
 
     def __call__(self, form, field):
         self.field_name = field.name
         other_field = form._fields.get(self.other_field_name)
+
+        if not self.message:
+            self.message = _l(
+                'One of the fields "%(other_field)s" or "%(field)s" should be filled in form',
+                other_field=other_field.label.text,
+                field=form._fields.get(self.field_name).label.text
+            )
+
         if other_field is not None:
             if bool(other_field.data) is False and bool(field.data) is False:
                 raise ValidationError(self.message)

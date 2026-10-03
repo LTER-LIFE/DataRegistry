@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Loading a previously drawn polygon on the popover map
+- Display both field names in message from `RequiredOr` validator
 
 ### Removed
 

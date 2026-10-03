@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-03 14:36+0200\n"
+"POT-Creation-Date: 2026-10-03 16:05+0200\n"
 "PO-Revision-Date: 2026-07-18 17:44+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: nl\n"
@@ -18,39 +18,46 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: application/forms.py:99 application/forms.py:110 application/forms.py:125
-#: application/forms.py:475 application/forms.py:486 application/forms.py:501
+#: application/forms.py:84
+#, python-format
+msgid ""
+"One of the fields \"%(other_field)s\" or \"%(field)s\" should be filled "
+"in form"
+msgstr "Eén van de velden \"%(other_field)s\" of \"%(field)s\" moet worden ingevuld"
+
+#: application/forms.py:104 application/forms.py:115 application/forms.py:130
+#: application/forms.py:480 application/forms.py:491 application/forms.py:506
 #: application/templates/instructions.html:3197
 #: application/templates/instructions.html:3268
 #: application/templates/instructions.html:3300
 msgid "Name"
 msgstr "Naam"
 
-#: application/forms.py:99 application/forms.py:475
+#: application/forms.py:104 application/forms.py:480
 msgid "Your first and last name."
 msgstr "Jouw voornaam en achternaam."
 
-#: application/forms.py:100 application/forms.py:113 application/forms.py:129
-#: application/forms.py:476 application/forms.py:489 application/forms.py:505
+#: application/forms.py:105 application/forms.py:118 application/forms.py:134
+#: application/forms.py:481 application/forms.py:494 application/forms.py:510
 #: application/templates/instructions.html:3201
 #: application/templates/instructions.html:3259
 #: application/templates/instructions.html:3325
 msgid "Organisation name"
 msgstr "Organisatie naam"
 
-#: application/forms.py:101 application/forms.py:477
+#: application/forms.py:106 application/forms.py:482
 msgid "The name of the organisation you are affiliated with."
 msgstr "De naam van de organisatie waaraan je verbonden bent."
 
-#: application/forms.py:102 application/forms.py:119 application/forms.py:132
-#: application/forms.py:478 application/forms.py:495 application/forms.py:508
+#: application/forms.py:107 application/forms.py:124 application/forms.py:137
+#: application/forms.py:483 application/forms.py:500 application/forms.py:513
 #: application/templates/instructions.html:3228
 #: application/templates/instructions.html:3272
 #: application/templates/instructions.html:3329
 msgid "Email address"
 msgstr "E-mailadres"
 
-#: application/forms.py:103 application/forms.py:479
+#: application/forms.py:108 application/forms.py:484
 msgid ""
 "This email address may serve as a point of contact for LTER-LIFE in case "
 "there are questions about the metadata form you are currently submitting."
@@ -63,7 +70,7 @@ msgstr ""
 "toestemming aan LTER-LIFE om het emailadres te tonen op de LTER-NL Data "
 "Registry."
 
-#: application/forms.py:111 application/forms.py:487
+#: application/forms.py:116 application/forms.py:492
 msgid ""
 "If the creator of the dataset is a person, please provide their first and"
 " last name."
@@ -71,7 +78,7 @@ msgstr ""
 "Als de vervaardiger van de dataset een persoon is, vul dan a.u.b. hun "
 "voornaam en achternaam in."
 
-#: application/forms.py:114 application/forms.py:490
+#: application/forms.py:119 application/forms.py:495
 msgid ""
 "If the creator of the dataset is an organisation, provide the name of the"
 " organisation here. If the creator of the dataset is a person, provide "
@@ -82,7 +89,7 @@ msgstr ""
 "persoon is, vul dan de naam van de organisatie in waarmee die verbonden "
 "is."
 
-#: application/forms.py:119 application/forms.py:495
+#: application/forms.py:124 application/forms.py:500
 msgid ""
 "If the creator of the dataset is a person, please provide their email "
 "address. NB: by providing this email address, you give consent to LTER-"
@@ -93,7 +100,7 @@ msgstr ""
 "toestemming aan LTER-LIFE om het e-mailadres te tonen op de LTER-NL Data "
 "Registry."
 
-#: application/forms.py:126 application/forms.py:502
+#: application/forms.py:131 application/forms.py:507
 msgid ""
 "If the contact point of the dataset is a person, please provide their "
 "first and last name. If the contact point of the dataset is a position, "
@@ -103,11 +110,11 @@ msgstr ""
 "voornaamen achternaam in. Als het contactpunt een rol is, de naam van die"
 " rol."
 
-#: application/forms.py:130 application/forms.py:506
+#: application/forms.py:135 application/forms.py:511
 msgid "The name of the organisation the contact point is affiliated with."
 msgstr "De naam van de organisatie waaraan het contactpunt is verbonden."
 
-#: application/forms.py:133 application/forms.py:509
+#: application/forms.py:138 application/forms.py:514
 msgid ""
 "This email address may serve as a point of contact for users of the LTER-"
 "NL Data Registry in case they have questions about the dataset. NB: by "
@@ -119,12 +126,12 @@ msgstr ""
 "door dit e-mailadres in te vullen, geef je toestemming aan LTER-LIFE om "
 "het e-mailadres te tonen op de LTER-NL Data Registry."
 
-#: application/forms.py:139 application/forms.py:515
+#: application/forms.py:144 application/forms.py:520
 #: application/templates/instructions.html:3334
 msgid "Title"
 msgstr "Titel"
 
-#: application/forms.py:139 application/forms.py:515
+#: application/forms.py:144 application/forms.py:520
 msgid ""
 "A brief description of the dataset. Recommended to include: subject, "
 "location, time period."
@@ -132,13 +139,13 @@ msgstr ""
 "Een korte omschrijving van de dataset. Het wordt aanbevolen om het "
 "onderwerp, de locatie en de tijdsperiode in de titel op te nemen."
 
-#: application/forms.py:142 application/forms.py:518
+#: application/forms.py:147 application/forms.py:523
 #: application/templates/dataset_detail.html:22
 #: application/templates/instructions.html:3357
 msgid "Description"
 msgstr "Beschrijving"
 
-#: application/forms.py:143 application/forms.py:519
+#: application/forms.py:148 application/forms.py:524
 msgid ""
 "A description of the contents of the dataset. The description will be "
 "used by full-text searches, and it should be rich with descriptive text. "
@@ -161,13 +168,13 @@ msgstr ""
 "verzameld, waar en wanneer. Een algemene beschrijving van de methoden van"
 " dataverzameling en gemeten variabelen wordt aanbevolen."
 
-#: application/forms.py:154 application/forms.py:530
+#: application/forms.py:159 application/forms.py:535
 #: application/templates/dataset_detail.html:77
 #: application/templates/instructions.html:3370
 msgid "Keywords"
 msgstr "Trefwoorden"
 
-#: application/forms.py:154 application/forms.py:530
+#: application/forms.py:159 application/forms.py:535
 msgid ""
 "Commonly used words or phrases to describe the dataset. Format: separate "
 "keywords by a comma."
@@ -175,13 +182,13 @@ msgstr ""
 "Trefwoorden zijn algemeen gebruikte kernwoorden om een dataset te "
 "beschrijven. Format: scheid trefwoorden door een komma."
 
-#: application/forms.py:159 application/forms.py:535
+#: application/forms.py:164 application/forms.py:540
 #: application/templates/dataset_detail.html:82
 #: application/templates/instructions.html:3413
 msgid "Resource type"
 msgstr "Type"
 
-#: application/forms.py:160 application/forms.py:536
+#: application/forms.py:165 application/forms.py:541
 msgid ""
 "The nature of the dataset. Examples include but are not limited to: "
 "observational data, experimental data, remotely sensed data, sounds, "
@@ -191,13 +198,13 @@ msgstr ""
 " data, genomische data, geospatiale data, observatiedata, simulatiedata, "
 "onderzoeksdata, afbeelding, geluid."
 
-#: application/forms.py:164 application/forms.py:540
+#: application/forms.py:169 application/forms.py:545
 #: application/templates/dataset_detail.html:114
 #: application/templates/instructions.html:3440
 msgid "License"
 msgstr "Licentie"
 
-#: application/forms.py:164 application/forms.py:540
+#: application/forms.py:169 application/forms.py:545
 msgid ""
 "The license determines what rights may be available to users when using "
 "the dataset. Recommend to choose one of the Creative Commons licenses. "
@@ -210,13 +217,13 @@ msgstr ""
 "bijvoorbeeld: CC0, CC-BY, CC-BY-NC. Zie  https://creativecommons.org"
 "/share-your-work/cclicenses/ voor meer Creative Commons licenties."
 
-#: application/forms.py:170 application/forms.py:546
+#: application/forms.py:175 application/forms.py:551
 #: application/templates/dataset_detail.html:119
 #: application/templates/instructions.html:3469
 msgid "Access rights"
 msgstr "Toegangsrechten"
 
-#: application/forms.py:172 application/forms.py:547
+#: application/forms.py:177 application/forms.py:552
 msgid ""
 "Information that indicates how the dataset can be accessed. Recommended "
 "to choose one of: embargoed access, metadata only access, open access, "
@@ -229,12 +236,12 @@ msgstr ""
 " informatie zie: https://vocabularies.coar-"
 "repositories.org/access_rights/."
 
-#: application/forms.py:177 application/forms.py:552
+#: application/forms.py:182 application/forms.py:557
 #: application/templates/instructions.html:3495
 msgid "Publisher name"
 msgstr "Uitgever"
 
-#: application/forms.py:178 application/forms.py:553
+#: application/forms.py:183 application/forms.py:558
 msgid ""
 "The organisation that made a citable version of the dataset available "
 "online. Examples include but are not limited to: GBIF, Dataverse NL, "
@@ -244,24 +251,24 @@ msgstr ""
 "versie van de dataset beschikbaar heeft gemaakt. Bijvoorbeeld: GBIF, "
 "Dataverse NL, Zenodo, Dryad, Figshare."
 
-#: application/forms.py:182 application/forms.py:557
+#: application/forms.py:187 application/forms.py:562
 #: application/templates/instructions.html:3523
 msgid "Dataset ID"
 msgstr "Dataset ID"
 
-#: application/forms.py:182 application/forms.py:557
+#: application/forms.py:187 application/forms.py:562
 msgid "DOI or other unique identifier associated with the published dataset."
 msgstr ""
 "DOI of een andere unieke identificatie voor een dataset verstrekt door "
 "een uitgever."
 
-#: application/forms.py:186 application/forms.py:561
+#: application/forms.py:191 application/forms.py:566
 #: application/templates/dataset_detail.html:134
 #: application/templates/instructions.html:3544
 msgid "Landing page"
 msgstr "Landingspagina"
 
-#: application/forms.py:186 application/forms.py:561
+#: application/forms.py:191 application/forms.py:566
 msgid ""
 "The web page (URL) that can be navigated to in a web browser to gain "
 "access to the dataset."
@@ -269,12 +276,12 @@ msgstr ""
 "De landingspagina is de webpagina (URL) waar een gebruiker naartoe kan "
 "navigeren om toegang te krijgen tot een dataset."
 
-#: application/forms.py:190 application/forms.py:565
+#: application/forms.py:195 application/forms.py:570
 #: application/templates/instructions.html:3569
 msgid "Start date"
 msgstr "Startdatum"
 
-#: application/forms.py:191 application/forms.py:566
+#: application/forms.py:196 application/forms.py:571
 msgid ""
 "The period of time when the data collection started. Format: either YYYY "
 "or YYYY-MM-DD."
@@ -282,12 +289,12 @@ msgstr ""
 "De tijd wanneer de dataverzameling gestart is. Format: een viercijferig "
 "jaar (YYYY) of een volledige datum (YYYY-MM-DD)."
 
-#: application/forms.py:193 application/forms.py:568
+#: application/forms.py:198 application/forms.py:573
 #: application/templates/instructions.html:3586
 msgid "End date"
 msgstr "Einddatum"
 
-#: application/forms.py:194 application/forms.py:569
+#: application/forms.py:199 application/forms.py:574
 msgid ""
 "The period of time when the data collection ended. NB: If data collection"
 " is ongoing, leave empty or select the latest period of time that is "
@@ -299,13 +306,13 @@ msgstr ""
 "versie van de dataset als einddatum gebruiken of dit veld open laten. "
 "Format: een viercijferig jaar (YYYY) of een volledige datum (YYYY-MM-DD)."
 
-#: application/forms.py:199 application/forms.py:574
+#: application/forms.py:204 application/forms.py:579
 #: application/templates/dataset_detail.html:109
 #: application/templates/instructions.html:3607
 msgid "Temporal resolution"
 msgstr "Tijdresolutie"
 
-#: application/forms.py:200 application/forms.py:575
+#: application/forms.py:205 application/forms.py:580
 msgid ""
 "The temporal resolution of the dataset is the minimum temporal separation"
 " between records in the dataset."
@@ -313,12 +320,12 @@ msgstr ""
 "De tijdresolutie is de minimale afstand in tijd tussen twee records in de"
 " dataset."
 
-#: application/forms.py:203 application/forms.py:578
+#: application/forms.py:208 application/forms.py:583
 #: application/templates/instructions.html:3625
 msgid "Spatial coverage"
 msgstr "Ruimtelijke dekking"
 
-#: application/forms.py:204 application/forms.py:579
+#: application/forms.py:209 application/forms.py:584
 msgid ""
 "The spatial extent that is covered by the dataset. Use the interactive "
 "map to draw the study area of your dataset."
@@ -326,11 +333,11 @@ msgstr ""
 "Het geografische gebied waarop de dataset betrekking heeft. Gebruik de "
 "interactieve kaart om het studiegebied van jouw dataset in te tekenen."
 
-#: application/forms.py:207 application/forms.py:582
+#: application/forms.py:212 application/forms.py:587
 msgid "Spatial coverage from file"
 msgstr "Ruimtelijke dekking op basis van een bestand"
 
-#: application/forms.py:208 application/forms.py:583
+#: application/forms.py:213 application/forms.py:588
 msgid ""
 "The spatial extent that is covered by the dataset. Upload a zip file "
 "containing the 4 files that make up a shapefile (i.e., .shp, .shx, .dbf, "
@@ -340,13 +347,13 @@ msgstr ""
 "zipbestand met daarin de 4 bestanden die samen een shapefile maken "
 "(d.w.z., .shp, .shx, .dbf, .prj)."
 
-#: application/forms.py:212 application/forms.py:587
+#: application/forms.py:217 application/forms.py:592
 #: application/templates/dataset_detail.html:87
 #: application/templates/instructions.html:3666
 msgid "Spatial resolution"
 msgstr "Ruimtelijke resolutie"
 
-#: application/forms.py:212 application/forms.py:587
+#: application/forms.py:217 application/forms.py:592
 msgid ""
 "If the dataset contains data acquired over a range of spatial locations "
 "during each collection period, document the minimum spatial separation "
@@ -356,13 +363,13 @@ msgstr ""
 "noteer dan de minimale ruimtelijke resolutie tussen records in de "
 "dataset."
 
-#: application/forms.py:218 application/forms.py:593
+#: application/forms.py:223 application/forms.py:598
 #: application/templates/dataset_detail.html:92
 #: application/templates/instructions.html:3696
 msgid "Taxonomic coverage"
 msgstr "Taxonomische dekking"
 
-#: application/forms.py:218 application/forms.py:593
+#: application/forms.py:223 application/forms.py:598
 msgid ""
 "If applicable, taxonomic coverage is a description of the taxa "
 "represented in the dataset. May be as generic as 'small passerines' or as"
@@ -373,43 +380,43 @@ msgstr ""
 " omschrijving zoals 'kleine zangvogels' tot het beschrijven van een lijst"
 " met soorten."
 
-#: application/forms.py:224 application/forms.py:599
+#: application/forms.py:229 application/forms.py:604
 #: application/templates/instructions.html:3156
 msgid "Metadata submission date"
 msgstr "Registratiedatum"
 
-#: application/forms.py:224 application/forms.py:599
+#: application/forms.py:229 application/forms.py:604
 msgid "Date of registration of your dataset in the LTER-NL Data Registry."
 msgstr ""
 "De datum waarop de dataset in de LTER-NL Data Registry geregistreerd "
 "wordt."
 
-#: application/forms.py:227 application/forms.py:602
+#: application/forms.py:232 application/forms.py:607
 #: application/templates/instructions.html:3165
 msgid "Language"
 msgstr "Taal"
 
-#: application/forms.py:228 application/forms.py:603
+#: application/forms.py:233 application/forms.py:608
 msgid "Language used in this form"
 msgstr "De taal waarin het formulier ingevuld wordt."
 
-#: application/forms.py:230 application/forms.py:605
+#: application/forms.py:235 application/forms.py:610
 msgid "Terms and conditions"
 msgstr "Voorwaarden"
 
-#: application/forms.py:230 application/forms.py:605
+#: application/forms.py:235 application/forms.py:610
 msgid "Yes, I have read and agree to the terms and conditions."
 msgstr "Ja, ik heb de voorwaarden gelezen en ik ga hiermee akkoord."
 
-#: application/forms.py:231 application/forms.py:606
+#: application/forms.py:236 application/forms.py:611
 msgid "Please answer Yes to proceed"
 msgstr "Antwoord 'Ja' om door te gaan"
 
-#: application/forms.py:236 application/forms.py:611
+#: application/forms.py:241 application/forms.py:616
 msgid "Submit dataset"
 msgstr "Dien dataset in"
 
-#: application/forms.py:396
+#: application/forms.py:401
 msgid "Paste dataset URL here..."
 msgstr "Plak hier de dataset URL..."
 
