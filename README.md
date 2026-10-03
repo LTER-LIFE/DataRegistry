@@ -141,7 +141,7 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) an
 ## Making a release
 
 1. Determine a new version by looking at the changelog
-2. Create a commit, which
+2. Create a commit via a PR, which
     * moves the contents from the "[Unreleased]" section in the [CHANGELOG.md](CHANGELOG.md) to a new versioned section
     * updates the version in `pyproject.toml`
     * runs `uv lock` so `uv.lock` records the new version
