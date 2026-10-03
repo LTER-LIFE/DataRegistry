@@ -14,8 +14,12 @@
             </a>
 
             <p class="mb-0">
-                LTER-NL Data Registry is an initiative of
-                <a href="https://lter-life.nl/en" target="_blank">LTER-LIFE</a>
+                {% autoescape false %}
+                    {{ _(
+                        'LTER-NL Data Registry is an initiative of %(lter_life_link)s',
+                        lter_life_link='<a href="https://lter-life.nl/en" target="_blank">LTER-LIFE</a>'
+                      ) }}
+                {% endautoescape %}
             </p>
         </div>
     </div>

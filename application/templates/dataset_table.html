@@ -22,7 +22,7 @@
                     role="tab"
                     type="button"
                 >
-                    List
+                    {{ _('List') }}
                 </button>
             </li>
 
@@ -39,18 +39,18 @@
                     role="tab"
                     type="button"
                 >
-                    Map
+                    {{ _('Map') }}
                 </button>
             </li>
         </ul>
     </div>
 
     <div class="col-md-4 order-first order-md-0">
-        <h2>Filters</h2>
+        <h2>{{ _('Filters') }}</h2>
 
         <form id="index_search_form">
            <div class="mb-4">
-               <label for="free" class="form-label">Free text</label>
+               <label for="free" class="form-label">{{ _('Free text') }}</label>
                <input
                    type="text"
                    class="form-control js-input"
@@ -60,7 +60,7 @@
            </div>
 
            <div class="mb-4">
-               <label class="form-label">Time period</label>
+               <label class="form-label">{{ _('Time period') }}</label>
                <div id="slider-range" class="mt-4 mx-3">
                    <div id="custom-handle-min" class="ui-slider-handle">
                        <small class="slider-handle-label"></small>
@@ -86,11 +86,11 @@
            </div>
 
            <div class="mb-4">
-               <label class="form-label" for="area">Area</label>
+               <label class="form-label" for="area">{{ _('Area') }}</label>
 
                <select class="form-select" name="area" aria-label="Select an area">
                    <option id="area-none" value="">
-                       None
+                       {{ _ ('None') }}
                    </option>
 
                    <option
@@ -108,7 +108,7 @@
                    </option>
 
                    <option id="area-custom" value="">
-                       Custom
+                       {{ _('Custom') }}
                    </option>
                </select>
 
@@ -148,7 +148,12 @@
                 role="tabpanel"
                 aria-labelledby="datasets-map-button"
             >
-                <div id="datasets-map" class="map"></div>
+                <div
+                    id="datasets-map"
+                    class="map"
+                    {# Translate Leaflet button text here, so javascript can retrieve this data attribute #}
+                    data-i18n-map-view-as-filter-title="{{ _('Set the map view as an Area filter') }}"
+                ></div>
             </div>
         </div>
     </div>
@@ -180,7 +185,7 @@ function parseUrlParams() {
 
             $('select[name="area"]').trigger('change')
         } else {
-            alert('An invalid area was requested. Reverting to a previously saved area filter or no area filter.')
+            alert("{{ _('An invalid area was requested. Reverting to a previously saved area filter or no area filter.') }}")
         }
     }
 }
@@ -286,7 +291,7 @@ function fetchData(query) {
                         addDataset(dataset._source);
                     });
                 } else {
-                    $('.datasets-list').append("<p>No results found.</p>");
+                    $('.datasets-list').append("<p>{{ _('No results found.') }}</p>");
                 }
 
                 if (appState.datasets.mapTabActive){
@@ -295,7 +300,7 @@ function fetchData(query) {
             },
             error: function(xhr, status, error) {
                 console.error("Error fetching data:", error);
-                $('.datasets-list').append("<p>An error occurred while fetching data. Please try again later.</p>");
+                $('.datasets-list').append("<p>{{ _('An error occurred while fetching data. Please try again later.') }}</p>");
             }
         });
 }
@@ -311,8 +316,8 @@ function addDataset(dataset) {
     const downloadListUrl = baseUrl.replace(/-999$/, dataset.dataset_id);
 
     const downloadListText = isInDownloadList
-        ? 'remove from download list'
-        : 'add to download list';
+        ? "{{ _('remove from download list') }}"
+        : "{{ _('add to download list') }}";
 
     const itemHtml = `
         <li class="datasets-list__item">
@@ -339,7 +344,7 @@ function addDataset(dataset) {
                     class="btn btn-link btn-sm p-0 link-underline-hover"
                     href="${dataset.url}"
                 >
-                    read more
+                    {{ _('read more') }}
                 </a>
             </div>
         </li>
@@ -420,12 +425,12 @@ function updateMap() {
                     </h2> \
                     <p>
                         ${dataset.description.substring(0, 125)}... \
-                        <a href="${dataset.url}">read more</a> \
+                        <a href="${dataset.url}">{{ _('read more') }}</a> \
                     </p>`
 
                 const button = document.createElement("button")
                 button.className = "btn btn-sm btn-primary"
-                button.innerHTML= "Show area"
+                button.innerHTML= "{{ _('Show area') }}"
                 button.onclick = function() {
                     if (appState.datasets.map.areaGroup.getLayers().length >=1) {
                         appState.datasets.map.areaGroup.clearLayers()

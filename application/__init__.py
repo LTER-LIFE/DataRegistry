@@ -1,6 +1,7 @@
 from os import environ
 
 from flask import Flask, session
+from flask_babel import Babel
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from application.database import validate_db 
@@ -16,6 +17,8 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 
+def get_locale():
+    return session.get('language', Config.BABEL_DEFAULT_LOCALE)
 
 def create_app():
     """
@@ -37,6 +40,9 @@ def create_app():
 
     # Tell flask its behind a proxy
     app.wsgi_app = ProxyFix(app.wsgi_app)
+
+    babel = Babel()
+    babel.init_app(app, locale_selector=get_locale)
 
     # Register blueprints
     with app.app_context():
