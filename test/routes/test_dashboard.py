@@ -1,13 +1,11 @@
-from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from application.database import db_session
-from application.models import Dataset, REVIEW_ACTOR_SYSTEM
-from application.workflow import initialize_reviewable, transition_reviewable
 from test.base_test_case import BaseTestCase
 from test.capture_templates import captured_templates
 from test.db import engine
+from test.mock_objects import MockObjects
 
 
 class TestDashboardRoutes(BaseTestCase):
@@ -15,45 +13,12 @@ class TestDashboardRoutes(BaseTestCase):
         self.connection = engine.connect()
         self.transaction = self.connection.begin()
         db_session.configure(bind=self.connection, join_transaction_mode="create_savepoint")
+        self.mock_objects = MockObjects(db_session=db_session)
 
     def tearDown(self):
         db_session.remove()
         self.transaction.rollback()
         self.connection.close()
-
-    @staticmethod
-    def dataset(status, title):
-        timestamp = datetime(2026, 1, 1, 12, 0)
-        dataset = Dataset(
-            release_date=timestamp,
-            language="EN",
-            title=title,
-            description="Dashboard count fixture.",
-            resource_type="dataset",
-            temporal_coverage_start=datetime(2020, 1, 1),
-            temporal_coverage_end=datetime(2021, 1, 1),
-            temporal_resolution="P1D",
-            access_rights="open access",
-            modified=timestamp,
-        )
-        initialize_reviewable(
-            dataset,
-            actor_mode=REVIEW_ACTOR_SYSTEM,
-            changed_at=timestamp,
-        )
-        if status != "submitted":
-            transition_reviewable(
-                dataset,
-                status,
-                review_comment=(
-                    "Review feedback"
-                    if status in {"revision", "rejected"}
-                    else None
-                ),
-                actor_mode=REVIEW_ACTOR_SYSTEM,
-                changed_at=timestamp,
-            )
-        return dataset
 
     @patch("application.routes.search_index.fetch_all")
     def test_dashboard_reports_lifecycle_and_actual_index_counts(self, fetch_all):
@@ -63,10 +28,13 @@ class TestDashboardRoutes(BaseTestCase):
         )
         db_session.add_all(
             [
-                self.dataset("accepted", "Accepted fixture"),
-                self.dataset("submitted", "Submitted fixture"),
-                self.dataset("revision", "Revision fixture"),
-                self.dataset("rejected", "Rejected fixture"),
+                self.mock_objects.create_mock_dataset(
+                    f"dashboard-{status}",
+                    status=status,
+                    persist=False,
+                    include_related=False,
+                )
+                for status in ("accepted", "submitted", "revision", "rejected")
             ]
         )
         db_session.flush()

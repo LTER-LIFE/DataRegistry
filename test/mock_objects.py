@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import random
 
+from faker import Faker
 import shapely
-from shapely.geometry.collection import GeometryCollection
-from shapely.geometry.polygon import Polygon
+from shapely.geometry import GeometryCollection, box
 
 from application.models import (
     REVIEW_ACTOR_SYSTEM,
@@ -20,106 +20,119 @@ from application.models import (
     DataTheme,
 )
 from application.workflow import initialize_reviewable, transition_reviewable
-from faker import Faker # Used for generating realistic-looking data
 
-# Initialize Faker for generating mock data
+
+MOCK_TIMESTAMP = datetime(2026, 1, 1, 12, 0)
+SUPPORTED_REVIEW_STATUSES = {
+    REVIEW_STATUS_ACCEPTED,
+    REVIEW_STATUS_REJECTED,
+    REVIEW_STATUS_REVISION,
+    REVIEW_STATUS_SUBMITTED,
+}
 fake = Faker()
 
+
 class MockObjects:
+    """Build valid, reusable ORM fixtures for dataset behavior tests.
+
+    Use this factory when a test needs an ordinary dataset aggregate whose
+    metadata is incidental to the behavior under test. Tests for invalid
+    constraints, historical migrations, form parsing, workflow initialization,
+    or lightweight protocol stubs should construct their specialized inputs
+    directly instead. Use ``create_fake_dataset`` when varied, realistic-looking
+    records are needed for bulk data generation rather than repeatable assertions.
+    """
+
     def __init__(self, db_session=None):
-        if not db_session:
+        if db_session is None:
             self.db_session = DBSessionMock()
         else:
             self.db_session = db_session
 
-    # Function to create a single mock dataset
     def create_mock_dataset(
         self,
         dataset_id_prefix="1",
         status=REVIEW_STATUS_ACCEPTED,
         review_comment=None,
+        *,
+        persist=True,
+        commit=True,
+        changed_at=None,
+        include_related=True,
+        dataset_overrides=None,
+        actor_mode=REVIEW_ACTOR_SYSTEM,
     ):
+        """Create a valid dataset aggregate with controllable persistence.
+
+        ``persist=False`` returns a transient aggregate and never touches the
+        configured session. ``commit=False`` adds a persistent fixture to the
+        session but leaves flushing and transaction completion to the caller.
         """
-        Creates a single mock Dataset object with dynamic data.
-        :param dataset_id_prefix: A prefix for the dataset to make a dataset more recognisable
-        :return: Dataset
-        """
-        dataset = Dataset()
+        if status not in SUPPORTED_REVIEW_STATUSES:
+            raise ValueError(f"Unsupported fixture review status {status!r}.")
 
-        dataset.modified = fake.date_time_between(start_date="-1y", end_date="now")
-        dataset.release_date = fake.date_time_between(start_date="-2y", end_date="-1y")
-        dataset.language = random.choice(["en", "nl", "fr", "de"])
-        dataset.title = f"{fake.catch_phrase()} - {dataset_id_prefix}"
-        dataset.description = fake.paragraph(nb_sentences=5)
-        dataset.resource_type = random.choice(["Dataset", "Image Collection", "Sensor Data", "Survey Results"])
+        timestamp = changed_at or MOCK_TIMESTAMP
+        fixture_key = str(dataset_id_prefix).lower().replace(" ", "-")
+        values = {
+            "modified": timestamp,
+            "release_date": timestamp,
+            "language": "EN",
+            "title": f"Mock dataset - {dataset_id_prefix}",
+            "description": "Metadata for a reusable dataset test fixture.",
+            "resource_type": "dataset",
+            "temporal_coverage_start": datetime(2020, 1, 1),
+            "temporal_coverage_end": datetime(2021, 1, 1),
+            "temporal_resolution": "P1D",
+            "spatial_resolution": "100 m",
+            "taxonomic_coverage": "Plants",
+            "access_rights": "open access",
+            "landing_page": f"https://example.org/datasets/{fixture_key}",
+            "public_id": f"DS-{dataset_id_prefix}",
+        }
+        values.update(dataset_overrides or {})
+        dataset = Dataset(**values)
 
-        # Agents
-        creator_email = fake.email()
-        contact_email = fake.email()
-        publisher_email = fake.email()
-        metadata_provider_email = fake.email()
-
-        dataset.creator = Agent.add_or_update_agent(mbox=creator_email)
-        dataset.dataset_contact_point = Agent.add_or_update_agent(mbox=contact_email)
-        dataset.dataset_publisher = Agent.add_or_update_agent(mbox=publisher_email)
-        dataset.dataset_metadata_provider = Agent.add_or_update_agent(mbox=metadata_provider_email)
-
-        # Keywords
-        num_keywords = random.randint(1, 3)
-        for _ in range(num_keywords):
-            keyword_name = fake.word()
-            keyword_obj = Keyword(name=keyword_name)
-            self.db_session.add(keyword_obj)
-            dataset.dataset_keywords.append(keyword_obj)
-
-        # Spatial Coverage (dynamic polygons around Wageningen, NL)
-        # Wageningen coordinates: ~5.67 E, 51.97 N
-        center_lon = 5.67 + random.uniform(-0.5, 0.5)
-        center_lat = 51.97 + random.uniform(-0.5, 0.5)
-        # Create a random polygon around the center
-        num_points = random.randint(4, 7)
-        points = []
-        for _ in range(num_points):
-            lon = center_lon + random.uniform(-0.05, 0.05)
-            lat = center_lat + random.uniform(-0.05, 0.05)
-            points.append((lon, lat))
-        polygon = Polygon(points)
-        geometry_wkt = shapely.to_wkt(GeometryCollection([polygon]))
-        dataset.dataset_spatial_coverage = Location.add_or_update_location(geometry=geometry_wkt)
-
-        dataset.temporal_coverage_start = fake.date_time_between(start_date="-5y", end_date="-3y")
-        dataset.temporal_coverage_end = fake.date_time_between(start_date="-2y", end_date="now")
-        dataset.temporal_resolution = random.choice(["P1D", "P1W", "P1M", "P1Y"]) # Daily, Weekly, Monthly, Yearly
-        dataset.spatial_resolution = random.choice(["1m", "10m", "100m", "1km", "Global", "Local"])
-        dataset.taxonomic_coverage = random.choice(["Mammals", "Birds", "Insects", "Plants", "Fungi", "Bacteria", "N/A"])
-        dataset.access_rights = random.choice(["OPEN", "RESTRICTED", "EMBARGOED"])
-
-        # License
-        license_code = random.choice(["CC-BY-4.0", "CC0-1.0", "MIT", "ODC-BY"])
-        dataset.dataset_license = LicenseDocument(code=license_code)
-        self.db_session.add(dataset.dataset_license) # Add to mock session
-
-        # Catalog
-        catalog_name = random.choice(["General Data Catalog", "Environmental Data Hub", "Research Archive"])
-        catalog_obj = Catalog(title=catalog_name)
-        self.db_session.add(catalog_obj)
-        dataset.dataset_catalog = catalog_obj
-
-        dataset.landing_page = fake.url()
-        dataset.public_id = f"DS-{dataset_id_prefix}-{fake.uuid4()[:8].upper()}"
+        if include_related:
+            dataset.creator = Agent(
+                name=f"Creator {dataset_id_prefix}",
+                type="Person",
+                mbox=f"creator-{fixture_key}@example.org",
+            )
+            dataset.dataset_contact_point = Agent(
+                name=f"Contact {dataset_id_prefix}",
+                type="Person",
+                mbox=f"contact-{fixture_key}@example.org",
+            )
+            dataset.dataset_publisher = Agent(
+                name=f"Publisher {dataset_id_prefix}",
+                type="Organisation",
+                mbox=f"publisher-{fixture_key}@example.org",
+            )
+            dataset.dataset_metadata_provider = Agent(
+                name=f"Metadata provider {dataset_id_prefix}",
+                type="Person",
+                mbox=f"provider-{fixture_key}@example.org",
+            )
+            dataset.dataset_keywords.append(Keyword(name=f"keyword-{fixture_key}"))
+            dataset.dataset_spatial_coverage = Location(
+                geometry=(
+                    "GEOMETRYCOLLECTION (POLYGON ((5.6 51.9, 5.7 51.9, "
+                    "5.7 52, 5.6 52, 5.6 51.9)))"
+                ),
+                bbox="POLYGON ((5.6 51.9, 5.7 51.9, 5.7 52, 5.6 52, 5.6 51.9))",
+                centroid="POINT (5.65 51.95)",
+            )
+            dataset.dataset_license = LicenseDocument(code="CC-BY-4.0")
+            dataset.dataset_catalog = Catalog(
+                title=f"Mock catalog - {dataset_id_prefix}"
+            )
 
         initialize_reviewable(
             dataset,
-            actor_mode=REVIEW_ACTOR_SYSTEM,
-            changed_at=dataset.modified,
+            actor_mode=actor_mode,
+            changed_at=timestamp,
         )
         if status != REVIEW_STATUS_SUBMITTED:
-            if status not in {
-                REVIEW_STATUS_ACCEPTED,
-                REVIEW_STATUS_REVISION,
-                REVIEW_STATUS_REJECTED,
-            }:
-                raise ValueError(f"Unsupported fixture review status {status!r}.")
             transition_comment = review_comment
             if status in {REVIEW_STATUS_REVISION, REVIEW_STATUS_REJECTED}:
                 transition_comment = transition_comment or "Review feedback"
@@ -127,22 +140,150 @@ class MockObjects:
                 dataset,
                 status,
                 review_comment=transition_comment,
-                actor_mode=REVIEW_ACTOR_SYSTEM,
-                changed_at=dataset.modified,
+                actor_mode=actor_mode,
+                changed_at=timestamp,
             )
 
-        self.db_session.add(dataset)
-        self.db_session.commit()
-        self.db_session.flush()
+        self._persist_dataset(dataset, persist, commit)
 
         return dataset
+
+    def create_fake_dataset(
+        self,
+        dataset_id_prefix="1",
+        status=REVIEW_STATUS_ACCEPTED,
+        review_comment=None,
+        *,
+        persist=True,
+        commit=True,
+        changed_at=None,
+        include_related=True,
+        dataset_overrides=None,
+        actor_mode=REVIEW_ACTOR_SYSTEM,
+    ):
+        """Create a varied, realistic-looking dataset for bulk test data."""
+        modified = changed_at or fake.date_time_between(
+            start_date="-1y",
+            end_date="now",
+        )
+        overrides = {
+            "modified": modified,
+            "release_date": fake.date_time_between(
+                start_date="-2y",
+                end_date="-1y",
+            ),
+            "language": random.choice(["en", "nl", "fr", "de"]),
+            "title": f"{fake.catch_phrase()} - {dataset_id_prefix}",
+            "description": fake.paragraph(nb_sentences=5),
+            "resource_type": random.choice(
+                ["Dataset", "Image Collection", "Sensor Data", "Survey Results"]
+            ),
+            "temporal_coverage_start": fake.date_time_between(
+                start_date="-5y",
+                end_date="-3y",
+            ),
+            "temporal_coverage_end": fake.date_time_between(
+                start_date="-2y",
+                end_date="now",
+            ),
+            "temporal_resolution": random.choice(["P1D", "P1W", "P1M", "P1Y"]),
+            "spatial_resolution": random.choice(
+                ["1m", "10m", "100m", "1km", "Global", "Local"]
+            ),
+            "taxonomic_coverage": random.choice(
+                [
+                    "Mammals",
+                    "Birds",
+                    "Insects",
+                    "Plants",
+                    "Fungi",
+                    "Bacteria",
+                    "N/A",
+                ]
+            ),
+            "access_rights": random.choice(["OPEN", "RESTRICTED", "EMBARGOED"]),
+            "landing_page": fake.url(),
+            "public_id": f"DS-{dataset_id_prefix}-{fake.uuid4()[:8].upper()}",
+        }
+        overrides.update(dataset_overrides or {})
+        dataset = self.create_mock_dataset(
+            dataset_id_prefix,
+            status=status,
+            review_comment=review_comment,
+            persist=False,
+            changed_at=changed_at or overrides["modified"],
+            include_related=False,
+            dataset_overrides=overrides,
+            actor_mode=actor_mode,
+        )
+
+        if include_related:
+            dataset.creator = Agent(
+                name=fake.name(),
+                type="Person",
+                mbox=fake.email(),
+            )
+            dataset.dataset_contact_point = Agent(
+                name=fake.name(),
+                type="Person",
+                mbox=fake.email(),
+            )
+            dataset.dataset_publisher = Agent(
+                name=fake.company(),
+                type="Organisation",
+                mbox=fake.email(),
+            )
+            dataset.dataset_metadata_provider = Agent(
+                name=fake.name(),
+                type="Person",
+                mbox=fake.email(),
+            )
+            for _ in range(random.randint(1, 3)):
+                dataset.dataset_keywords.append(Keyword(name=fake.word()))
+
+            center_lon = 5.67 + random.uniform(-0.5, 0.5)
+            center_lat = 51.97 + random.uniform(-0.5, 0.5)
+            half_width = random.uniform(0.01, 0.05)
+            polygon = box(
+                center_lon - half_width,
+                center_lat - half_width,
+                center_lon + half_width,
+                center_lat + half_width,
+            )
+            geometry = GeometryCollection([polygon])
+            dataset.dataset_spatial_coverage = Location(
+                geometry=shapely.to_wkt(geometry),
+                bbox=shapely.to_wkt(polygon),
+                centroid=shapely.to_wkt(geometry.centroid),
+            )
+            dataset.dataset_license = LicenseDocument(
+                code=random.choice(["CC-BY-4.0", "CC0-1.0", "MIT", "ODC-BY"])
+            )
+            dataset.dataset_catalog = Catalog(
+                title=random.choice(
+                    [
+                        "General Data Catalog",
+                        "Environmental Data Hub",
+                        "Research Archive",
+                    ]
+                )
+            )
+
+        self._persist_dataset(dataset, persist, commit)
+        return dataset
+
+    def _persist_dataset(self, dataset, persist, commit):
+        if persist:
+            self.db_session.add(dataset)
+            if commit:
+                self.db_session.commit()
 
     def generate_datasets(self, number=10, dataset_id_prefix=""):
         """
         Generate a specified number of mock datasets.
 
-        This method creates a list of mock datasets by repeatedly calling
-        :meth:`self.create_mock_dataset`. It prints progress messages
+        This method creates a list of realistic datasets by repeatedly calling
+        :meth:`self.create_fake_dataset`. It prints progress messages
         during the generation process.
 
         :param number: The number of mock datasets to generate. Defaults to 10.
@@ -153,9 +294,9 @@ class MockObjects:
         """
 
         mock_datasets = []
-        print("Generating 10 mock datasets...")
+        print(f"Generating {number} mock datasets...")
         for i in range(1, number+1):
-            dataset = self.create_mock_dataset(f"ds-{dataset_id_prefix}-{i}")
+            dataset = self.create_fake_dataset(f"ds-{dataset_id_prefix}-{i}")
             mock_datasets.append(dataset)
             print(f"Generated Dataset {i}: {dataset.title}")
         return mock_datasets
@@ -183,15 +324,15 @@ class DBSessionMock:
     :vartype _catalogs: dict
     """
 
-    _agents = {} # To store mock agents by mbox
-    _locations = {} # To store mock locations by geometry WKT
-    _keywords = {} # To store mock keywords by name
-    _datatypes = {} # To store mock datatypes by name
-    _licenses = {} # To store mock licenses by code
-    _catalogs = {} # To store mock catalogs by name
-
     def __init__(self):
         self._current_query_cls = None
+        self._agents = {}
+        self._locations = {}
+        self._keywords = {}
+        self._datatypes = {}
+        self._licenses = {}
+        self._catalogs = {}
+        self._datasets = {}
 
     def query(self, cls):
         """
@@ -206,6 +347,7 @@ class DBSessionMock:
                   or the mock session object itself to allow chaining.
         :rtype: list or :class:`DBSessionMock`
         """
+        self._current_query_cls = cls
         if cls == Agent:
             return self._agents.values()
         elif cls == Location:
@@ -218,6 +360,8 @@ class DBSessionMock:
             return self._licenses.values()
         elif cls == Catalog:
             return self._catalogs.values()
+        elif cls == Dataset:
+            return self._datasets.values()
         return self # Allow chaining for filter_by
 
     def filter_by(self, **kwargs):
@@ -298,6 +442,10 @@ class DBSessionMock:
                 self._catalogs[obj.title] = obj
             if not obj.catalog_id:
                 obj.catalog_id = len(self._catalogs)
+        elif isinstance(obj, Dataset):
+            if not obj.dataset_id:
+                obj.dataset_id = len(self._datasets) + 1
+            self._datasets[obj.dataset_id] = obj
 
     def commit(self):
         """

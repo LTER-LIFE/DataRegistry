@@ -8,6 +8,8 @@ from application.models import Dataset, ReviewLifecycle, ReviewTransition
 from test.db import engine
 
 
+# These tests construct invalid ownership and lifecycle combinations on purpose;
+# the valid aggregate factory would prevent the database constraints being tested.
 class TestReviewLifecycleConstraints(unittest.TestCase):
     def setUp(self):
         self.connection = engine.connect()

@@ -27,6 +27,8 @@ EXPECTED_UNSUPPORTED_TABLES = (
 )
 
 
+# Migration fixtures target the historical schema and malformed legacy states,
+# so they must use raw values rather than the current-schema dataset factory.
 class TestDatasetLifecycleMigration(unittest.TestCase):
     database_name = "ecosearchengine_migration_test"
 

@@ -1,4 +1,3 @@
-from datetime import datetime
 import re
 import unittest
 from unittest.mock import patch
@@ -14,11 +13,12 @@ from application.models import (
     DataTheme,
     Dataset,
     Keyword,
+    REVIEW_ACTOR_ANONYMOUS,
     ReviewLifecycle,
     ReviewTransition,
 )
-from application.workflow import initialize_reviewable
 from test.db import engine
+from test.mock_objects import MockObjects
 
 
 class TestLocalEditorBypass(unittest.TestCase):
@@ -29,6 +29,7 @@ class TestLocalEditorBypass(unittest.TestCase):
             bind=self.connection,
             join_transaction_mode="create_savepoint",
         )
+        self.mock_objects = MockObjects(db_session=db_session)
 
     def tearDown(self):
         db_session.remove()
@@ -46,23 +47,14 @@ class TestLocalEditorBypass(unittest.TestCase):
         Babel(app)
         return app
 
-    @staticmethod
-    def submitted_dataset():
-        timestamp = datetime(2026, 1, 1, 12, 0)
-        dataset = Dataset(
-            release_date=timestamp,
-            language="EN",
-            title="Locally reviewable submission",
-            description="Submitted metadata for local admin inspection.",
-            resource_type="dataset",
-            temporal_coverage_start=datetime(2020, 1, 1),
-            temporal_coverage_end=datetime(2021, 1, 1),
-            temporal_resolution="P1D",
-            access_rights="open access",
-            modified=timestamp,
+    def submitted_dataset(self):
+        return self.mock_objects.create_mock_dataset(
+            "admin",
+            status="submitted",
+            persist=False,
+            include_related=False,
+            actor_mode=REVIEW_ACTOR_ANONYMOUS,
         )
-        initialize_reviewable(dataset, changed_at=timestamp)
-        return dataset
 
     @patch("application.authentication.in_editor_group")
     def test_disabled_bypass_uses_sram_editor_policy(self, in_editor_group):
@@ -107,7 +99,7 @@ class TestLocalEditorBypass(unittest.TestCase):
         response = app.test_client().get("/admin/dataset/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Locally reviewable submission", response.data)
+        self.assertIn(b"Mock dataset - admin", response.data)
         self.assertIn(b"Submitted", response.data)
         self.assertIn(b"Review", response.data)
 

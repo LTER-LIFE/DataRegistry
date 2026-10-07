@@ -1,4 +1,3 @@
-from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -12,8 +11,6 @@ from application.models import (
     ReviewLifecycle,
     ReviewTransition,
 )
-from application.workflow import initialize_reviewable
-
 from test.base_test_case import BaseTestCase
 from test.db import engine
 from test.capture_templates import captured_templates
@@ -237,19 +234,12 @@ class TestDatasetRoutes(BaseTestCase):
         is_logged_in,
         in_editor_group,
     ):
-        timestamp = datetime(2026, 1, 1, 12, 0)
-        dataset = Dataset(
-            release_date=timestamp,
-            language="EN",
-            title="Dataset to delete",
-            description="Delete through the lifecycle aggregate.",
-            resource_type="dataset",
-            temporal_coverage_start=datetime(2020, 1, 1),
-            temporal_resolution="P1D",
-            access_rights="open access",
-            modified=timestamp,
+        dataset = self.mock_objects.create_mock_dataset(
+            "delete",
+            status="submitted",
+            persist=False,
+            include_related=False,
         )
-        initialize_reviewable(dataset, changed_at=timestamp)
         dataset.dataset_keywords.append(Keyword(name="shared keyword"))
         dataset.dataset_themes.append(
             DataTheme(code="shared-theme", label="Shared theme")

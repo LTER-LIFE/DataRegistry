@@ -9,15 +9,17 @@ from application.models import (
     ReviewLifecycle,
     REVIEW_ACTOR_SYSTEM,
 )
-from application.workflow import initialize_reviewable, transition_reviewable
+from application.workflow import transition_reviewable
 from test.base_test_case import BaseTestCase
 from test.db import engine
+from test.mock_objects import MockObjects
 
 
 class TestLiveSearchSynchronization(BaseTestCase):
     def setUp(self):
         db_session.remove()
         db_session.configure(bind=engine)
+        self.mock_objects = MockObjects(db_session=db_session)
         self.lifecycle_ids = set()
         self.index_name = f"dataset-test-{uuid.uuid4().hex}"
         self.original_index_name = search_index.INDEX_NAME
@@ -38,30 +40,14 @@ class TestLiveSearchSynchronization(BaseTestCase):
         search_index.es.indices.delete(index=self.index_name, ignore_unavailable=True)
         search_index.INDEX_NAME = self.original_index_name
 
-    @staticmethod
-    def dataset(title="Search synchronization fixture"):
-        timestamp = datetime(2026, 1, 1, 12, 0)
-        dataset = Dataset(
-            release_date=timestamp,
-            language="EN",
-            title=title,
-            description="Metadata used to verify live search synchronization.",
-            resource_type="dataset",
-            temporal_coverage_start=datetime(2020, 1, 1),
-            temporal_coverage_end=datetime(2021, 1, 1),
-            temporal_resolution="P1D",
-            access_rights="open access",
-            modified=timestamp,
-        )
-        initialize_reviewable(
-            dataset,
-            actor_mode=REVIEW_ACTOR_SYSTEM,
-            changed_at=timestamp,
-        )
-        return dataset
-
     def commit_dataset(self, title="Search synchronization fixture"):
-        dataset = self.dataset(title)
+        dataset = self.mock_objects.create_mock_dataset(
+            title,
+            status="submitted",
+            persist=False,
+            include_related=False,
+            dataset_overrides={"title": title},
+        )
         db_session.add(dataset)
         db_session.commit()
         self.lifecycle_ids.add(dataset.review_lifecycle_id)
@@ -187,8 +173,20 @@ class TestLiveSearchSynchronization(BaseTestCase):
 
     def test_queue_deduplicates_and_continues_after_sync_failure(self):
         with self.app.app_context():
-            first = self.dataset("First queued dataset")
-            second = self.dataset("Second queued dataset")
+            first = self.mock_objects.create_mock_dataset(
+                "first-queued",
+                status="submitted",
+                persist=False,
+                include_related=False,
+                dataset_overrides={"title": "First queued dataset"},
+            )
+            second = self.mock_objects.create_mock_dataset(
+                "second-queued",
+                status="submitted",
+                persist=False,
+                include_related=False,
+                dataset_overrides={"title": "Second queued dataset"},
+            )
             db_session.add_all((first, second))
             db_session.commit()
             self.lifecycle_ids.update(

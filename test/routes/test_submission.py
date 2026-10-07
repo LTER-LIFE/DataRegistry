@@ -14,6 +14,8 @@ from test.base_test_case import BaseTestCase
 from test.db import engine
 
 
+# Form payloads remain explicit because these tests validate HTTP parsing and
+# Dataset construction itself, which an ORM fixture would bypass.
 def submission_data():
     return {
         "metadata_provider_name": "Metadata Provider",

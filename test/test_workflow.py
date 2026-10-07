@@ -6,8 +6,11 @@ from sqlalchemy.orm import sessionmaker
 from application.models import Dataset, ReviewTransition
 from application.workflow import initialize_reviewable, transition_reviewable
 from test.db import engine
+from test.mock_objects import MockObjects
 
 
+# Direct minimal construction is intentional here: lifecycle initialization and
+# invalid intermediate states are the behavior under test.
 class TestReviewWorkflow(unittest.TestCase):
     @staticmethod
     def dataset(status="submitted"):
@@ -176,21 +179,19 @@ class TestReviewWorkflow(unittest.TestCase):
 class TestPersistedReviewWorkflow(unittest.TestCase):
     def test_stale_reviewer_state_is_refreshed_under_row_lock(self):
         timestamp = datetime(2026, 1, 1, 12, 0)
-        dataset = Dataset(
-            release_date=timestamp,
-            language="EN",
-            title="Concurrent review fixture",
-            description="Verify serialized lifecycle transitions.",
-            resource_type="dataset",
-            temporal_coverage_start=datetime(2020, 1, 1),
-            temporal_resolution="P1D",
-            access_rights="open access",
-            modified=timestamp,
-        )
-        initialize_reviewable(dataset, changed_at=timestamp)
-
         session_factory = sessionmaker(bind=engine)
         setup_session = session_factory()
+        dataset = MockObjects(db_session=setup_session).create_mock_dataset(
+            "concurrent-review",
+            status="submitted",
+            persist=False,
+            changed_at=timestamp,
+            include_related=False,
+            dataset_overrides={
+                "title": "Concurrent review fixture",
+                "description": "Verify serialized lifecycle transitions.",
+            },
+        )
         setup_session.add(dataset)
         setup_session.commit()
         dataset_id = dataset.dataset_id

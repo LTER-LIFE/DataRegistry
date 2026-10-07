@@ -9,6 +9,8 @@ class TestSearchIndex(unittest.TestCase):
     @patch.object(search_index, "es")
     def test_rebuild_uses_stable_ids_and_accepted_records_only(self, es):
         es.indices.exists.return_value = True
+        # Lightweight protocol stubs keep this unit test independent of the ORM,
+        # database, and Flask serialization context.
         accepted = SimpleNamespace(
             dataset_id=4,
             review_lifecycle=SimpleNamespace(status="accepted"),
