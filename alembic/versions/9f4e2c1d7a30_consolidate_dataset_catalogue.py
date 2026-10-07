@@ -23,6 +23,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+# Fields used to identify the canonical row matching an approved staging row.
 DATASET_FIELDS = (
     "release_date",
     "language",
@@ -40,6 +41,7 @@ DATASET_FIELDS = (
     "public_id",
 )
 
+# These staging relationships have no supported canonical migration path yet.
 UNSUPPORTED_STAGING_TABLES = (
     "CatalogStaging",
     "DataThemeStaging",
@@ -53,17 +55,163 @@ UNSUPPORTED_STAGING_TABLES = (
 )
 
 
+def upgrade() -> None:
+    """Consolidate staging records into lifecycle-backed canonical datasets."""
+    connection = op.get_bind()
+
+    # 1. Freeze every source table used by validation or copying so the
+    # preflight result remains valid for the duration of the migration.
+    connection.execute(
+        sa.text(
+            'LOCK TABLE "Dataset", "DatasetStaging", "Agent", '
+            '"AgentStaging", "Keyword", "KeywordStaging", '
+            '"LicenseDocument", "LicenseDocumentStaging", "Location", '
+            '"LocationStaging", "Distribution", "datasetKeyword", '
+            '"datasetKeywordStaging", "datasetDataTheme", "CatalogStaging", '
+            '"DataThemeStaging", "DistributionStaging", '
+            '"ChecksumStaging", "MediaTypeStaging", "DataServiceStaging", '
+            '"datasetDataThemeStaging", "dataThemeCatalogStaging", '
+            '"dataserviceMediaTypeStaging" '
+            "IN SHARE ROW EXCLUSIVE MODE"
+        )
+    )
+    _validate_source(connection)
+
+    # 2. Record the source count and one shared cutover time for deterministic
+    # lifecycle snapshots and post-copy reconciliation.
+    original_main_count = connection.execute(
+        sa.text('SELECT COUNT(*) FROM "Dataset"')
+    ).scalar_one()
+    cutover_at = connection.execute(
+        sa.text("SELECT timezone('UTC', CURRENT_TIMESTAMP)")
+    ).scalar_one()
+
+    # 3. Add the lifecycle schema and nullable owner columns. Nullability is
+    # tightened only after every canonical dataset has an owner lifecycle.
+    _create_review_tables()
+    op.add_column(
+        "Dataset",
+        sa.Column("review_lifecycle_id", sa.Integer(), nullable=True),
+    )
+    op.add_column(
+        "Dataset",
+        sa.Column(
+            "review_owner_type",
+            sa.String(length=32),
+            nullable=True,
+            server_default="dataset",
+        ),
+    )
+
+    # 4. Existing canonical rows become accepted; non-approved staging rows
+    # are copied into the canonical catalogue with their current review state.
+    _attach_canonical_lifecycles(connection, cutover_at)
+    migrated_count = _migrate_staging_datasets(connection, cutover_at)
+
+    # 5. Enforce typed one-to-one ownership after the data backfill completes.
+    op.alter_column("Dataset", "review_lifecycle_id", nullable=False)
+    op.alter_column("Dataset", "review_owner_type", nullable=False)
+    op.create_check_constraint(
+        "ck_Dataset_review_owner_type",
+        "Dataset",
+        "review_owner_type = 'dataset'",
+    )
+    op.create_unique_constraint(
+        "uq_Dataset_review_lifecycle_id",
+        "Dataset",
+        ["review_lifecycle_id"],
+    )
+    op.create_foreign_key(
+        "fk_Dataset_review_lifecycle",
+        "Dataset",
+        "ReviewLifecycle",
+        ["review_lifecycle_id", "review_owner_type"],
+        ["review_lifecycle_id", "owner_type"],
+        ondelete="CASCADE",
+        deferrable=True,
+        initially="DEFERRED",
+    )
+
+    # Dataset-owned dependants must be removed with the aggregate. Shared
+    # catalogue entities remain independent and are not cascaded from Dataset.
+    _replace_dataset_foreign_key_with_cascade(
+        connection,
+        "Distribution",
+        "distribution_dataset_id",
+    )
+    _replace_dataset_foreign_key_with_cascade(
+        connection,
+        "datasetDataTheme",
+        "dataset_id",
+    )
+    _replace_dataset_foreign_key_with_cascade(
+        connection,
+        "datasetKeyword",
+        "dataset_id",
+    )
+
+    # 6. Reconcile row, lifecycle, transition, and ownership counts before the
+    # transaction can commit.
+    final_count = connection.execute(
+        sa.text('SELECT COUNT(*) FROM "Dataset"')
+    ).scalar_one()
+    if final_count != original_main_count + migrated_count:
+        raise RuntimeError(
+            "Catalogue consolidation produced an unexpected Dataset row count"
+        )
+
+    lifecycle_count = connection.execute(
+        sa.text('SELECT COUNT(*) FROM "ReviewLifecycle"')
+    ).scalar_one()
+    transition_count = connection.execute(
+        sa.text('SELECT COUNT(*) FROM "ReviewTransition"')
+    ).scalar_one()
+    owned_lifecycle_count = connection.execute(
+        sa.text(
+            'SELECT COUNT(*) FROM "ReviewLifecycle" lifecycle '
+            'JOIN "Dataset" dataset '
+            "ON dataset.review_lifecycle_id = lifecycle.review_lifecycle_id "
+            "AND dataset.review_owner_type = lifecycle.owner_type"
+        )
+    ).scalar_one()
+    if lifecycle_count != final_count or transition_count != lifecycle_count:
+        raise RuntimeError(
+            "Catalogue consolidation produced unexpected lifecycle or transition counts"
+        )
+    if owned_lifecycle_count != lifecycle_count:
+        raise RuntimeError(
+            "Catalogue consolidation produced an invalid lifecycle owner count"
+        )
+
+    # 7. Install deferred ownership checks and immutable-history enforcement.
+    _create_review_triggers(connection)
+
+
+def downgrade() -> None:
+    """Reject reversal because consolidation cannot reconstruct staging state."""
+    raise RuntimeError(
+        "Catalogue consolidation is irreversible; restore the matching database "
+        "backup and application release instead."
+    )
+
+
+# Source validation and approved-row reconciliation
+
 def _signature(row):
+    """Return the metadata tuple used to reconcile approved staging rows."""
     return tuple(row[field] for field in DATASET_FIELDS)
 
 
 def _ids(connection, query, parameters=None):
+    """Execute a query and return its first-column values as a list."""
     return list(connection.execute(sa.text(query), parameters or {}).scalars())
 
 
 def _validate_source(connection):
+    """Reject source data that cannot be consolidated without ambiguity or loss."""
     blockers = []
 
+    # "Contradictory" means both mutually exclusive legacy decision flags are set.
     contradictory = _ids(
         connection,
         'SELECT dataset_id FROM "DatasetStaging" '
@@ -72,6 +220,7 @@ def _validate_source(connection):
     if contradictory:
         blockers.append(f"approved and rejected staging datasets: {contradictory[:10]}")
 
+    # Approval state and approval timestamp must either both be present or absent.
     invalid_approval_dates = _ids(
         connection,
         'SELECT dataset_id FROM "DatasetStaging" '
@@ -84,6 +233,7 @@ def _validate_source(connection):
             f"{invalid_approval_dates[:10]}"
         )
 
+    # A terminal rejection needs feedback; resubmitted rows are no longer terminal.
     rejected_without_comment = _ids(
         connection,
         'SELECT dataset_id FROM "DatasetStaging" '
@@ -97,6 +247,7 @@ def _validate_source(connection):
             f"{rejected_without_comment[:10]}"
         )
 
+    # Any rows here would be silently orphaned because these entities are not copied.
     for table_name in UNSUPPORTED_STAGING_TABLES:
         count = connection.execute(
             sa.text(f'SELECT COUNT(*) FROM "{table_name}"')
@@ -104,6 +255,7 @@ def _validate_source(connection):
         if count:
             blockers.append(f'{table_name} contains {count} unsupported row(s)')
 
+    # Staging catalogue references cannot be mapped to canonical catalogues safely.
     catalogued = _ids(
         connection,
         'SELECT dataset_id FROM "DatasetStaging" '
@@ -114,6 +266,7 @@ def _validate_source(connection):
             f"staging datasets reference a staging catalogue: {catalogued[:10]}"
         )
 
+    # A non-approved submission must not claim an identifier already made public.
     identifier_conflicts = _ids(
         connection,
         'SELECT DISTINCT staging.dataset_id FROM "DatasetStaging" staging '
@@ -127,6 +280,7 @@ def _validate_source(connection):
             f"{identifier_conflicts[:10]}"
         )
 
+    # Invalid source geometry cannot be copied into a trustworthy canonical record.
     invalid_geometries = _ids(
         connection,
         'SELECT staging.dataset_id FROM "DatasetStaging" staging '
@@ -139,6 +293,8 @@ def _validate_source(connection):
             f"staging datasets contain invalid geometry: {invalid_geometries[:10]}"
         )
 
+    # Approved staging rows were already promoted by the old workflow. Their
+    # metadata signature must identify exactly one existing canonical row.
     main_rows = connection.execute(
         sa.text(
             f'SELECT dataset_id, {", ".join(DATASET_FIELDS)} FROM "Dataset"'
@@ -175,7 +331,12 @@ def _validate_source(connection):
         raise RuntimeError(f"Catalogue consolidation preflight failed:\n- {details}")
 
 
+# Supported staging relationship copying
+# Mappings ensure one canonical helper row is reused when several datasets
+# reference the same staging row.
+
 def _copy_agent(connection, staging_id, mapping):
+    """Copy one staging agent once and return its canonical identifier."""
     if staging_id is None:
         return None
     if staging_id not in mapping:
@@ -191,6 +352,7 @@ def _copy_agent(connection, staging_id, mapping):
 
 
 def _copy_keyword(connection, staging_id, mapping):
+    """Copy one staging keyword once and return its canonical identifier."""
     if staging_id not in mapping:
         mapping[staging_id] = connection.execute(
             sa.text(
@@ -204,6 +366,7 @@ def _copy_keyword(connection, staging_id, mapping):
 
 
 def _copy_license(connection, staging_id, mapping):
+    """Copy one staging license once and return its canonical identifier."""
     if staging_id is None:
         return None
     if staging_id not in mapping:
@@ -222,6 +385,7 @@ def _copy_license(connection, staging_id, mapping):
 
 
 def _copy_location(connection, staging_id, mapping):
+    """Copy one staging location once and return its canonical identifier."""
     if staging_id is None:
         return None
     if staging_id not in mapping:
@@ -236,7 +400,10 @@ def _copy_location(connection, staging_id, mapping):
     return mapping[staging_id]
 
 
+# Lifecycle backfill and dataset consolidation
+
 def _latest_change(row):
+    """Return the latest legacy timestamp that represents a metadata change."""
     values = [row["modified"], row["rejected_at"], row["resubmitted_at"]]
     return max(value for value in values if isinstance(value, datetime))
 
@@ -251,6 +418,7 @@ def _create_lifecycle_snapshot(
     submitter_id=None,
     changed_at,
 ):
+    """Create a lifecycle and its initial immutable migration transition."""
     lifecycle_id = connection.execute(
         sa.text(
             'INSERT INTO "ReviewLifecycle" '
@@ -286,6 +454,7 @@ def _create_lifecycle_snapshot(
 
 
 def _attach_canonical_lifecycles(connection, cutover_at):
+    """Attach an accepted lifecycle snapshot to every canonical dataset."""
     dataset_ids = _ids(
         connection,
         'SELECT dataset_id FROM "Dataset" ORDER BY dataset_id',
@@ -308,11 +477,14 @@ def _attach_canonical_lifecycles(connection, cutover_at):
 
 
 def _migrate_staging_datasets(connection, cutover_at):
+    """Copy non-approved staging datasets and their supported relationships."""
     agent_mapping = {}
     keyword_mapping = {}
     license_mapping = {}
     location_mapping = {}
 
+    # Approved staging rows are excluded: validation already matched them to
+    # canonical records, which receive lifecycles in _attach_canonical_lifecycles.
     staging_rows = connection.execute(
         sa.text(
             'SELECT * FROM "DatasetStaging" '
@@ -338,6 +510,8 @@ def _migrate_staging_datasets(connection, cutover_at):
             connection, row["dataset_license_id"], license_mapping
         )
 
+        # An unreopened rejection remains rejected. Pending and resubmitted
+        # records both enter the canonical catalogue as submitted for review.
         status = (
             "rejected"
             if row["is_rejected"] is True and row["resubmitted_at"] is None
@@ -398,7 +572,10 @@ def _migrate_staging_datasets(connection, cutover_at):
     return len(staging_rows)
 
 
+# Schema creation and aggregate integrity enforcement
+
 def _create_review_tables():
+    """Create normalized lifecycle and immutable transition tables."""
     op.create_table(
         "ReviewLifecycle",
         sa.Column("review_lifecycle_id", sa.Integer(), nullable=False),
@@ -503,6 +680,7 @@ def _create_review_tables():
 
 
 def _replace_dataset_foreign_key_with_cascade(connection, table_name, column_name):
+    """Replace a Dataset foreign key with an ON DELETE CASCADE equivalent."""
     foreign_keys = sa.inspect(connection).get_foreign_keys(table_name)
     existing = next(
         foreign_key
@@ -522,6 +700,9 @@ def _replace_dataset_foreign_key_with_cascade(connection, table_name, column_nam
 
 
 def _create_review_triggers(connection):
+    """Enforce exactly-one ownership and immutable transition history."""
+    # Deferred ownership checks allow lifecycle and owner rows to be inserted or
+    # deleted in either order within one transaction, while enforcing the final state.
     connection.execute(
         sa.text(
             """
@@ -607,6 +788,8 @@ def _create_review_triggers(connection):
         )
     )
 
+    # Transition updates are always forbidden. Deletes are allowed only when a
+    # lifecycle cascade is already removing the aggregate.
     connection.execute(
         sa.text(
             """
@@ -644,130 +827,4 @@ def _create_review_triggers(connection):
             EXECUTE FUNCTION prevent_review_transition_mutation()
             """
         )
-    )
-
-
-def upgrade() -> None:
-    connection = op.get_bind()
-    if connection.dialect.name != "postgresql":
-        raise RuntimeError("Catalogue consolidation requires PostgreSQL/PostGIS")
-
-    connection.execute(
-        sa.text(
-            'LOCK TABLE "Dataset", "DatasetStaging", "Agent", '
-            '"AgentStaging", "Keyword", "KeywordStaging", '
-            '"LicenseDocument", "LicenseDocumentStaging", "Location", '
-            '"LocationStaging", "Distribution", "datasetKeyword", '
-            '"datasetKeywordStaging", "datasetDataTheme", "CatalogStaging", '
-            '"DataThemeStaging", "DistributionStaging", '
-            '"ChecksumStaging", "MediaTypeStaging", "DataServiceStaging", '
-            '"datasetDataThemeStaging", "dataThemeCatalogStaging", '
-            '"dataserviceMediaTypeStaging" '
-            "IN SHARE ROW EXCLUSIVE MODE"
-        )
-    )
-    _validate_source(connection)
-
-    original_main_count = connection.execute(
-        sa.text('SELECT COUNT(*) FROM "Dataset"')
-    ).scalar_one()
-    cutover_at = connection.execute(
-        sa.text("SELECT timezone('UTC', CURRENT_TIMESTAMP)")
-    ).scalar_one()
-
-    _create_review_tables()
-    op.add_column(
-        "Dataset",
-        sa.Column("review_lifecycle_id", sa.Integer(), nullable=True),
-    )
-    op.add_column(
-        "Dataset",
-        sa.Column(
-            "review_owner_type",
-            sa.String(length=32),
-            nullable=True,
-            server_default="dataset",
-        ),
-    )
-
-    _attach_canonical_lifecycles(connection, cutover_at)
-    migrated_count = _migrate_staging_datasets(connection, cutover_at)
-
-    op.alter_column("Dataset", "review_lifecycle_id", nullable=False)
-    op.alter_column("Dataset", "review_owner_type", nullable=False)
-    op.create_check_constraint(
-        "ck_Dataset_review_owner_type",
-        "Dataset",
-        "review_owner_type = 'dataset'",
-    )
-    op.create_unique_constraint(
-        "uq_Dataset_review_lifecycle_id",
-        "Dataset",
-        ["review_lifecycle_id"],
-    )
-    op.create_foreign_key(
-        "fk_Dataset_review_lifecycle",
-        "Dataset",
-        "ReviewLifecycle",
-        ["review_lifecycle_id", "review_owner_type"],
-        ["review_lifecycle_id", "owner_type"],
-        ondelete="CASCADE",
-        deferrable=True,
-        initially="DEFERRED",
-    )
-
-    _replace_dataset_foreign_key_with_cascade(
-        connection,
-        "Distribution",
-        "distribution_dataset_id",
-    )
-    _replace_dataset_foreign_key_with_cascade(
-        connection,
-        "datasetDataTheme",
-        "dataset_id",
-    )
-    _replace_dataset_foreign_key_with_cascade(
-        connection,
-        "datasetKeyword",
-        "dataset_id",
-    )
-
-    final_count = connection.execute(
-        sa.text('SELECT COUNT(*) FROM "Dataset"')
-    ).scalar_one()
-    if final_count != original_main_count + migrated_count:
-        raise RuntimeError(
-            "Catalogue consolidation produced an unexpected Dataset row count"
-        )
-
-    lifecycle_count = connection.execute(
-        sa.text('SELECT COUNT(*) FROM "ReviewLifecycle"')
-    ).scalar_one()
-    transition_count = connection.execute(
-        sa.text('SELECT COUNT(*) FROM "ReviewTransition"')
-    ).scalar_one()
-    owned_lifecycle_count = connection.execute(
-        sa.text(
-            'SELECT COUNT(*) FROM "ReviewLifecycle" lifecycle '
-            'JOIN "Dataset" dataset '
-            "ON dataset.review_lifecycle_id = lifecycle.review_lifecycle_id "
-            "AND dataset.review_owner_type = lifecycle.owner_type"
-        )
-    ).scalar_one()
-    if lifecycle_count != final_count or transition_count != lifecycle_count:
-        raise RuntimeError(
-            "Catalogue consolidation produced unexpected lifecycle or transition counts"
-        )
-    if owned_lifecycle_count != lifecycle_count:
-        raise RuntimeError(
-            "Catalogue consolidation produced an invalid lifecycle owner count"
-        )
-
-    _create_review_triggers(connection)
-
-
-def downgrade() -> None:
-    raise RuntimeError(
-        "Catalogue consolidation is irreversible; restore the matching database "
-        "backup and application release instead."
     )
