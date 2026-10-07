@@ -6,3 +6,6 @@ __pycache__
 flask_session/*
 .venv
 docker-compose.override.yml
+
+# Translations
+messages.pot

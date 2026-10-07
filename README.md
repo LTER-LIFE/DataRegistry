@@ -27,6 +27,7 @@ sudo sysctl -p
 - Start the database and Elasticsearch without exposing the application:
   `docker compose up --detach database es01`
 - Run database migrations:
+  - on an existing database, first make a [manual backup](#manual-backup)
   - for a new installation, run `docker compose run --rm --no-deps app alembic upgrade head`
   - before upgrading an existing database from revision `251acb193b99`, follow the [catalogue migration runbook](docs/catalogue-migration.md)
   - capture the read-only preflight report with `docker compose run --rm --no-deps app python -m scripts.catalogue_migration_preflight --json > catalogue-preflight.json`
@@ -45,16 +46,99 @@ sudo sysctl -p
   - log into the database container to restore the backup.
 
 By default:
-- the app is available at http://localhost:8000
+- the app is available at http://localhost:8084 (the `PORT` from your `.env`)
 - the database is available at localhost, port 25432. Please see the `.env` file for the connection details.
 - Elasticsearch is available at https://localhost:9200.
 
 ---
 
+## Database backup
+
+Automatic database backups are handled by [`kartoza/pg-backup`](https://github.com/kartoza/docker-pg-backup), the backup companion to the `kartoza/postgis`
+`database` image (so `pg_dump` always matches the server version). It is **disabled by default**.
+
+### Enable backup:
+- copy `docker-compose.override.yml.example` to `docker-compose.override.yml` (if you haven't already) and uncomment the `backup` service.
+- add the backup variables to your `.env`:
+  - `BACKUP_DIR` — the host folder where dumps are written
+  - `CRON_SCHEDULE` — when backups run, in cron syntax (default: daily at midnight)
+  - `REMOVE_BEFORE` — delete dumps older than this many days
+- validate your config with `docker compose config`
+- (re)start the stack: `docker compose up --detach`
+
+Backups are written to `BACKUP_DIR` as compressed archives using `pg_dump -Fc --data-only`, i.e.
+**data only, without the schema**.
+
+### Retention:
+The image names each dump `PG_<database>.<dd-Month-yyyy>.dmp` and overwrites it on repeat runs on the same
+day, so a daily `CRON_SCHEDULE` leaves one dump per day. Retention is two tiers:
+
+- **a month of daily dumps**: set `REMOVE_BEFORE=30` in your `.env`. After every backup the container
+  deletes dumps older than that.
+- **one dump per month, kept indefinitely**: copy the first dump of each month out of `BACKUP_DIR`, in
+  `/etc/cron.d/ecometa-monthly-backup`:
+
+```cron
+0 4 1 * * root cp /var/backups/ecometa/$(date +\%Y)/$(date +\%B)/PG_ecosearchengine.*.dmp /var/backups/ecometa-monthly/
+```
+
+The monthly folder has to sit outside `BACKUP_DIR`, because the container's pruning walks that whole tree.
+Adjust the paths to match your `BACKUP_DIR` and database name.
+
+### Manual backup:
+Make one before anything that could damage the database: migrations, restores and releases.
+The `backup` service has to be enabled (see [Enable backup](#enable-backup)).
+
+```bash
+docker compose run --rm --no-deps -e RUN_ONCE=TRUE \
+  -e ARCHIVE_FILENAME=manual-$(date +%F_%H%M)-<reason> backup
+```
+
+- `RUN_ONCE=TRUE` takes one dump and exits. Without it the container starts its cron schedule and keeps running.
+- `ARCHIVE_FILENAME` writes `<name>.<database>.dmp` to the top of `BACKUP_DIR`, e.g.
+  `manual-2026-09-28_1221-release-v1.4.ecosearchengine.dmp`, so the scheduled dumps never overwrite it.
+
+> [!WARNING]
+> Manual backups are pruned like the scheduled ones: `REMOVE_BEFORE` deletes them after that many days
+> (30 with the retention above). Copy a dump out of `BACKUP_DIR` to keep it longer.
+
+### Restoring:
+- log into the database container, where `BACKUP_DIR` is mounted at `/backups`.
+  Scheduled dumps are in `/backups/<year>/<Month>/`, manual ones directly in `/backups/`
+  (use that path in place of `/backups/<year>/<Month>/<dump>.dmp` below):
+  ```bash
+  docker compose exec database bash
+  ```
+- read the schema version the dump was taken at:
+  ```bash
+  pg_restore -a -t alembic_version -f - /backups/<year>/<Month>/<dump>.dmp | grep "public.alembic_version" -A1
+  ```
+- if the database holds data you may still need, first make a [manual backup](#manual-backup) of it.
+- check out that version of the app and run its migrations in the app container (see
+  [Getting started](#-getting-started)). The dump holds **data only**, so the schema has to be in place first.
+- empty the version table, or `alembic_version` ends up with two rows:
+  ```bash
+  PGPASSWORD=$POSTGRES_PASS psql -h 127.0.0.1 -U $POSTGRES_USER -d $POSTGRES_DBNAME -c 'TRUNCATE alembic_version'
+  ```
+- restore the data:
+  ```bash
+  PGPASSWORD=$POSTGRES_PASS pg_restore -h 127.0.0.1 -U $POSTGRES_USER -d $POSTGRES_DBNAME /backups/<year>/<Month>/<dump>.dmp
+  ```
+
 ## Running tests
 - make sure the Docker Compose environment is running
 - log into the app container: `docker compose exec app bash`
 - run the tests with: `python -m unittest`
+
+## Translating the app
+The app uses Flask-Babel for managing translations. In order to add or modify translatable strings, first add or modify an English string in a template file (e.g. `about.html`) or Python file (e.g. `routes.py`). Then, navigate to the project's root folder and run the following commands:
+
+- Extract translatable English strings from the application: `uv run pybabel extract -F babel.cfg -k _l -o messages.pot .`. Note: the `messages.pot` file is not version-controlled, as this can be generated at any time.
+- Update the Dutch translation: `uv run pybabel update -i messages.pot -d application/translations`. This merges new and updated with the already translated strings. Add or update any missing Dutch strings in `application/translations/nl/LC_MESSAGES/messages.po`.
+- After translating to Dutch, re-run the previous update command to fix the formatting of the translated Dutch text. This helps with clean diffs, so when the next person updates the `messages.po` file they dont end up re-formatting large parts of the file which they didn't modify.
+- Compile the `messages.po` file for usage in app: `uv run pybabel compile -d application/translations`. This results in a `messages.mo` file, which is used when retrieving tranlations on runtime.
+
+Note: do not change English strings in the `messages.po` file as the English strings acts as keys when searching for translations. Modifying the key can results in losing the connection to the source file, and as a result the Dutch translation will not show at all or not show correctly.
 
 ## 🤝 Contributing
 
@@ -66,11 +150,12 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) an
 2. Create a commit, which
     * moves the contents from the "[Unreleased]" section in the [CHANGELOG.md](CHANGELOG.md) to a new versioned section
     * updates the version in `pyproject.toml`
+    * runs `uv lock` so `uv.lock` records the new version
 3. Tag this commit with a new version: `git tag -a <version> -m "<description>" <commit-hash>`
 4. Create a new GitHub release, point to relevant section in the changelog
 5. Deploy release. First deploy release on acceptance. After confirmation by product owner, deploy release on production. Follow this procedure:
     * stop application writes and web access: `docker compose stop app`
-    * create and verify a full PostgreSQL schema-and-data backup using the backup tooling configured for the deployment; the repository does not currently define a Compose `backup` service
+    * create a [manual backup](#manual-backup) with `<reason>` set to `release-<tag-name>`
     * pull latest version of app: `git fetch --tags` and `git checkout tags/<tag-name>`
     * build the release image without starting the web service: `docker compose build app`
     * when the release includes the catalogue migration, complete the [catalogue migration runbook](docs/catalogue-migration.md) before starting the app

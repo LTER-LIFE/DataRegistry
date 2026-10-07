@@ -1,68 +1,85 @@
-<header class="header">
-    <nav class="navbar navbar-expand-lg bg-white">
-      <div class="container">
-        <a class="navbar-brand" href="https://lter-nl.nl/en/data">
+<header class="header bg-white">
+    <div class="container d-flex justify-content-between align-items-md-center">
+        <a class="header-logo d-flex flex-column flex-md-row align-items-md-center" href="https://lter-nl.nl/en/data">
           <img
             src="{{ url_for('static', filename='img/logo-lter-nl.png') }}"
             alt="LTER-NL logo"
             height="92"
             class="d-inline-block me-3"
           >
-          LTER-NL Data Registry <small class="text-black-50">(beta)</small>
+            <span>LTER-NL Data Registry <small class="text-black-50">(beta)</small></span>
         </a>
 
-        <button
-          class="navbar-toggler ms-auto"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbar-main-menu"
-          aria-controls="navbar-main-menu"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
+        <div>
+            <nav class="top-menu navbar navbar-expand shadow-none" aria-labelledby="navbar-top-menu">
+                <ul id="navbar-top-menu" class="navbar-nav ms-auto">
+                    {% for language in languages %}
+                       <li class="nav-item">
+                         <a
+                           class="nav-link {% if active_language == language %}active{% endif %}"
+                           href="{{ url_for('main_bp.set_language', language_key=language) }}"
+                         >
+                             {{ language | upper }}
+                         </a>
+                       </li>
+                    {% endfor %}
+                </ul>
+            </nav>
 
-        <div class="collapse navbar-collapse" id="navbar-main-menu">
-          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <a
-                class="nav-link {% if request.path == url_for('main_bp.datasets') %}active{% endif %}"
-                href="{{ url_for('main_bp.datasets') }}"
-              >
-                  Datasets
-              </a>
-            </li>
+            <nav class="main-menu navbar navbar-expand-lg" aria-labelledby="navbar-main-menu">
+                <button
+                  class="navbar-toggler ms-auto mt-3"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#navbar-main-menu"
+                  aria-controls="navbar-main-menu"
+                  aria-expanded="false"
+                  aria-label="Toggle navigation"
+                >
+                  <span class="navbar-toggler-icon"></span>
+                </button>
 
-            <li class="nav-item">
-              <a
-                class="nav-link {% if request.path == url_for('main_bp.stage_dataset') %}active{% endif %}"
-                href="{{ url_for('main_bp.stage_dataset') }}"
-              >
-                  Register dataset
-              </a>
-            </li>
+                <div class="collapse navbar-collapse" id="navbar-main-menu">
+                  <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                      <a
+                        class="nav-link {% if request.path == url_for('main_bp.datasets') %}active{% endif %}"
+                        href="{{ url_for('main_bp.datasets') }}"
+                      >
+                          {{ _('Datasets') }}
+                      </a>
+                    </li>
 
-            <li class="nav-item">
-              <a
-                class="nav-link {% if request.path == url_for('main_bp.download_list') %}active{% endif %}"
-                href="{{ url_for('main_bp.download_list') }}"
-              >
-                  Download list
-                  {% if download_list_item_count > 0 %} ({{ download_list_item_count }}) {% endif %}
-              </a>
-            </li>
+                    <li class="nav-item">
+                      <a
+                        class="nav-link {% if request.path == url_for('main_bp.stage_dataset') %}active{% endif %}"
+                        href="{{ url_for('main_bp.stage_dataset') }}"
+                      >
+                          {{ _('Register dataset') }}
+                      </a>
+                    </li>
 
-            <li class="nav-item">
-              <a
-                class="nav-link {% if request.path == url_for('main_bp.about') %}active{% endif %}"
-                href="{{ url_for('main_bp.about') }}"
-              >
-                  About
-              </a>
-            </li>
-          </ul>
+                    <li class="nav-item">
+                      <a
+                        class="nav-link {% if request.path == url_for('main_bp.download_list') %}active{% endif %}"
+                        href="{{ url_for('main_bp.download_list') }}"
+                      >
+                          {{ _('Download list') }}
+                          {% if download_list_item_count > 0 %} ({{ download_list_item_count }}) {% endif %}
+                      </a>
+                    </li>
+
+                    <li class="nav-item">
+                      <a
+                        class="nav-link {% if request.path == url_for('main_bp.about') %}active{% endif %}"
+                        href="{{ url_for('main_bp.about') }}"
+                      >
+                          {{ _('About') }}
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+            </nav>
         </div>
-      </div>
-    </nav>
+    </div>
 </header>

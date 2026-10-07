@@ -25,6 +25,9 @@ def get_code_challenge():
 
 
 class Config(object):
+    LANGUAGES = ['en', 'nl']
+    BABEL_DEFAULT_LOCALE = 'en'
+
     LLM_API_KEY = environ.get('LLM_API_KEY', 'none')
     LLM_SERVICE_URL = environ.get('LLM_SERVICE_URL', '')
     LLM_MODEL = environ.get('LLM_MODEL', 'gemini-2.5-flash')

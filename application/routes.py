@@ -4,21 +4,24 @@ import io
 import json
 import logging
 import zipfile
+from datetime import date, datetime
+from urllib.parse import urljoin, urlparse
+
 import requests
 import traceback
 import time
-from datetime import datetime
 
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file, jsonify
 
 from flask import current_app as app
+from flask_babel import _, lazy_gettext as _l
 import jwt
 import markupsafe
 import shapely
 from sqlalchemy import func
 from sqlalchemy.orm import contains_eager
 
-from application import search_index
+from application import get_locale, search_index
 from application.authentication import in_editor_group, oidc_subject, valid_token
 from application.database import db_session
 from application.forms import DatasetForm, LlmForm
@@ -149,7 +152,7 @@ def stage_dataset():
             return redirect(url_for("main_bp.stage_dataset"))
 
         page = render_template('dataset_form.html', form=dataset_form, name=name, llm_form=llm_form,
-                               form_action=url_for("main_bp.stage_dataset"), title="Register your dataset")
+                               form_action=url_for("main_bp.stage_dataset"), title=_('Register your dataset'))
         return page
     except Exception as e:
         db_session.rollback()
@@ -165,7 +168,7 @@ async def dataset_from_ai_submit():
             service = LlmMetadataService()
             job_id = await service.submit_job(llm_form.dataset_url.data)
             return jsonify({"job_id": job_id})
-        return jsonify({"error": "Invalid form"}), 400
+        return jsonify({"error": _l("Invalid form")}), 400
     except Exception as e:
         logging.error(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
@@ -195,7 +198,7 @@ async def dataset_from_ai():
     llm_form = LlmForm()
     llm_metadata_service = LlmMetadataService()
 
-    name = "LLM Prefilled dataset"
+    name = _l("LLM Prefilled dataset")
     try:
         job_id = request.form.get("job_id")
         if job_id:
@@ -212,7 +215,7 @@ async def dataset_from_ai():
 
         page = render_template(
             'dataset_form.html', form=dataset_form, llm_form=llm_form, name=name,
-            form_action=url_for("main_bp.stage_dataset"), title="Register your dataset"
+            form_action=url_for("main_bp.stage_dataset"), title=_l("Register your dataset")
         )
         return page
     except Exception as e:
@@ -259,6 +262,9 @@ def datasets_detail(dataset_id):
     return render_template(
         'dataset_detail.html',
         dataset=dataset.to_dict(),
+        # modified as separate Date object (the to_dict() already formats it as an
+        # ISO string), so it can be formatted according to the language
+        modified=dataset.modified,
         title=dataset.title,
         is_dataset_in_download_list=dataset.dataset_id in download_list
     )
@@ -271,7 +277,7 @@ def download_list():
         Dataset.dataset_id.in_(dataset_ids)
     ).all() if dataset_ids else []
     session['download_list'] = [dataset.dataset_id for dataset in download_list]
-    return render_template('download-list.html', download_list=download_list, title='Your download list')
+    return render_template('download-list.html', download_list=download_list, title=_('Your download list'))
 
 
 @main_bp.route('/download-list/add/<int:dataset_id>')
@@ -288,12 +294,16 @@ def add_to_download_list(dataset_id):
         session.modified = True
     flash(
         markupsafe.Markup(
-            f'Dataset "{dataset.title}" added to the '
-            f'<a href="{url_for("main_bp.download_list")}">Download list</a>'
+            _('Dataset "%(title)s" added to the '
+                '%(link_start)sDownload list%(link_end)s',
+                title=dataset.title,
+                link_start='<a href="%s">' % url_for('main_bp.download_list'),
+                link_end='</a>'
+            )
         ),
         'success'
     )
-    return redirect(request.referrer)
+    return redirect(get_safe_redirect(request.referrer))
 
 
 @main_bp.route('/download-list/remove/<int:dataset_id>')
@@ -309,18 +319,22 @@ def remove_from_download_list(dataset_id):
     dataset_title = dataset.title if dataset else f"{dataset_id}"
     flash(
         markupsafe.Markup(
-            f'Dataset "{dataset_title}" removed from the '
-            f'<a href="{url_for("main_bp.download_list")}">Download list</a>'
+            _('Dataset "%(title)s" removed from the '
+              '%(link_start)sDownload list%(link_end)s',
+              title=dataset_title,
+              link_start='<a href="%s">' % url_for('main_bp.download_list'),
+              link_end='</a>'
+            )
         ),
         'success'
     )
-    return redirect(request.referrer)
+    return redirect(get_safe_redirect(request.referrer))
 
 
 @main_bp.route('/download-list/empty')
 def empty_download_list():
     session.pop('download_list', None)
-    return redirect(request.referrer)
+    return redirect(get_safe_redirect(request.referrer))
 
 
 @main_bp.route('/download-list/export')
@@ -385,6 +399,28 @@ def _database_dataset_stats():
 def _elasticsearch_result_count(search_result):
     total = search_result.body["hits"]["total"]
     return total["value"] if isinstance(total, dict) else total
+
+
+@app.context_processor
+def inject_languages():
+    """
+    Exposes languages and selected language to templates
+    """
+    return {
+        'active_language': get_locale(),
+        'languages': app.config['LANGUAGES'],
+    }
+
+
+@main_bp.route('/languages/set/<language_key>')
+def set_language(language_key):
+    if language_key not in app.config['LANGUAGES']:
+        session['language'] = app.config['BABEL_DEFAULT_LOCALE']
+        return redirect(get_safe_redirect(request.referrer))
+
+    session['language'] = language_key
+
+    return redirect(get_safe_redirect(request.referrer))
 
 
 @main_bp.route('/rebuild')
@@ -556,8 +592,9 @@ def about():
     """
     Renders a simple about page.
 
-    :return: rendered flask template from templates/about.html    """
-    return render_template('about.html', title='About the LTER-NL Data Registry')
+    :return: rendered flask template from templates/about.html
+    """
+    return render_template('about.html', title=_('About the LTER-NL Data Registry'))
 
 
 @main_bp.route('/instructions')
@@ -567,7 +604,10 @@ def instructions():
 
     :return: rendered flask template from templates/instructions.html
     """
-    return render_template('instructions.html')
+    published = date(2024, 12, 12)
+    modified = date(2026, 8, 14)
+
+    return render_template('instructions.html', published=published, modified=modified)
 
 
 @main_bp.route('/contact')
@@ -649,3 +689,18 @@ def _drop_geometry_collection(geometry):
             geom = geom.geoms[0]
             geometry = json.loads(shapely.to_geojson(geom))
     return geometry
+
+
+# source: https://security.openstack.org/guidelines/dg_avoid-unvalidated-redirects.html
+def _is_safe_redirect_url(target):
+    host_url = urlparse(request.host_url)
+    redirect_url = urlparse(urljoin(request.host_url, target))
+
+    return redirect_url.scheme in ('http', 'https') and host_url.netloc == redirect_url.netloc
+
+
+def get_safe_redirect(url):
+    if url and _is_safe_redirect_url(url):
+        return url
+
+    return url_for("main_bp.home")

@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from flask import Flask, session
 from flask_admin import Admin
+from flask_babel import Babel
 
 from application.admin import DatasetReviewAdmin
 from application.authentication import has_editor_access, oidc_subject
@@ -42,6 +43,7 @@ class TestLocalEditorBypass(unittest.TestCase):
             LOCAL_EDITOR_BYPASS=local_bypass,
             WTF_CSRF_ENABLED=False,
         )
+        Babel(app)
         return app
 
     @staticmethod

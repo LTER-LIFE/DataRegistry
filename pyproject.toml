@@ -17,6 +17,7 @@ dependencies = [
     "elasticsearch",
     "flask",
     "flask-admin",
+    "flask-babel>=4.0.0",
     "flask-jwt-extended",
     "flask-login",
     "flask-session>=0.8.0",

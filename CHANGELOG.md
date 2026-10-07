@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add List and Map tab on the Datasets page
 - Add dataset lifecycle states and a read-only catalogue migration preflight command
+- Add optional automatic database backups with `kartoza/pg-backup`, including manual backup, retention and restore instructions in the README
+- Make the application multilingual and add Dutch translation
 
 ### Changed
 
@@ -25,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Loading a previously drawn polygon on the popover map
+- Display both field names in message from `RequiredOr` validator
+- Open redirect vulnerability when using `request.referrer`
 
 ### Removed
 
