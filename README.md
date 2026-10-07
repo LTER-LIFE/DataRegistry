@@ -28,15 +28,13 @@ sudo sysctl -p
   `docker compose up --detach database es01`
 - Run database migrations:
   - on an existing database, first make a [manual backup](#manual-backup)
-  - for a new installation, run `docker compose run --rm --no-deps app alembic upgrade head`
-  - before upgrading an existing database from revision `251acb193b99`, follow the [catalogue migration runbook](docs/catalogue-migration.md)
-  - capture the read-only preflight report with `docker compose run --rm --no-deps app python -m scripts.catalogue_migration_preflight --json > catalogue-preflight.json`
-  - resolve every reported blocker before running `docker compose run --rm --no-deps app alembic upgrade head`
+  - check an existing database's revision with `docker compose run --rm --no-deps app alembic current`
+  - upgrading from revision `251acb193b99` requires careful consultation of the [catalogue migration runbook](docs/catalogue-migration.md)
+  - apply outstanding migrations with `docker compose run --rm --no-deps app alembic upgrade head`
 - Start the application only after migrations complete: `docker compose up --detach app`.
 - Rebuild the Elasticsearch index:
   - check the status page by visiting `/dashboard`.
   - if necessary rebuild the accepted-only index by visiting `/rebuild`.
-  - retain the preflight report and follow the runbook's post-upgrade validation procedure
 - Docker Compose Watch has been configured to watch for changes in the app source code. [Enable it](https://docs.docker.com/compose/how-tos/file-watch/#use-watch) to start watching for changes.
 - (optional) Restore a database backup
   - copy `docker-compose.override.yml.example` and rename it to `docker-compose.override.yml`.
@@ -158,7 +156,7 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) an
     * create a [manual backup](#manual-backup) with `<reason>` set to `release-<tag-name>`
     * pull latest version of app: `git fetch --tags` and `git checkout tags/<tag-name>`
     * build the release image without starting the web service: `docker compose build app`
-    * when the release includes the catalogue migration, complete the [catalogue migration runbook](docs/catalogue-migration.md) before starting the app
+    * when upgrading from revision `251acb193b99`, complete the [catalogue migration runbook](docs/catalogue-migration.md) before starting the app
     * start the release only after migration and database validation: `docker compose up --detach`
     * Show logs: `docker compose logs -f`
 
