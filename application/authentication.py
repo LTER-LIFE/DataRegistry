@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 import requests
+from flask import current_app
 from config import Config
 
 
@@ -40,9 +41,17 @@ def get_userinfo(access_token):
     :param access_token:
     :return: dictionary containing the userinfo
     """
-    if not access_token:
+    if not access_token or access_token.get("error"):
         return None
-    result = requests.post(url=Config.SURF_DOTWELLKNOWN_CONFIG['userinfo_endpoint'], data=access_token)
+    token_value = access_token.get("access_token")
+    endpoint = Config.SURF_DOTWELLKNOWN_CONFIG.get('userinfo_endpoint')
+    if not token_value or not endpoint:
+        return None
+    result = requests.get(
+        url=endpoint,
+        headers={"Authorization": f"Bearer {token_value}"},
+        timeout=10,
+    )
 
     if result.status_code != 200:
         return None
@@ -59,4 +68,21 @@ def in_editor_group(access_token):
     :return: boolean
     """
     user_info = get_userinfo(access_token)
-    return Config.SURF_EDITOR_GROUP in user_info.get('eduperson_entitlement', [])
+    return bool(
+        user_info
+        and Config.SURF_EDITOR_GROUP in user_info.get('eduperson_entitlement', [])
+    )
+
+
+def has_editor_access(access_token):
+    """Apply the editor policy, including the explicit local-only bypass."""
+    if current_app.config.get("LOCAL_EDITOR_BYPASS", False):
+        return True
+    return in_editor_group(access_token)
+
+
+def oidc_subject(access_token):
+    """Return the subject asserted by the OIDC UserInfo endpoint, or None."""
+    user_info = get_userinfo(access_token)
+    subject = user_info.get("sub") if user_info else None
+    return subject.strip() if isinstance(subject, str) and subject.strip() else None

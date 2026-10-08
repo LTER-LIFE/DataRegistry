@@ -1,4 +1,5 @@
 import os
+from sqlalchemy import inspect
 from sqlalchemy.testing import eq_
 
 from application.database import db_session
@@ -46,6 +47,50 @@ class TestDataset(BaseTestCase):
         all_db_datasets = db_session.query(Dataset).all()
 
         assert len(all_db_datasets) == 1
+        lifecycle = all_db_datasets[0].review_lifecycle
+        assert lifecycle.status == "accepted"
+        assert lifecycle.submitted_at is not None
+        assert lifecycle.accepted_at is not None
+
+    def test_public_serialization_flattens_only_public_lifecycle_fields(self):
+        with self.app.app_context():
+            dataset = self.mock_objects.create_mock_dataset("serialized")
+            lifecycle = dataset.review_lifecycle
+            lifecycle.submitter_id = "private-submitter"
+            lifecycle.current_review_comment = "private-feedback"
+
+            serialized = dataset.to_dict()
+
+        self.assertEqual(serialized["status"], "accepted")
+        self.assertEqual(
+            serialized["submitted_at"],
+            lifecycle.submitted_at.isoformat(),
+        )
+        self.assertEqual(
+            serialized["accepted_at"],
+            lifecycle.accepted_at.isoformat(),
+        )
+        for private_key in (
+            "current_review_comment",
+            "submitter_id",
+            "actor_id",
+            "actor_mode",
+            "transitions",
+        ):
+            self.assertNotIn(private_key, serialized)
+
+    def test_lifecycle_is_selectin_loaded_for_dataset_collections(self):
+        with self.app.app_context():
+            self.mock_objects.create_mock_dataset("first")
+            self.mock_objects.create_mock_dataset("second")
+            db_session.expire_all()
+
+            datasets = db_session.query(Dataset).all()
+
+        self.assertEqual(len(datasets), 2)
+        self.assertTrue(
+            all("review_lifecycle" not in inspect(dataset).unloaded for dataset in datasets)
+        )
 
     def test_create_dataset_box_wkt(self):
         instances = db_session.query(Dataset).all()
@@ -57,6 +102,26 @@ class TestDataset(BaseTestCase):
         all_db_datasets = db_session.query(Dataset).all()
 
         assert len(all_db_datasets) == 1
+
+    def test_catalog_serialization_excludes_non_accepted_siblings(self):
+        with self.app.app_context():
+            accepted = self.mock_objects.create_mock_dataset("accepted")
+            hidden = self.mock_objects.create_mock_dataset(
+                "hidden",
+                status="revision",
+                review_comment="Changes requested",
+            )
+            hidden.dataset_catalog = accepted.dataset_catalog
+            db_session.commit()
+
+            serialized = accepted.to_dict()
+
+            catalogued_ids = {
+                dataset["dataset_id"]
+                for dataset in serialized["dataset_catalog"]["datasets_in_catalogue"]
+            }
+            self.assertIn(accepted.dataset_id, catalogued_ids)
+            self.assertNotIn(hidden.dataset_id, catalogued_ids)
 
     def test_create_dataset_from_shapefile(self):
         dirname = os.path.dirname(__file__)

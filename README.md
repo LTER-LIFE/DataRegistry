@@ -23,14 +23,18 @@ sudo sysctl -p
 ## 🚀 Getting started
 
 - Copy `.env.example`, rename it to `.env` and complete the missing variables.
-- Start the Docker Compose environment: `docker compose up --detach`
+- Validate the configuration with `docker compose config`.
+- Start the database and Elasticsearch without exposing the application:
+  `docker compose up --detach database es01`
 - Run database migrations:
   - on an existing database, first make a [manual backup](#manual-backup)
-  - log into the app container: `docker compose exec app bash`
-  - and run the migrations: `alembic upgrade head`
+  - check an existing database's revision with `docker compose run --rm --no-deps app alembic current`
+  - upgrading from revision `251acb193b99` requires careful consultation of the [catalogue migration runbook](docs/catalogue-migration.md)
+  - apply outstanding migrations with `docker compose run --rm --no-deps app alembic upgrade head`
+- Start the application only after migrations complete: `docker compose up --detach app`.
 - Rebuild the Elasticsearch index:
   - check the status page by visiting `/dashboard`.
-  - if necessary rebuild the index by visiting `/rebuild`.
+  - if necessary rebuild the accepted-only index by visiting `/rebuild`.
 - Docker Compose Watch has been configured to watch for changes in the app source code. [Enable it](https://docs.docker.com/compose/how-tos/file-watch/#use-watch) to start watching for changes.
 - (optional) Restore a database backup
   - copy `docker-compose.override.yml.example` and rename it to `docker-compose.override.yml`.
@@ -48,7 +52,7 @@ By default:
 
 ## Database backup
 
-Automatic database backups are handled by [`kartoza/pg-backup`](https://github.com/kartoza/docker-pg-backup), the backup companion to the `kartoza/postgis` 
+Automatic database backups are handled by [`kartoza/pg-backup`](https://github.com/kartoza/docker-pg-backup), the backup companion to the `kartoza/postgis`
 `database` image (so `pg_dump` always matches the server version). It is **disabled by default**.
 
 ### Enable backup:
@@ -60,7 +64,7 @@ Automatic database backups are handled by [`kartoza/pg-backup`](https://github.c
 - validate your config with `docker compose config`
 - (re)start the stack: `docker compose up --detach`
 
-Backups are written to `BACKUP_DIR` as compressed archives using `pg_dump -Fc --data-only`, i.e. 
+Backups are written to `BACKUP_DIR` as compressed archives using `pg_dump -Fc --data-only`, i.e.
 **data only, without the schema**.
 
 ### Retention:
@@ -148,11 +152,12 @@ Your contributions are welcome. Please see [CONTRIBUTING.md](CONTRIBUTING.md) an
 3. Tag this commit with a new version: `git tag -a <version> -m "<description>" <commit-hash>`
 4. Create a new GitHub release, point to relevant section in the changelog
 5. Deploy release. First deploy release on acceptance. After confirmation by product owner, deploy release on production. Follow this procedure:
-    * shut down access to the site temporarily: `docker compose down app`
+    * stop application writes and web access: `docker compose stop app`
     * create a [manual backup](#manual-backup) with `<reason>` set to `release-<tag-name>`
     * pull latest version of app: `git fetch --tags` and `git checkout tags/<tag-name>`
-    * Shut down Docker: `docker compose down`
-    * Install new version of app: `docker compose up --build -d`
+    * build the release image without starting the web service: `docker compose build app`
+    * when upgrading from revision `251acb193b99`, complete the [catalogue migration runbook](docs/catalogue-migration.md) before starting the app
+    * start the release only after migration and database validation: `docker compose up --detach`
     * Show logs: `docker compose logs -f`
 
 ## 📄 License

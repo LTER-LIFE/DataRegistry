@@ -1,0 +1,76 @@
+{% extends 'admin/master.html' %}
+{% import 'admin/lib.html' as lib with context %}
+
+{% block head %}
+  {{ super() }}
+  {{ lib.form_css() }}
+{% endblock %}
+
+{% block body %}
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a href="{{ return_url }}" class="nav-link">List</a>
+    </li>
+    <li class="nav-item">
+      <a href="javascript:void(0)" class="nav-link active">Review</a>
+    </li>
+  </ul>
+
+  <h2>{{ dataset.title }}</h2>
+  <dl class="row">
+    <dt class="col-sm-3">Dataset ID</dt>
+    <dd class="col-sm-9">{{ dataset.dataset_id }}</dd>
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">{{ lifecycle.status }}</dd>
+    <dt class="col-sm-3">Submitted</dt>
+    <dd class="col-sm-9">{{ lifecycle.submitted_at }}</dd>
+    <dt class="col-sm-3">Accepted</dt>
+    <dd class="col-sm-9">{{ lifecycle.accepted_at or '' }}</dd>
+    <dt class="col-sm-3">Submitter</dt>
+    <dd class="col-sm-9">{{ lifecycle.submitter_id or '' }}</dd>
+    <dt class="col-sm-3">Current feedback</dt>
+    <dd class="col-sm-9">{{ lifecycle.current_review_comment or '' }}</dd>
+  </dl>
+
+  <h3>Apply transition</h3>
+  {% if form.csrf_token.errors %}
+  <div class="alert alert-danger" role="alert">
+    {% for error in form.csrf_token.errors %}{{ error }}{% endfor %}
+  </div>
+  {% endif %}
+  {% call lib.form_tag(action=request.url) %}
+    {{ lib.render_form_fields(form) }}
+    <button type="submit" class="btn btn-primary">Apply transition</button>
+  {% endcall %}
+
+  <h3 class="mt-5">Transition history</h3>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Changed</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Comment</th>
+        <th>Actor</th>
+        <th>Mode</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for transition in lifecycle.transitions %}
+      <tr>
+        <td>{{ transition.changed_at }}</td>
+        <td>{{ transition.from_status or '' }}</td>
+        <td>{{ transition.to_status }}</td>
+        <td>{{ transition.review_comment or '' }}</td>
+        <td>{{ transition.actor_id or '' }}</td>
+        <td>{{ transition.actor_mode }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  {{ lib.form_js() }}
+{% endblock %}

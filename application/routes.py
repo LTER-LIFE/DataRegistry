@@ -4,12 +4,12 @@ import io
 import json
 import logging
 import zipfile
-from datetime import date
+from datetime import date, datetime
+from urllib.parse import urljoin, urlparse
 
 import requests
 import traceback
 import time
-from urllib.parse import urlparse, urljoin
 
 from flask import render_template, Blueprint, flash, request, abort, redirect, session, url_for, send_file, jsonify
 
@@ -18,17 +18,19 @@ from flask_babel import _, lazy_gettext as _l
 import jwt
 import markupsafe
 import shapely
+from sqlalchemy import func
+from sqlalchemy.orm import contains_eager
 
-from application import search_index, get_locale
-from application.authentication import valid_token, in_editor_group
+from application import get_locale, search_index
+from application.authentication import in_editor_group, oidc_subject, valid_token
 from application.database import db_session
 from application.forms import DatasetForm, LlmForm
-from application.forms import DatasetForm, DatasetStagingForm
 from application.models import Agent, Keyword, Catalog, Checksum, DataService, Dataset, DataTheme, Distribution, \
-    LicenseDocument, MediaType, Location
+    LicenseDocument, MediaType, Location, ReviewLifecycle, REVIEW_ACTOR_ANONYMOUS, \
+    REVIEW_ACTOR_AUTHENTICATED, REVIEW_STATUS_ACCEPTED, REVIEW_STATUS_REJECTED, \
+    REVIEW_STATUS_REVISION, REVIEW_STATUS_SUBMITTED
 from application.services import LlmMetadataService
-from application.models import AgentStaging, KeywordStaging, CatalogStaging, ChecksumStaging, DataServiceStaging, DatasetStaging, DataThemeStaging, DistributionStaging, \
-    LicenseDocumentStaging, MediaTypeStaging, LocationStaging
+from application.workflow import initialize_reviewable
 
 # Blueprint Configuration
 # Here the static folder and the templates folder are annotated
@@ -37,6 +39,16 @@ url_prefix = f"{proxy_prefix}/".replace("//", "/") if proxy_prefix else "/"
 
 # Blueprint Configuration
 main_bp = Blueprint("main_bp", __name__, template_folder="templates", static_folder="static", url_prefix=url_prefix)
+
+
+def _accepted_dataset_query():
+    """Return datasets whose joined lifecycle is currently accepted."""
+    return (
+        db_session.query(Dataset)
+        .join(Dataset.review_lifecycle)
+        .options(contains_eager(Dataset.review_lifecycle))
+        .filter(ReviewLifecycle.status == REVIEW_STATUS_ACCEPTED)
+    )
 
 
 @main_bp.route('/')
@@ -60,6 +72,8 @@ def add_dataset(dataset_id=None):
 
     :return: rendered flask template from templates/add_dataset.html
     """
+    if request.url_rule.rule == "/add_dataset":
+        return redirect(url_for("main_bp.stage_dataset"))
     #
     try:
         name = None
@@ -80,97 +94,68 @@ def add_dataset(dataset_id=None):
                 flash(f"Please ask for editor access to an admin.", "error")
                 return redirect(url_for("main_bp.home"))
             if request.url_rule.rule.find("delete") > -1:
-                db_session.delete(dataset)
+                db_session.delete(dataset.review_lifecycle)
                 db_session.commit()
                 db_session.flush()
                 flash(f"Deleted dataset {dataset_id}", "success")
             elif request.url_rule.rule.find("edit") > -1 or request.url_rule.rule.find("copy") > -1:
                 dataset_form.from_dataset(dataset)
 
-        # If the form validates
+        # Direct creation is handled by stage_dataset so every new entry is reviewed.
         if dataset_form.validate_on_submit():
-            if request.url_rule.rule.find("edit") > -1:
-                dataset = dataset_form.to_dataset(dataset)
-                dataset = dataset_form.to_dataset(dataset)
-                # Commit study to the database
-                db_session.commit()
-                db_session.flush()
-            else:
-                dataset = dataset_form.to_dataset(dataset)
-                # Add to the database
-                db_session.add(dataset)
-                # Commit study to the database
-                db_session.commit()
-                db_session.flush()
+            dataset = dataset_form.to_dataset(dataset)
+            db_session.commit()
             # Feedback
-            flash(f"Added dataset with title {dataset.title}.", "success")
+            flash(f"Updated dataset with title {dataset.title}.", "success")
 
-        page = render_template('dataset_form.html', form=dataset_form, name=name, llm_form=llm_form, title='Register your dataset')
+        page = render_template(
+            'dataset_form.html', form=dataset_form, name=name, llm_form=llm_form,
+            form_action=request.path, title='Edit dataset'
+        )
         return page
     except Exception as e:
+        db_session.rollback()
         logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
 
-@main_bp.route('/stageddatasets/edit/<dataset_id>', methods=['GET', 'POST'])
-@main_bp.route('/stageddatasets/delete/<dataset_id>', methods=['GET'])
 @main_bp.route('/stage_dataset', methods=['GET', 'POST'])
-def stage_dataset(dataset_id=None):
+def stage_dataset():
     """
-    Renders a form to stage (create) or edit or delete a new dataset
-
-    :param dataset_id: The param dataset id can be used to Edit or Delete datasets
-
-    :return: rendered flask template from templates/add_dataset.html
+    Render and process the public canonical dataset submission form.
     """
     #
     try:
         name = None
-        dataset_form = DatasetStagingForm()
+        dataset_form = DatasetForm()
         llm_form = LlmForm()
-        dataset = None
 
-        # Delete the dataset or edit
-        if request.url_rule.rule.find("delete") > -1 or request.url_rule.rule.find("edit") > -1:
-            dataset = db_session.get(DatasetStaging, dataset_id)
-
-            if not dataset:
-                flash(f"{dataset_id} does not exist.", "error")
-            if not is_logged_in():
-                flash(f"Please login to modify a dataset.", "error")
-                return redirect(url_for("main_bp.login"))
-            if not in_editor_group(session.get('access_token')):
-                flash(f"Please ask for editor access to an admin.", "error")
-                return redirect(url_for("main_bp.home"))
-            if request.url_rule.rule.find("delete") > -1:
-                db_session.delete(dataset)
-                db_session.commit()
-                db_session.flush()
-                flash(f"Deleted dataset {dataset_id}", "success")
-            elif request.url_rule.rule.find("edit") > -1 or request.url_rule.rule.find("copy") > -1:
-                dataset_form.from_dataset(dataset)
-
-        # If the form validates
+        # A record is created only after the user explicitly submits this form.
         if dataset_form.validate_on_submit():
-            if request.url_rule.rule.find("edit") > -1:
-                dataset = dataset_form.to_dataset(dataset)
-                dataset = dataset_form.to_dataset(dataset)
-                # Commit study to the database
-                db_session.commit()
-                db_session.flush()
-            else:
-                dataset = dataset_form.to_dataset(dataset)
-                # Add to the database
-                db_session.add(dataset)
-                # Commit study to the database
-                db_session.commit()
-                db_session.flush()
-            # Feedback
-            flash(f"Staged dataset with title {dataset.title}.", "success")
+            dataset = dataset_form.to_dataset()
+            now = datetime.utcnow()
+            submitter_id = oidc_subject(session.get("access_token"))
+            actor_mode = (
+                REVIEW_ACTOR_AUTHENTICATED
+                if submitter_id
+                else REVIEW_ACTOR_ANONYMOUS
+            )
+            initialize_reviewable(
+                dataset,
+                submitter_id=submitter_id,
+                actor_id=submitter_id,
+                actor_mode=actor_mode,
+                changed_at=now,
+            )
+            db_session.add(dataset)
+            db_session.commit()
+            flash(f"Submitted dataset with title {dataset.title} for review.", "success")
+            return redirect(url_for("main_bp.stage_dataset"))
 
         page = render_template('dataset_form.html', form=dataset_form, name=name, llm_form=llm_form,
-                               title=_('Register your dataset'))
+                               form_action=url_for("main_bp.stage_dataset"), title=_('Register your dataset'))
         return page
     except Exception as e:
+        db_session.rollback()
         logging.error(traceback.format_exc())
         abort(500, description="Failed to mutate dataset.", original_exception=e)
 
@@ -221,14 +206,17 @@ async def dataset_from_ai():
         elif llm_form.validate_on_submit():
             dataset_json = await llm_metadata_service.get_metadata(llm_form.dataset_url.data)
         else:
-            return redirect(url_for('main_bp.add_dataset'))
+            return redirect(url_for('main_bp.stage_dataset'))
 
         dataset = llm_form.to_dataset(dataset_json)
 
         dataset_form = DatasetForm()
         dataset_form.from_dataset(dataset)
 
-        page = render_template('dataset_form.html', form=dataset_form, llm_form=llm_form, name=name, title=_l("Register your dataset"))
+        page = render_template(
+            'dataset_form.html', form=dataset_form, llm_form=llm_form, name=name,
+            form_action=url_for("main_bp.stage_dataset"), title=_l("Register your dataset")
+        )
         return page
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -260,7 +248,9 @@ def datasets_detail(dataset_id):
     :return: rendered flask template from templates/dataset_detail.html
     """
     try:
-        dataset = db_session.get(Dataset, dataset_id)
+        dataset = _accepted_dataset_query().filter(
+            Dataset.dataset_id == dataset_id
+        ).one_or_none()
     except Exception as e:
         logging.error(traceback.format_exc())
         abort(500, description="Failed to fetch dataset.", original_exception=e)
@@ -280,43 +270,28 @@ def datasets_detail(dataset_id):
     )
 
 
-@main_bp.route('/stageddatasets')
-@main_bp.route('/StagedDataset/<dataset_id>')
-def stageddatasets(dataset_id=None):
-    """
-    Renders a form to show all datasets in a table form. When a dataset_id is given only one dataset is shown
-
-    :param dataset_id: The param dataset id can be used to Edit or Delete datasets
-
-    :return: rendered flask template from templates/dataset_table.html
-    """
-    try:
-        if dataset_id:
-            datasets_table = [db_session.get(DatasetStaging, dataset_id)]
-        else:
-            datasets_table = db_session.query(DatasetStaging).all()
-        page = render_template('dataset_table.html', datasets=datasets_table, title="Staged datasets")
-        return page
-    except Exception as e:
-        logging.error(traceback.format_exc())
-        abort(500, description="Failed to fetch datasets and render to table.", original_exception=e)
-
-
 @main_bp.route('/download-list')
 def download_list():
     dataset_ids = session.get('download_list', [])
-    download_list = [db_session.get(Dataset, dataset_id) for dataset_id in dataset_ids]
+    download_list = _accepted_dataset_query().filter(
+        Dataset.dataset_id.in_(dataset_ids)
+    ).all() if dataset_ids else []
+    session['download_list'] = [dataset.dataset_id for dataset in download_list]
     return render_template('download-list.html', download_list=download_list, title=_('Your download list'))
 
 
 @main_bp.route('/download-list/add/<int:dataset_id>')
 def add_to_download_list(dataset_id):
+    dataset = _accepted_dataset_query().filter(
+        Dataset.dataset_id == dataset_id
+    ).one_or_none()
+    if not dataset:
+        abort(404)
     if 'download_list' not in session:
         session['download_list'] = []
     if dataset_id not in session['download_list']:
         session['download_list'].append(dataset_id)
         session.modified = True
-    dataset = db_session.get(Dataset, dataset_id)
     flash(
         markupsafe.Markup(
             _('Dataset "%(title)s" added to the '
@@ -338,12 +313,15 @@ def remove_from_download_list(dataset_id):
         download_list.remove(dataset_id)
         session['download_list'] = download_list
         session.modified = True
-    dataset = db_session.get(Dataset, dataset_id)
+    dataset = _accepted_dataset_query().filter(
+        Dataset.dataset_id == dataset_id
+    ).one_or_none()
+    dataset_title = dataset.title if dataset else f"{dataset_id}"
     flash(
         markupsafe.Markup(
             _('Dataset "%(title)s" removed from the '
               '%(link_start)sDownload list%(link_end)s',
-              title=dataset.title,
+              title=dataset_title,
               link_start='<a href="%s">' % url_for('main_bp.download_list'),
               link_end='</a>'
             )
@@ -362,33 +340,65 @@ def empty_download_list():
 @main_bp.route('/download-list/export')
 def export_download_list():
     dataset_ids = session.get('download_list', [])
-    if len(dataset_ids) > 0:
-        stream = io.BytesIO()
-        # Create Zip archive with one GeoJSON file per dataset, and a CSV file
-        # as Table of Content (TOC)
-        with zipfile.ZipFile(stream, 'w') as zf:
-            toc_entries = []
-            for dataset_id in dataset_ids:
-                dataset = db_session.get(Dataset, dataset_id)
-                dataset_geojson = _geojson_dump(dataset.to_dict())
-                dataset_encoded = dataset_geojson.encode()
-                dataset_hash = hashlib.md5(dataset_encoded).hexdigest()
-                # Add JSON file to Zip archive
-                with zf.open(f'{dataset_hash}.json', 'w') as f:
-                    f.write(dataset_encoded)
-                toc_entries.append({'hash': dataset_hash, 'title': dataset.title})
-            # Add CSV file to Zip archive
-            with zf.open("TOC.csv", "w") as csvf:
-                # ZipFile expects binary, while the CSV writer gives strings
-                with io.TextIOWrapper(csvf) as f:
-                    writer = csv.DictWriter(f, fieldnames=toc_entries[0].keys())
-                    writer.writeheader()
-                    writer.writerows(toc_entries)
-        stream.seek(0)
-        return send_file(stream,
-                         mimetype='application/zip',
-                         as_attachment=True,
-                         download_name='datasets.zip')
+    datasets = _accepted_dataset_query().filter(
+        Dataset.dataset_id.in_(dataset_ids)
+    ).all() if dataset_ids else []
+    session['download_list'] = [dataset.dataset_id for dataset in datasets]
+    if not datasets:
+        flash("Your download list contains no accepted datasets.", "warning")
+        return redirect(url_for("main_bp.download_list"))
+
+    stream = io.BytesIO()
+    # Create Zip archive with one GeoJSON file per dataset, and a CSV file
+    # as Table of Content (TOC)
+    with zipfile.ZipFile(stream, 'w') as zf:
+        toc_entries = []
+        for dataset in datasets:
+            dataset_geojson = _geojson_dump(dataset.to_dict())
+            dataset_encoded = dataset_geojson.encode()
+            dataset_hash = hashlib.md5(dataset_encoded).hexdigest()
+            # Add JSON file to Zip archive
+            with zf.open(f'{dataset_hash}.json', 'w') as f:
+                f.write(dataset_encoded)
+            toc_entries.append({'hash': dataset_hash, 'title': dataset.title})
+        # Add CSV file to Zip archive
+        with zf.open("TOC.csv", "w") as csvf:
+            # ZipFile expects binary, while the CSV writer gives strings
+            with io.TextIOWrapper(csvf) as f:
+                writer = csv.DictWriter(f, fieldnames=toc_entries[0].keys())
+                writer.writeheader()
+                writer.writerows(toc_entries)
+    stream.seek(0)
+    return send_file(stream,
+                     mimetype='application/zip',
+                     as_attachment=True,
+                     download_name='datasets.zip')
+
+
+def _database_dataset_stats():
+    start = time.time()
+    status_counts = dict(
+        db_session.query(
+            ReviewLifecycle.status,
+            func.count(Dataset.dataset_id),
+        )
+        .join(Dataset, Dataset.review_lifecycle_id == ReviewLifecycle.review_lifecycle_id)
+        .group_by(ReviewLifecycle.status)
+        .all()
+    )
+    return {
+        "total": sum(status_counts.values()),
+        "submitted": status_counts.get(REVIEW_STATUS_SUBMITTED, 0),
+        "revision": status_counts.get(REVIEW_STATUS_REVISION, 0),
+        "rejected": status_counts.get(REVIEW_STATUS_REJECTED, 0),
+        "accepted": status_counts.get(REVIEW_STATUS_ACCEPTED, 0),
+        "duration": "{:f}".format(time.time() - start),
+    }
+
+
+def _elasticsearch_result_count(search_result):
+    total = search_result.body["hits"]["total"]
+    return total["value"] if isinstance(total, dict) else total
 
 
 @app.context_processor
@@ -423,14 +433,8 @@ def rebuild_index():
 
     :return: rendered flask template from templates/dashboard.html
     """
-    # get all datasets from database
-    start = time.time()
-
-    db_datasets = db_session.query(Dataset).all()
-    db_duration = '{:f}'.format(time.time() - start)
-
-    database_datasets_stats =  {"total": len(db_datasets),
-                             "duration": f"Fetched all full datasets in {db_duration}"}
+    database_datasets_stats = _database_dataset_stats()
+    db_datasets = _accepted_dataset_query().all()
 
     start = time.time()
     indexed_datasets = search_index.rebuild_index(db_datasets)
@@ -441,7 +445,8 @@ def rebuild_index():
 
     return render_template('dashboard.html',
                            database_datasets_stats=database_datasets_stats,
-                           index_datasets_stats=index_datasets_stats)
+                           index_datasets_stats=index_datasets_stats,
+                           title='Dashboard')
 
 @main_bp.route('/query', methods=['POST'])
 def query_index():
@@ -463,7 +468,23 @@ def query_index():
             es_datasets = search_index.fetch_all()
 
 
-        for hit in es_datasets.raw["hits"]["hits"]:
+        accepted_ids = {
+            dataset_id
+            for dataset_id, in db_session.query(Dataset.dataset_id)
+            .join(Dataset.review_lifecycle)
+            .filter(ReviewLifecycle.status == REVIEW_STATUS_ACCEPTED)
+            .all()
+        }
+        visible_hits = [
+            hit for hit in es_datasets.raw["hits"]["hits"]
+            if hit.get("_source", {}).get("dataset_id") in accepted_ids
+        ]
+        es_datasets.raw["hits"]["hits"] = visible_hits
+        es_datasets.raw["hits"]["total"] = {
+            "value": len(visible_hits), "relation": "eq"
+        }
+
+        for hit in visible_hits:
             source = {}
             for key, value in hit.get("_source").items():
                 if isinstance(value, dict):
@@ -494,17 +515,12 @@ def dashboard():
 
     :return: rendered flask template from templates/dashboard.html
     """
-    start = time.time()
-
-    db_datasets_count = db_session.query(Dataset.dataset_id).count()
-    db_duration = '{:f}'.format(time.time() - start)
-
-    database_datasets_stats =  {"total": db_datasets_count,
-                             "duration": db_duration}
-
+    database_datasets_stats = _database_dataset_stats()
     index_datasets = search_index.fetch_all()
-    index_datasets_stats =  {"total": len(index_datasets.body["hits"]["total"]),
-                             "duration": index_datasets.meta.duration}
+    index_datasets_stats = {
+        "total": _elasticsearch_result_count(index_datasets),
+        "duration": index_datasets.meta.duration,
+    }
 
     return render_template('dashboard.html',
                            database_datasets_stats=database_datasets_stats,

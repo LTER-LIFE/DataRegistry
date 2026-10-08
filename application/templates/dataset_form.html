@@ -21,6 +21,10 @@
     <label class="form-label">
         <i class="bi bi-robot"></i> {{ _('Use LLM metadata harvester to prefill fields') }}
     </label>
+    <p>
+        AI suggestions are not submitted or stored. Review and complete the
+        populated form, then submit it manually when it is ready.
+    </p>
 
     <form action="{{ url_for('main_bp.dataset_from_ai') }}" method="POST" id="llm-harvester-form">
         {{ llm_form.hidden_tag() }}
@@ -93,7 +97,7 @@
     {% endautoescape %}
 </p>
 
-<form action="" enctype="multipart/form-data" method="POST" novalidate>
+<form action="{{ form_action }}" enctype="multipart/form-data" method="POST" novalidate>
     {{form.hidden_tag()}}
 
     <div class="mb-3">

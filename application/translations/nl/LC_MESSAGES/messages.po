@@ -1582,4 +1582,3 @@ msgstr "Download lijst"
 #: application/templates/partials/header.html:77
 msgid "About"
 msgstr "Over"
-
