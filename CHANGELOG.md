@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking changes
+
+- Replace the separate main and staging runtime model graphs with one canonical `Dataset` catalogue and explicit review lifecycle and transition tables. Upgrading from Alembic revision `251acb193b99` is forward-only, requires the [catalogue migration runbook](docs/catalogue-migration.md), and makes the migrated database incompatible with older application releases.
+- Remove the runtime staging models, forms, routes, and record-transfer workflow. Legacy staging tables are retained as a read-only migration archive for this release.
+
 ### Added
 
 - Add List and Map tab on the Datasets page
@@ -16,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Store submitted and accepted metadata records in one canonical catalogue
 - Require explicit user submission after AI-assisted form prefilling
 - Restrict public detail, download, export, and search indexing to accepted records
 - Move Code of Conduct to a separate document [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
@@ -32,7 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Remove runtime staging models, forms, routes, and record-transfer logic
 - Remove the 'Map' page
 
 
