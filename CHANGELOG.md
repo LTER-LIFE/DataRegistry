@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update SURF's SRAM application connection to fix login procedure on `data.lter-nl.nl`
+- Update default application port to 8000
+- Update SURF redirect URI for local development environment
 
 ## [0.8.0] - 2026-10-03
 

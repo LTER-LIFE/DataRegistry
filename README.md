@@ -40,7 +40,7 @@ sudo sysctl -p
   - log into the database container to restore the backup.
 
 By default:
-- the app is available at http://localhost:8084 (the `PORT` from your `.env`)
+- the app is available at http://localhost:8000 (the `PORT` from your `.env`)
 - the database is available at localhost, port 25432. Please see the `.env` file for the connection details.
 - Elasticsearch is available at https://localhost:9200.
 
